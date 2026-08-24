@@ -1,0 +1,2 @@
+cd "c:\Users\new\Downloads\ETA App"
+>> npx expo start --android
