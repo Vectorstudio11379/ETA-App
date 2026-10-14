@@ -10,15 +10,15 @@ interface CertificatePreviewProps {
 }
 
 export const CertificatePreview: React.FC<CertificatePreviewProps> = ({
-  studentName = 'YOUR NAME',
-  courseTitle = 'Microsoft Excel for Financial Analysis, Modelling & Accounting',
-  instructorName = 'JAMEEL BIN ABDULLAHI',
+  studentName = 'STUDENT NAME',
+  courseTitle = 'Complete AI & Tech Engineering Track',
+  instructorName = 'Alex Mercer & ETA Academic Board',
 }) => {
   return (
     <View style={styles.certCard}>
       <View style={styles.headerRow}>
         <Award size={18} color={Colors.primary} />
-        <Text style={styles.brandTitle}>AQskill</Text>
+        <Text style={styles.brandTitle}>Express Tech Academy</Text>
       </View>
 
       <Text style={styles.certTitle}>CERTIFICATE OF COMPLETION</Text>

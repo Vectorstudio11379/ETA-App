@@ -40,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({ title, showCurrency = true, show
         <View style={styles.leftContainer}>
           {showBack && (
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-              <Text style={[styles.backText, { color: colors.secondary }]}>‹ Back</Text>
+              <Text style={[styles.backText, { color: colors.accent }]}>‹ Back</Text>
             </TouchableOpacity>
           )}
           {title && <Text style={[styles.titleText, { color: colors.text }]}>{title}</Text>}
@@ -62,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({ title, showCurrency = true, show
         >
           <HugeiconsIcon icon={ShoppingCart01Icon} size={22} color={colors.text} />
           {cartIds.length > 0 && (
-            <View style={[styles.cartBadge, { backgroundColor: colors.primary }]}>
+            <View style={[styles.cartBadge, { backgroundColor: colors.accent }]}>
               <Text style={styles.cartBadgeText}>{cartIds.length}</Text>
             </View>
           )}

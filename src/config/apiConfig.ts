@@ -7,8 +7,8 @@ export const API_CONFIG = {
   // Live WordPress site domain
   WORDPRESS_URL: 'https://expressteck.tech',
 
-  // Enable mock data fallback if offline or request fails
-  ENABLE_MOCK_FALLBACK: true,
+  // Disable mock data fallback completely
+  ENABLE_MOCK_FALLBACK: false,
 
   // Default API Timeout in Milliseconds
   TIMEOUT_MS: 15000,
@@ -33,12 +33,29 @@ export const API_CONFIG = {
     COURSE_DETAILS: (id: string) => `/wp-json/wp/v2/mto-course/${id}`,
     LESSONS: (courseId: string) => `/wp-json/wp/v2/lessons?course=${courseId}`,
     
+    // Categories, Instructors and Site Info
+    CATEGORIES: '/wp-json/eta/v1/categories',
+    INSTRUCTORS: '/wp-json/eta/v1/instructors',
+    BUNDLES: '/wp-json/eta/v1/bundles',
+    SITE_INFO: '/wp-json/eta/v1/site-info',
+    COURSE_CURRICULUM: (id: string) => `/wp-json/eta/v1/course-details?id=${id}`,
+    
     // User Synced Data Endpoints
-    USER_ENROLLMENTS: '/wp-json/eta/v1/progress',
+    USER_ENROLLMENTS: '/wp-json/eta/v1/my-courses',
+    MY_COURSES: '/wp-json/eta/v1/my-courses',
     USER_PROGRESS: '/wp-json/eta/v1/progress',
     USER_CART: '/wp-json/eta/v1/cart',
     USER_WISHLIST: '/wp-json/eta/v1/wishlist',
     USER_NOTIFICATIONS: '/wp-json/eta/v1/notifications',
+
+    // Paystack & Website Payment Endpoints
+    PAYSTACK_INITIALIZE: '/wp-json/eta/v1/checkout/initialize-paystack',
+    PAYSTACK_VERIFY: '/wp-json/eta/v1/checkout/verify-paystack',
+    PAYMENT_INITIALIZE: '/wp-json/eta/v1/payment/initialize',
+    PAYMENT_VERIFY: '/wp-json/eta/v1/payment/verify',
+    PAYMENT_STATUS: '/wp-json/eta/v1/payment/status',
+    PAYMENT_COMPLETE_PAGE: '/payment-complete/',
+    MOBILE_CHECKOUT_URL: (courseId: string, email: string) => `/mobile-checkout/?course_id=${courseId}&email=${encodeURIComponent(email)}`,
   },
 };
 

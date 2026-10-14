@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,13 +19,15 @@ import {
   Cancel01Icon,
   ShoppingBag01Icon,
   CreditCardIcon,
+  SecurityCheckIcon,
 } from '@hugeicons/core-free-icons';
 import { useApp } from '../context/AppContext';
 
 export default function CartScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { courses, cartIds, removeFromCart, formatPrice, clearCart, colors } = useApp();
+  const { courses, cartIds, removeFromCart, formatPrice, colors, startPaystackPayment, userProfile } = useApp();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const cartCourses = courses.filter((c) => cartIds.includes(c.id));
   const totalAmount = cartCourses.reduce((sum, item) => sum + item.price, 0);
@@ -33,20 +36,18 @@ export default function CartScreen() {
     ? Math.max(insets.top, StatusBar.currentHeight || 24) + 6
     : Math.max(insets.top, 12);
 
-  const handleCheckout = (provider: string) => {
-    Alert.alert(
-      'Checkout Success',
-      `Proceeding with ${provider} for ${formatPrice(totalAmount)}!`,
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            clearCart();
-            router.push('/(tabs)/my-courses');
-          },
-        },
-      ]
-    );
+  const handlePaystackCheckout = async () => {
+    if (cartCourses.length === 0 || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      await startPaystackPayment(
+        cartCourses,
+        userProfile.email || 'student@expressteck.tech',
+        userProfile.name || 'Student'
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -114,24 +115,37 @@ export default function CartScreen() {
           <View style={[styles.totalBox, { backgroundColor: colors.surfaceLight }]}>
             <HugeiconsIcon icon={CreditCardIcon} size={22} color={colors.primary} />
             <View style={styles.totalTextCol}>
-              <Text style={[styles.totalAmount, { color: colors.primary }]}>{formatPrice(totalAmount)}</Text>
+              <Text style={[styles.totalAmount, { color: colors.accent }]}>{formatPrice(totalAmount)}</Text>
               <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Total Payable Sum</Text>
             </View>
           </View>
 
           <TouchableOpacity
-            style={[styles.primaryPayBtn, { backgroundColor: colors.primary }]}
-            onPress={() => handleCheckout('Local Payment (Paystack / Flutterwave)')}
+            style={[
+              styles.primaryPayBtn,
+              { backgroundColor: isProcessing ? colors.accentDark : colors.accent, opacity: isProcessing ? 0.8 : 1 },
+            ]}
+            disabled={isProcessing}
+            onPress={handlePaystackCheckout}
           >
-            <Text style={styles.primaryPayText}>Use Local Payment</Text>
+            {isProcessing ? (
+              <View style={styles.processingRow}>
+                <ActivityIndicator color="#FFF" size="small" />
+                <Text style={styles.primaryPayText}>Connecting Paystack...</Text>
+              </View>
+            ) : (
+              <View style={styles.processingRow}>
+                <HugeiconsIcon icon={SecurityCheckIcon} size={18} color="#FFF" />
+                <Text style={styles.primaryPayText}>Pay with Paystack</Text>
+              </View>
+            )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.secondaryPayBtn, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}
-            onPress={() => handleCheckout('Google Pay')}
-          >
-            <Text style={[styles.secondaryPayText, { color: colors.text }]}>Use Google Pay</Text>
-          </TouchableOpacity>
+          <View style={styles.secureNoticeRow}>
+            <Text style={[styles.secureNoticeText, { color: colors.textSecondary }]}>
+              🔒 256-Bit Encrypted • Direct Sync with Expressteck Database
+            </Text>
+          </View>
         </View>
       )}
     </View>
@@ -272,20 +286,24 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  processingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   primaryPayText: {
     color: '#FFF',
     fontSize: 15,
     fontWeight: 'bold',
   },
-  secondaryPayBtn: {
-    borderRadius: 24,
-    paddingVertical: 14,
+  secureNoticeRow: {
     alignItems: 'center',
-    borderWidth: 1,
+    marginTop: 4,
   },
-  secondaryPayText: {
-    fontSize: 15,
-    fontWeight: 'bold',
+  secureNoticeText: {
+    fontSize: 11,
+    textAlign: 'center',
   },
 });

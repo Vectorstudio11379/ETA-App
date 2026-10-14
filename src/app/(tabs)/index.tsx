@@ -10,12 +10,13 @@ import {
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Header } from '../../components/Header';
 import { SearchBar } from '../../components/SearchBar';
 import { CourseCard } from '../../components/CourseCard';
-import { MOCK_HERO_BANNERS, HeroBanner, Instructor } from '../../data/mockData';
+import { HERO_BANNERS, HeroBanner, Instructor } from '../../data/mockData';
 import { useApp } from '../../context/AppContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -24,7 +25,7 @@ const CARD_ITEM_STEP = 284;
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { courses, newCourses, bundles, instructors, colors } = useApp();
+  const { courses, newCourses, bundles, instructors, colors, isRefreshing, refreshLiveData } = useApp();
 
   const [activeHeroIndex, setActiveHeroIndex] = useState<number>(0);
   const [activeFeaturedIndex, setActiveFeaturedIndex] = useState<number>(0);
@@ -36,7 +37,7 @@ export default function HomeScreen() {
   const handleHeroScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const slideSize = event.nativeEvent.layoutMeasurement.width;
     const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
-    if (index >= 0 && index < MOCK_HERO_BANNERS.length) {
+    if (index >= 0 && index < HERO_BANNERS.length) {
       setActiveHeroIndex(index);
     }
   };
@@ -57,14 +58,25 @@ export default function HomeScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Header showCurrency={true} />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={refreshLiveData}
+            colors={[colors.primary, colors.secondary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
         <SearchBar onFilterPress={() => router.push('/explore')} />
 
         {/* Hero Banner Swipeable Horizontal Slider */}
         <FlatList
           horizontal
           pagingEnabled
-          data={MOCK_HERO_BANNERS}
+          data={HERO_BANNERS}
           keyExtractor={(item) => item.id}
           onScroll={handleHeroScroll}
           showsHorizontalScrollIndicator={false}
@@ -82,13 +94,13 @@ export default function HomeScreen() {
               <View style={styles.heroLeft}>
                 <Text style={[styles.heroTitle, { color: colors.text }]}>
                   {item.title}
-                  <Text style={{ color: colors.secondary }}>{item.highlightText}</Text>
+                  <Text style={{ color: colors.accent }}>{item.highlightText}</Text>
                 </Text>
                 <Text style={[styles.heroSub, { color: colors.textSecondary }]}>
                   {item.subtitle}
                 </Text>
                 <TouchableOpacity
-                  style={[styles.heroBtn, { backgroundColor: colors.primary }]}
+                  style={[styles.heroBtn, { backgroundColor: colors.accent }]}
                   onPress={() => router.push('/explore')}
                 >
                   <Text style={styles.heroBtnText}>{item.ctaText}</Text>
@@ -101,13 +113,13 @@ export default function HomeScreen() {
 
         {/* Hero Slider Dots Indicator */}
         <View style={styles.dotsRow}>
-          {MOCK_HERO_BANNERS.map((_, idx) => (
+          {HERO_BANNERS.map((_, idx) => (
             <View
               key={idx}
               style={[
                 styles.dot,
                 idx === activeHeroIndex
-                  ? [styles.dotActive, { backgroundColor: colors.primary }]
+                  ? [styles.dotActive, { backgroundColor: colors.accent }]
                   : { backgroundColor: colors.surfaceLight },
               ]}
             />
@@ -118,7 +130,7 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Courses</Text>
           <TouchableOpacity onPress={() => router.push('/explore')}>
-            <Text style={[styles.seeAllText, { color: colors.secondary }]}>See all</Text>
+            <Text style={[styles.seeAllText, { color: colors.accent }]}>See all</Text>
           </TouchableOpacity>
         </View>
 
@@ -140,7 +152,7 @@ export default function HomeScreen() {
               style={[
                 styles.dot,
                 idx === activeFeaturedIndex
-                  ? [styles.dotActive, { backgroundColor: colors.primary }]
+                  ? [styles.dotActive, { backgroundColor: colors.accent }]
                   : { backgroundColor: colors.surfaceLight },
               ]}
             />
@@ -151,7 +163,7 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>New Courses</Text>
           <TouchableOpacity onPress={() => router.push('/explore')}>
-            <Text style={[styles.seeAllText, { color: colors.secondary }]}>See all</Text>
+            <Text style={[styles.seeAllText, { color: colors.accent }]}>See all</Text>
           </TouchableOpacity>
         </View>
 
@@ -173,7 +185,7 @@ export default function HomeScreen() {
               style={[
                 styles.dot,
                 idx === activeNewIndex
-                  ? [styles.dotActive, { backgroundColor: colors.primary }]
+                  ? [styles.dotActive, { backgroundColor: colors.accent }]
                   : { backgroundColor: colors.surfaceLight },
               ]}
             />
@@ -184,7 +196,7 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Course Bundles</Text>
           <TouchableOpacity onPress={() => router.push('/explore')}>
-            <Text style={[styles.seeAllText, { color: colors.secondary }]}>See all</Text>
+            <Text style={[styles.seeAllText, { color: colors.accent }]}>See all</Text>
           </TouchableOpacity>
         </View>
 
@@ -206,7 +218,7 @@ export default function HomeScreen() {
               style={[
                 styles.dot,
                 idx === activeBundleIndex
-                  ? [styles.dotActive, { backgroundColor: colors.primary }]
+                  ? [styles.dotActive, { backgroundColor: colors.accent }]
                   : { backgroundColor: colors.surfaceLight },
               ]}
             />
@@ -217,7 +229,7 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Instructors</Text>
           <TouchableOpacity onPress={() => router.push('/instructors' as any)}>
-            <Text style={[styles.seeAllText, { color: colors.secondary }]}>See all</Text>
+            <Text style={[styles.seeAllText, { color: colors.accent }]}>See all</Text>
           </TouchableOpacity>
         </View>
 

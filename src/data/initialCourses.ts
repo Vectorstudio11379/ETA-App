@@ -1,0 +1,2404 @@
+import { Course } from './types';
+
+export const INITIAL_COURSES: Course[] = [
+  {
+    "id": "704",
+    "title": "PAID ONLINE SURVEY &amp; INTERNATIONAL TESTING MASTERCLASS",
+    "instructor": "Expressteck Instructor",
+    "category": "Development",
+    "originalPrice": 15000,
+    "price": 9900,
+    "discount": 40,
+    "studentsCount": 120,
+    "rating": 4.8,
+    "reviewsCount": 35,
+    "daysLeft": 5,
+    "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/001974_20261013_182602_0000.jpg-1024x576.jpeg",
+    "description": "Complete blueprint to earning legitimate foreign income from paid online surveys and user testing studies. Master residential proxy configuration on PC &amp; Mobile, foreign SMS verifications, setting up UK and Serbian PayPal accounts for instant withdrawals, and live practical survey walkthroughs.",
+    "isEnrolled": false,
+    "progress": 0,
+    "modules": [
+      {
+        "id": "682",
+        "title": "Module 1: Survey Fundamentals & Getting Started",
+        "lessons": [
+          {
+            "id": "683",
+            "title": "Introduction to Paid International Surveys",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/01_module_1_intro.mp4",
+            "url": "https://expressteck.tech/lesson/introduction-to-paid-international-surveys/",
+            "summary": "Introduction to global paid surveys, market research dynamics, and why tier-1 corporate research firms pay top dollar for consumer feedback.",
+            "isCompleted": false
+          },
+          {
+            "id": "684",
+            "title": "What You Need to Know Before Starting",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/02_what_you_need_to_know.mp4",
+            "url": "https://expressteck.tech/lesson/what-you-need-to-know-before-starting/",
+            "summary": "Prerequisites, clean browser footprints, essential rules, and operational guidelines to prevent immediate account red flags.",
+            "isCompleted": false
+          },
+          {
+            "id": "685",
+            "title": "Critical Foundations & Survey Mechanics",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/03_core_foundations_part2.mp4",
+            "url": "https://expressteck.tech/lesson/critical-foundations-survey-mechanics/",
+            "summary": "Understanding survey qualification algorithms, trap questions, quota constraints, and maintaining high participant reputation scores.",
+            "isCompleted": false
+          },
+          {
+            "id": "900",
+            "title": "Quiz 1: Survey Ecosystem, Router Mechanics & Quality Scoring",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-1-survey-ecosystem-router-mechanics-quality-scoring/",
+            "summary": "Assess your mastery of market research routers, disqualification algorithms, and profile consistency metrics. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "686",
+        "title": "Module 2: High-Paying Profile Setup & Screener Mastery",
+        "lessons": [
+          {
+            "id": "687",
+            "title": "How To Fill Your Survey Profile (Part 1)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/04_how_to_fill_survey_profile_pt1.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-fill-your-survey-profile-part-1/",
+            "summary": "Step-by-step masterclass on engineering an ideal tier-1 household demographic profile that matches corporate advertiser criteria.",
+            "isCompleted": false
+          },
+          {
+            "id": "688",
+            "title": "Survey Profile Optimization & Consistency Rules (Part 2)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/05_survey_profile_filling_pt2.mp4",
+            "url": "https://expressteck.tech/lesson/survey-profile-optimization-consistency-rules-part-2/",
+            "summary": "Maintaining rigid consistency across employment, household income, decision-maker status, and tech adoption indicators.",
+            "isCompleted": false
+          },
+          {
+            "id": "689",
+            "title": "Live Walkthrough: Answering Profile Questions Without Disqualification",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/13_answer_profile_questions_live.mp4",
+            "url": "https://expressteck.tech/lesson/live-walkthrough-answering-profile-questions-without-disqualification/",
+            "summary": "Live practical demonstration answering screening questionnaires smoothly, bypassing trick verification checks, and qualifying for high payouts.",
+            "isCompleted": false
+          },
+          {
+            "id": "906",
+            "title": "Practical Assignment 1: Build a Non-Disqualifying Master Survey Persona",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-1-build-a-non-disqualifying-master-survey-persona",
+            "summary": "Objective\nFormulate an airtight, consistent Master Survey Demographic Profile Sheet engineered to qualify for high-yield market research studies while eliminating conflicting data.\n\nRequired Persona Elements\n\n    Core Demographics: Age bracket (e.g. 32-38), Marital Status, Household Size (Married with 2 children under 12), and exact US/UK ZIP code and city.\n    Employment &amp; Executive Authority: Job Title (IT Director, Operations Manager, or Marketing Lead), Industry (Technology/Healthcare/Finance), and Company Size (250-1,000 employees).\n    Purchasing Authority: Specific categories where you hold sole or shared purchasing decision authority (Software/IT, Office supplies, Financial services, Travel).\n    Household Income &amp; Financial Metrics: Annual Household Income ($100k-$150k bracket) and home ownership status.\n    Tech &amp; Lifestyle Profile: Smartphones owned, streaming services subscribed, vehicle make/year, and primary grocery shopping responsibility (Primary Decision Maker).\n\n\nSubmission Format\nSubmit a clean PDF or Spreadsheet Cheat Sheet containing your complete Master Survey Persona.\n\nGrading Rubric (100 Points)\n\n    High-yield demographic alignment &amp; commercial desirability: 35 pts\n    Zero internal logical contradictions across profile parameters: 35 pts\n    Comprehensive coverage of purchasing authority and technology metrics: 30 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "690",
+        "title": "Module 3: Proxy, VPN & Network Configuration (PC & Mobile)",
+        "lessons": [
+          {
+            "id": "691",
+            "title": "How To Buy & Select Clean Residential Proxies",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/06_how_to_buy_a_proxy.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-buy-select-clean-residential-proxies/",
+            "summary": "Comprehensive guide to choosing between residential and datacenter proxies, checking IP fraud scores, and avoiding blacklisted pools.",
+            "isCompleted": false
+          },
+          {
+            "id": "692",
+            "title": "How To Install & Configure Proxy on PC / Laptop",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/07_install_proxy_laptop.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-install-configure-proxy-on-pc-laptop/",
+            "summary": "Configuring browser profiles, setting up proxy extensions, disabling WebRTC leaks, and ensuring complete network anonymity.",
+            "isCompleted": false
+          },
+          {
+            "id": "693",
+            "title": "How To Configure Proxy On Mobile Phone (Android & iOS)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/08_install_proxy_phone.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-configure-proxy-on-mobile-phone-android-ios/",
+            "summary": "Configuring mobile proxies on smartphone devices, Wi-Fi manual proxy routing, and matching time zones with IP geo-locations.",
+            "isCompleted": false
+          },
+          {
+            "id": "694",
+            "title": "How To Get Paid Proxies For Free",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/10_get_paid_proxy_for_free.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-get-paid-proxies-for-free/",
+            "summary": "Legitimate trial methods and strategies to acquire high-speed paid proxy servers without spending initial capital.",
+            "isCompleted": false
+          },
+          {
+            "id": "695",
+            "title": "Foreign SMS Verification: Getting Temporary International Numbers",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/09_get_temporal_foreign_numbers.mp4",
+            "url": "https://expressteck.tech/lesson/foreign-sms-verification-getting-temporary-international-numbers/",
+            "summary": "Using verified online SMS portals to acquire US and UK phone numbers for one-time verification codes during platform signup.",
+            "isCompleted": false
+          },
+          {
+            "id": "696",
+            "title": "VPN Software Setup & Mobile Proxy Client (Planet VPN APK)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/Planet_VPN_Proxy_v8.3.0.apk",
+            "url": "https://expressteck.tech/lesson/vpn-software-setup-mobile-proxy-client-planet-vpn-apk/",
+            "summary": "Download and setup guide for the included Planet VPN Proxy client (v8.3.0) for reliable mobile traffic encryption.",
+            "isCompleted": false
+          },
+          {
+            "id": "907",
+            "title": "Quiz 2: Clean Residential Proxies & Anti-Detect Browser Configurations",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-2-clean-residential-proxies-anti-detect-browser-configurations/",
+            "summary": "Test your knowledge of residential IP selection, WebRTC leak prevention, anti-detect browser profiles, and fraud scoring. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "913",
+            "title": "Practical Assignment 2: Clean IP Setup & Browser Leak Test Submission",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-2-clean-ip-setup-browser-leak-test-submission",
+            "summary": "Objective\nConfigure a leak-free residential proxy connection inside an isolated browser profile and produce an official clean diagnostic score verifying zero fraud indicators.\n\nStep-by-Step Requirements\n\n    Configure an Anti-detect browser profile (e.g. AdsPower, Dolphin Anty, or clean Firefox with WebRTC disabled).\n    Bind a high-quality Static Residential proxy or verified clean connection matching your target testing region (e.g. US or UK).\n    Match browser language, system timezone, and geolocation to your assigned proxy coordinates.\n    Run comprehensive leak checks on:\n        \n            Whoer.net: Verify 100% Anonymity Score (zero WebRTC or DNS leaks).\n            Pixelscan.net: Verify 'Consistent Fingerprint' status with zero anomalies.\n        \n    \n\n\nSubmission Format\nSubmit screenshots displaying your Whoer.net 100% score and Pixelscan green status report showing matching timezone and clean WebRTC.\n\nGrading Rubric (100 Points)\n\n    Whoer.net 100% anonymity verification (zero leaks): 40 pts\n    Pixelscan green consistent fingerprint pass: 35 pts\n    Timezone, language &amp; geolocation alignment: 25 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "697",
+        "title": "Module 4: Cross-Border Payouts & Global PayPal Integration",
+        "lessons": [
+          {
+            "id": "698",
+            "title": "Connecting Your PayPal for Survey Payouts",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/11_connect_paypal_payouts.mp4",
+            "url": "https://expressteck.tech/lesson/connecting-your-paypal-for-survey-payouts/",
+            "summary": "Connecting your primary and secondary PayPal accounts to international survey portals to receive smooth automated payouts.",
+            "isCompleted": false
+          },
+          {
+            "id": "699",
+            "title": "How To Create & Verify A UK PayPal Account",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/12_create_uk_paypal.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-create-verify-a-uk-paypal-account/",
+            "summary": "Complete blueprint for registering and verifying a dedicated UK PayPal account for receiving survey rewards in GBP and USD.",
+            "isCompleted": false
+          },
+          {
+            "id": "914",
+            "title": "Quiz 3: International Payouts, Gift Card Portals & Cashout Safety",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-3-international-payouts-gift-card-portals-cashout-safety/",
+            "summary": "Assess your mastery of payout channels, Tremendous/Tango portals, minimum withdrawal limits, and gift card redemption. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "700",
+        "title": "Module 5: Live Survey Practicals & Platform Vault",
+        "lessons": [
+          {
+            "id": "701",
+            "title": "Live Practical Masterclass: Completing Real Surveys Live",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/14_live_practicals_doing_survey.mp4",
+            "url": "https://expressteck.tech/lesson/live-practical-masterclass-completing-real-surveys-live/",
+            "summary": "Full 29-minute unedited live demonstration answering questions, staying engaged, passing quality checkpoints, and receiving instant credit.",
+            "isCompleted": false
+          },
+          {
+            "id": "702",
+            "title": "Top 40 High-Paying Survey & User Testing Platforms Directory",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/40_survey_testing_websites.pdf",
+            "url": "https://expressteck.tech/lesson/top-40-high-paying-survey-user-testing-platforms-directory/",
+            "summary": "Curated directory and resource guide featuring 40+ verified survey platforms, user testing labs, and high-CPM research communities.",
+            "isCompleted": false
+          },
+          {
+            "id": "703",
+            "title": "ID vs. Non-ID Survey Portals Blueprint",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/survey/id_card_and_none_id_card_surveys.pdf",
+            "url": "https://expressteck.tech/lesson/id-vs-non-id-survey-portals-blueprint/",
+            "summary": "Essential classification guide separating portals that require KYC verification from instant-payout platforms requiring zero ID verification.",
+            "isCompleted": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "668",
+    "title": "AI &amp; Automation Power Suite",
+    "instructor": "Denis Undigiang",
+    "category": "Development",
+    "originalPrice": 25000,
+    "price": 15000,
+    "discount": 40,
+    "studentsCount": 120,
+    "rating": 4.8,
+    "reviewsCount": 35,
+    "daysLeft": 5,
+    "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/prompt-engineering-thumbnail-1024x572.jpg",
+    "description": "The ultimate all-in-one artificial intelligence mastery pack. Master prompt engineering for text, photorealistic image &amp; video generation, plus end-to-end n8n workflow automation and AI agents.",
+    "isEnrolled": false,
+    "progress": 0,
+    "modules": []
+  },
+  {
+    "id": "669",
+    "title": "Digital Creator &amp; Social Media Launchpad",
+    "instructor": "Denis Undigiang",
+    "category": "Development",
+    "originalPrice": 25000,
+    "price": 15000,
+    "discount": 40,
+    "studentsCount": 120,
+    "rating": 4.8,
+    "reviewsCount": 35,
+    "daysLeft": 5,
+    "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/youtube-masterclass-thumbnail-1024x572.jpg",
+    "description": "Everything you need to launch, grow, and monetize as a top-tier digital creator. Covers channel growth, high-CPM global targeting, CapCut editing, viral social strategies, and agency client management.",
+    "isEnrolled": false,
+    "progress": 0,
+    "modules": []
+  },
+  {
+    "id": "670",
+    "title": "Global Remote Career &amp; Virtual Assistant Bundle",
+    "instructor": "Denis Undigiang",
+    "category": "Development",
+    "originalPrice": 25000,
+    "price": 15000,
+    "discount": 40,
+    "studentsCount": 120,
+    "rating": 4.8,
+    "reviewsCount": 35,
+    "daysLeft": 5,
+    "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/virtual-assistant-masterclass-1024x572.jpg",
+    "description": "Step-by-step blueprint to secure high-paying international remote clients and receive foreign payments safely with fully verified overseas PayPal and virtual US/UK bank accounts.",
+    "isEnrolled": false,
+    "progress": 0,
+    "modules": []
+  },
+  {
+    "id": "671",
+    "title": "Financial Freedom &amp; Global Trading Mastery",
+    "instructor": "Denis Undigiang",
+    "category": "Development",
+    "originalPrice": 25000,
+    "price": 15000,
+    "discount": 40,
+    "studentsCount": 120,
+    "rating": 4.8,
+    "reviewsCount": 35,
+    "daysLeft": 5,
+    "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/forex-trading-masterclass-1024x572.jpg",
+    "description": "Master high-probability currency market analysis, technical price action, institutional risk management, and seamlessly withdraw global earnings through cross-border accounts.",
+    "isEnrolled": false,
+    "progress": 0,
+    "modules": []
+  },
+  {
+    "id": "666",
+    "title": "COMPLETE PROMPT ENGINEERING MASTERCLASS (TEXT, IMAGE &amp; VIDEO)",
+    "instructor": "Expressteck Instructor",
+    "category": "Development",
+    "originalPrice": 10000,
+    "price": 4500,
+    "discount": 40,
+    "studentsCount": 120,
+    "rating": 4.8,
+    "reviewsCount": 35,
+    "daysLeft": 5,
+    "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/1-1024x576.jpeg",
+    "description": "Master professional prompt engineering for text generation, synthetic media, AI images, and cinematic video. Learn foundational prompt structures, top 20 free AI tools, professional prompt formulas, and advanced techniques by Coach Denis.",
+    "isEnrolled": false,
+    "progress": 0,
+    "modules": [
+      {
+        "id": "662",
+        "title": "Module 1: Text Generation & LLM Prompt Engineering",
+        "lessons": [
+          {
+            "id": "663",
+            "title": "Part 1: Complete Prompt Engineering for Text Generation",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=5DNevRQ34Q4",
+            "url": "https://expressteck.tech/lesson/part-1-complete-prompt-engineering-for-text-generation/",
+            "summary": "Comprehensive masterclass on text prompting. Learn the anatomy of a perfect prompt, how AI interprets instructions, prompt templates for articles, emails, and scripts, and practical exercises with Coach Denis.",
+            "isCompleted": false
+          },
+          {
+            "id": "806",
+            "title": "Quiz 1: Large Language Model Architectures & Advanced Text Prompting",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-1-large-language-model-architectures-advanced-text-prompting/",
+            "summary": "Assess your mastery of Few-Shot learning, Chain-of-Thought (CoT) reasoning, Temperature/Top_P parameters, and hallucination mitigation. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "812",
+            "title": "Practical Assignment 1: Architect a Production-Ready Enterprise System Prompt",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-1-architect-a-production-ready-enterprise-system-prompt",
+            "summary": "Objective\nEngineer a modular, production-ready system prompt for an enterprise use case (e.g. Senior Contract Legal Analyst, Customer Support Escalation Specialist, or Technical Code Reviewer).\n\nRequired Prompt Architecture\n\n    Role &amp; Persona Framing: Explicitly define identity, domain expertise, and operational boundaries.\n    Context &amp; Operating Constraints: Explicit negative constraints (what the model MUST NEVER do or say).\n    Few-Shot Demonstrations: At least 2 complete input/output examples showing proper handling of ambiguous or edge-case requests.\n    Structured Output Enforcement: Mandate a strict JSON output schema with defined fields (e.g., `{\"risk_score\": 1-5, \"analysis\": \"...\", \"recommended_action\": \"...\"}`).\n    Delimited Input Injection: Template formatted with `` XML tags.\n\n\nSubmission Format\nSubmit a text or markdown document containing your full system prompt, a sample test input, and the raw JSON output returned by ChatGPT or Claude.\n\nGrading Rubric (100 Points)\n\n    Clarity of role framing &amp; guardrail constraints: 25 pts\n    High-quality few-shot examples with edge cases: 25 pts\n    Valid, strict JSON schema output formatting: 25 pts\n    Real-world execution testing and reproducibility: 25 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "664",
+        "title": "Module 2: Generative Media — Image & Video Prompting",
+        "lessons": [
+          {
+            "id": "665",
+            "title": "Part 2: Prompt Engineering for AI Image & Video Generation",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=Hlv3XVP3Ek8",
+            "url": "https://expressteck.tech/lesson/part-2-prompt-engineering-for-ai-image-video-generation/",
+            "summary": "Discover the top 20 AI tools for generating images and videos for free in 2026. Master image prompt formulas, camera lenses, lighting modifiers, video motion prompts, and professional techniques.",
+            "isCompleted": false
+          },
+          {
+            "id": "813",
+            "title": "Quiz 2: Generative Media – Image & Video Prompting Principles",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-2-generative-media-image-video-prompting-principles/",
+            "summary": "Evaluate your expertise in lighting parameters, camera optics, stylize controls, and motion prompt syntax. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "819",
+            "title": "Practical Assignment 2: Create a 3-Scene Cinematic Visual & Video Storyboard",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-2-create-a-3-scene-cinematic-visual-video-storyboard",
+            "summary": "Objective\nEngineer 3 photorealistic visual generation prompts and accompanying AI video motion camera directions for a cohesive cinematic storyboard sequence.\n\nRequired Storyboard Scenes\n\n    Scene 1 (Establishing Wide Shot):\n        \n            Detailed prompt: Environment, weather, architecture, lighting style, and camera lens (e.g. 24mm wide angle, volumetric fog).\n            Aspect ratio: `--ar 16:9`.\n            Video camera motion instruction (e.g. 'Slow forward push-in through morning mist').\n        \n    \n    Scene 2 (Medium Character / Action Shot):\n        \n            Detailed prompt: Subject styling, wardrobe, cinematic lighting (golden hour or harsh rim light), 50mm portrait lens, depth of field.\n            Video motion instruction (e.g. 'Tracking profile shot moving parallel to character').\n        \n    \n    Scene 3 (Macro / Emotional Close-Up):\n        \n            Detailed prompt: Extreme close-up, textural details, 85mm macro lens, f/1.4 shallow depth of field.\n            Video motion instruction (e.g. 'Subtle rack focus from background to subject eye').\n        \n    \n\n\nSubmission Format\nSubmit a PDF document showing the prompt syntax for each scene, the generated image renders (Midjourney/Flux/DALL-E), and the corresponding video motion directives.\n\nGrading Rubric (100 Points)\n\n    Photographic technical syntax (optics, lighting, composition): 30 pts\n    Visual continuity &amp; thematic consistency across scenes: 30 pts\n    Cinematic video camera motion specifications: 20 pts\n    Aesthetic render quality &amp; execution: 20 pts",
+            "isCompleted": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "659",
+    "title": "YOUTUBE CREATOR MASTERCLASS: CHANNEL GROWTH &amp; MONETIZATION",
+    "instructor": "Expressteck Instructor",
+    "category": "Development",
+    "originalPrice": 15000,
+    "price": 5000,
+    "discount": 40,
+    "studentsCount": 120,
+    "rating": 4.8,
+    "reviewsCount": 35,
+    "daysLeft": 5,
+    "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/2-1024x576.jpeg",
+    "description": "Complete YouTube blueprint by Coach Denis. Master channel creation, AI automation channels, rapid 1,000 subscribers and 4,000 watch hours, high-CPM foreign audience targeting, viral shorts batching, professional video editing with CapCut Pro, and 10 monetization streams.",
+    "isEnrolled": false,
+    "progress": 0,
+    "modules": [
+      {
+        "id": "630",
+        "title": "Module 1: Foundations, Channel Setup & Optimization",
+        "lessons": [
+          {
+            "id": "631",
+            "title": "Day 01: Introduction to Everything About YouTube Success",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=XsvVi5ImZ6s",
+            "url": "https://expressteck.tech/lesson/day-01-introduction-to-everything-about-youtube-success/",
+            "summary": "Welcome to the YouTube Masterclass with Coach Denis. The roadmap to building a sustainable, high-income creator business.",
+            "isCompleted": false
+          },
+          {
+            "id": "632",
+            "title": "Day 02: How To Create & Optimise Your YouTube Channel",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=y_lvwxO3CY8",
+            "url": "https://expressteck.tech/lesson/day-02-how-to-create-optimise-your-youtube-channel/",
+            "summary": "Setting up your channel correctly: name selection, keyword SEO, tags, channel branding, and default upload settings.",
+            "isCompleted": false
+          },
+          {
+            "id": "633",
+            "title": "Proper Upload Strategy: Uploading Videos the Right Way",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=QYBYvmpFLAk",
+            "url": "https://expressteck.tech/lesson/proper-upload-strategy-uploading-videos-the-right-way/",
+            "summary": "Correct upload protocols: video tags, timestamp chapters, end-screens, cards, and metadata indexing.",
+            "isCompleted": false
+          },
+          {
+            "id": "634",
+            "title": "Playlist Strategy: How to Create Playlists for More Views",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=QCdLhEsN56s",
+            "url": "https://expressteck.tech/lesson/playlist-strategy-how-to-create-playlists-for-more-views/",
+            "summary": "Using curated playlists to hook viewers into auto-playing watch sessions and multiplying your session watch time.",
+            "isCompleted": false
+          },
+          {
+            "id": "635",
+            "title": "10 Essential Websites You MUST Know as a YouTuber",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=INiovfbNvSg",
+            "url": "https://expressteck.tech/lesson/10-essential-websites-you-must-know-as-a-youtuber/",
+            "summary": "Crucial free and premium creator websites for audio, stock footage, thumbnail assets, and analytics.",
+            "isCompleted": false
+          },
+          {
+            "id": "779",
+            "title": "Quiz 1: YouTube SEO, Channel Optimization & Algorithm Metrics",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-1-youtube-seo-channel-optimization-algorithm-metrics/",
+            "summary": "Evaluate your understanding of search optimization, metadata, Click-Through Rate (CTR), and Average View Duration (AVD). Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "785",
+            "title": "Practical Assignment 1: Complete YouTube Channel Architecture & SEO Audit",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-1-complete-youtube-channel-architecture-seo-audit",
+            "summary": "Objective\nPerform an end-to-end channel optimization audit for your YouTube channel (or a simulated niche channel) to ensure maximum discoverability.\n\nTasks &amp; Deliverables\n\n    Channel Branding: Set up or audit a cohesive Channel Name, unique Handle (@handle), high-resolution Avatar, and Banner aligned for mobile and desktop displays.\n    Channel SEO &amp; About: Write a keyword-rich 250-word Channel Description incorporating your top 5 target search phrases and clear value proposition (who this channel is for, what they will learn, and upload frequency).\n    Channel Settings: Add 10-15 targeted Channel Keywords in YouTube Studio &gt; Settings &gt; Channel.\n    Playlist Architecture: Create 3 themed playlists with optimized titles and descriptions ready to receive upcoming uploads.\n\n\nSubmission Format\nSubmit a PDF report containing screenshots of your updated YouTube Studio channel settings, About page, and playlist layout.\n\nGrading Rubric (100 Points)\n\n    Professional banner &amp; branding alignment: 25 pts\n    Keyword-rich Channel About description &amp; positioning: 25 pts\n    Channel Keywords selection &amp; relevancy: 25 pts\n    Strategic playlist organization: 25 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "636",
+        "title": "Module 2: AI Channel Automation & Batch Content Creation",
+        "lessons": [
+          {
+            "id": "637",
+            "title": "Day 03: AI Automation YouTube Channels Masterclass",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=4_elRrIKjAU",
+            "url": "https://expressteck.tech/lesson/day-03-ai-automation-youtube-channels-masterclass/",
+            "summary": "Building faceless AI automated YouTube channels: niche selection, AI scriptwriting, automated voiceovers, and asset sourcing.",
+            "isCompleted": false
+          },
+          {
+            "id": "638",
+            "title": "Creating Long-Form AI Videos on Your Phone for Free",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=87txQJ-NRCU",
+            "url": "https://expressteck.tech/lesson/creating-long-form-ai-videos-on-your-phone-for-free/",
+            "summary": "Mobile production lab: produce full 8-15 minute long-form AI videos completely free directly on your smartphone.",
+            "isCompleted": false
+          },
+          {
+            "id": "639",
+            "title": "Batching 50+ Short Videos in Under 10 Minutes with One Setup",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=5N9VE4siXug",
+            "url": "https://expressteck.tech/lesson/batching-50-short-videos-in-under-10-minutes-with-one-setup/",
+            "summary": "Mass-production workflow to generate and schedule over 50 viral YouTube Shorts with a single automated setup.",
+            "isCompleted": false
+          },
+          {
+            "id": "640",
+            "title": "5 Proven Methods to Find Viral Video Ideas",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=VUhx5WptZt4",
+            "url": "https://expressteck.tech/lesson/5-proven-methods-to-find-viral-video-ideas/",
+            "summary": "Competitor research, trend-jack algorithms, and keyword research tools to discover viral topics with proven viewer demand.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "641",
+        "title": "Module 3: High-Converting Thumbnail Design & Visual Hooks",
+        "lessons": [
+          {
+            "id": "642",
+            "title": "Designing High-CTR Thumbnails for Your YouTube Videos",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=leES74lxbXk",
+            "url": "https://expressteck.tech/lesson/designing-high-ctr-thumbnails-for-your-youtube-videos/",
+            "summary": "Visual psychology of high click-through rates: focal points, contrasting color pallets, and text placement rules.",
+            "isCompleted": false
+          },
+          {
+            "id": "643",
+            "title": "Creating Professional YouTube Thumbnails with ChatGPT",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=R7Fncmy3tvA",
+            "url": "https://expressteck.tech/lesson/creating-professional-youtube-thumbnails-with-chatgpt/",
+            "summary": "Prompting ChatGPT and AI image generators to create viral thumbnail concepts and custom graphics seamlessly.",
+            "isCompleted": false
+          },
+          {
+            "id": "786",
+            "title": "Quiz 2: High-Converting Thumbnail Design & Visual Psychology",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-2-high-converting-thumbnail-design-visual-psychology/",
+            "summary": "Test your knowledge of thumbnail composition, color contrast, curiosity gap, and mobile readability. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "792",
+            "title": "Practical Assignment 2: Design 2 Competing High-CTR Thumbnails for A/B Testing",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-2-design-2-competing-high-ctr-thumbnails-for-a-b-testing",
+            "summary": "Objective\nCreate two contrasting, professional YouTube thumbnail concepts for the exact same video title to test differing visual hooks and psychological angles.\n\nStep-by-Step Requirements\n\n    Select a video topic in your niche (e.g. 'How I Built a $5,000/Month AI Business in 30 Days').\n    Variation A (Human / Emotion Focus):\n        \n            High-contrast facial expression / reaction.\n            Minimal bold text (2-3 words, e.g. 'HE WAS WRONG!').\n            Clean, uncluttered background with strong subject lighting.\n        \n    \n    Variation B (Curiosity / Proof Focus):\n        \n            Visual evidence or before/after comparison graphic (e.g. analytics screenshot with highlighted red arrow or key object).\n            Contrasting punchy phrase (e.g. 'THE 1% SECRET').\n        \n    \n    Verify both designs on a Mobile Mockup test tool to ensure readability at 100px width.\n\n\nSubmission Format\nSubmit both thumbnail image files (1280x720 PNG/JPG) along with a short 1-paragraph explanation of the contrasting psychological angles tested.\n\nGrading Rubric (100 Points)\n\n    Visual hierarchy &amp; clean subject separation: 30 pts\n    Mobile readability &amp; text brevity ($le$ 4 words): 30 pts\n    Clear psychological divergence between variations: 20 pts\n    Technical specs (1280x720, under 2MB, no obscured bottom-right corner): 20 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "644",
+        "title": "Module 4: Fast-Track 1,000 Subscribers & 4,000 Watch Hours",
+        "lessons": [
+          {
+            "id": "645",
+            "title": "Proven Blueprint to Gain 1,000 Subscribers in 3 Days",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=fWZ2G5nYLhI",
+            "url": "https://expressteck.tech/lesson/proven-blueprint-to-gain-1000-subscribers-in-3-days/",
+            "summary": "The aggressive subscriber acceleration method: triggering suggested video placement and community engagement spikes.",
+            "isCompleted": false
+          },
+          {
+            "id": "646",
+            "title": "How to Get 4,000 Watch Hours in One Week (Method 1)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=b3Eco3vf854",
+            "url": "https://expressteck.tech/lesson/how-to-get-4000-watch-hours-in-one-week-method-1/",
+            "summary": "Method 1: Long-form bingeable loops, livestreams, and community playlists engineered to rack up compliant watch time fast.",
+            "isCompleted": false
+          },
+          {
+            "id": "647",
+            "title": "How to Get 4,000 Watch Hours in One Week (Method 2)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=2Vix6_1Uu3A",
+            "url": "https://expressteck.tech/lesson/how-to-get-4000-watch-hours-in-one-week-method-2/",
+            "summary": "Method 2: High-retention narrative hooks and multi-part series structures that multiply cumulative viewer duration.",
+            "isCompleted": false
+          },
+          {
+            "id": "648",
+            "title": "4 Proven Ways to Hit 4,000 Watch Hours for Monetization",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=2prdGy2icss",
+            "url": "https://expressteck.tech/lesson/4-proven-ways-to-hit-4000-watch-hours-for-monetization/",
+            "summary": "Comprehensive breakdown of four white-hat techniques to fulfill the YouTube Partner Program watch hour requirement.",
+            "isCompleted": false
+          },
+          {
+            "id": "649",
+            "title": "New Strategy to Explode Your Views on YouTube",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=G7UY9-dp81w",
+            "url": "https://expressteck.tech/lesson/new-strategy-to-explode-your-views-on-youtube/",
+            "summary": "Cracking the 2026 YouTube Browse Features algorithm: thumbnail test cycles, first 24-hour velocity, and audience retention peaks.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "650",
+        "title": "Module 5: YouTube Monetization & High-CPM Global Targeting",
+        "lessons": [
+          {
+            "id": "651",
+            "title": "10 High-Income Ways to Monetise Your YouTube Channel",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=dOIjncx-lyk",
+            "url": "https://expressteck.tech/lesson/10-high-income-ways-to-monetise-your-youtube-channel/",
+            "summary": "Full monetization ecosystem: AdSense, brand sponsorships, affiliate marketing, digital courses, merchandise, and consulting retainers.",
+            "isCompleted": false
+          },
+          {
+            "id": "652",
+            "title": "How to Target Foreign Countries & Earn High CPM / RPM",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=Elf8HvtWy0Q",
+            "url": "https://expressteck.tech/lesson/how-to-target-foreign-countries-earn-high-cpm-rpm/",
+            "summary": "Geo-targeting Tier-1 nations (US, UK, Australia, Germany): video metadata, cultural alignment, and maximizing RPM from $2 to $25+.",
+            "isCompleted": false
+          },
+          {
+            "id": "653",
+            "title": "6 Reasons You Are Not Yet Making Money from YouTube",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=whySj9R5P1c",
+            "url": "https://expressteck.tech/lesson/6-reasons-you-are-not-yet-making-money-from-youtube/",
+            "summary": "Auditing failure points: poor retention drops, wrong monetization models, low commercial intent niches, and consistency gaps.",
+            "isCompleted": false
+          },
+          {
+            "id": "793",
+            "title": "Quiz 3: YouTube Monetization, High CPMs & Global Revenue Streams",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-3-youtube-monetization-high-cpms-global-revenue-streams/",
+            "summary": "Assess your mastery of AdSense thresholds, geographic CPM disparities, sponsorship pricing, and multi-stream channel monetization. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "799",
+            "title": "Practical Assignment 3: Develop a Multi-Stream Channel Monetization Architecture",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-3-develop-a-multi-stream-channel-monetization-architecture",
+            "summary": "Objective\nDesign a strategic 4-pillar monetization model for your YouTube channel that builds recurring income beyond YouTube AdSense.\n\nRequired Plan Components\n\n    Niche &amp; High-CPM Audience Targeting: Identify your niche and define 3 video topics specifically engineered to attract Tier-1 (US/UK/Canada) high-value viewers.\n    Affiliate Revenue Funnel: Select 3 high-converting affiliate tools/products relevant to your content, showing exact placement in video descriptions and pinned comments.\n    Digital Product / Lead Magnet: Outline a proprietary digital product (e.g. Notion template, cheat sheet, workshop) with pricing and lead capture mechanism.\n    Sponsorship Rate Card: Calculate your estimated sponsorship pricing for an integrated 60-second ad read based on realistic view milestones (e.g. $25-$40 CPM on average views).\n\n\nSubmission Format\nSubmit a 2-page PDF document detailing your complete Channel Monetization Blueprint.\n\nGrading Rubric (100 Points)\n\n    High-CPM content strategy &amp; Tier-1 geo-targeting: 25 pts\n    Practical affiliate funnel integration: 25 pts\n    Compelling digital product / lead magnet design: 25 pts\n    Realistic sponsorship rate card &amp; pitch framework: 25 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "654",
+        "title": "Module 6: Pro Editing Masterclass (CapCut Pro & Canva Pro)",
+        "lessons": [
+          {
+            "id": "655",
+            "title": "Full Beginners Guide: How to Edit Videos with CapCut on Mobile",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.facebook.com/share/v/19LTLZfdNZ/",
+            "url": "https://expressteck.tech/lesson/full-beginners-guide-how-to-edit-videos-with-capcut-on-mobile/",
+            "summary": "Comprehensive masterclass on CapCut mobile editing: transitions, keyframing, sound effects, dynamic captions, and color grading.",
+            "isCompleted": false
+          },
+          {
+            "id": "656",
+            "title": "How to Get CapCut Pro Account for Free on Laptop (PC)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.facebook.com/share/v/1J9WiF5h7h/",
+            "url": "https://expressteck.tech/lesson/how-to-get-capcut-pro-account-for-free-on-laptop-pc/",
+            "summary": "Step-by-step setup to install and access CapCut Pro tools on your desktop computer without monthly subscription costs.",
+            "isCompleted": false
+          },
+          {
+            "id": "657",
+            "title": "How to Get CapCut Pro Account for Free on Phone (Mobile)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.facebook.com/share/v/19KCNYfH5F/",
+            "url": "https://expressteck.tech/lesson/how-to-get-capcut-pro-account-for-free-on-phone-mobile/",
+            "summary": "Complete mobile setup instructions to unlock premium CapCut filters, effects, and export resolutions on iOS &amp; Android.",
+            "isCompleted": false
+          },
+          {
+            "id": "658",
+            "title": "2 Methods to Get Canva Pro Account for Free",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.facebook.com/share/v/1DTi3mF59n/",
+            "url": "https://expressteck.tech/lesson/2-methods-to-get-canva-pro-account-for-free/",
+            "summary": "Two reliable, working methods to unlock Canva Pro features, brand kits, background removers, and premium stock libraries.",
+            "isCompleted": false
+          },
+          {
+            "id": "800",
+            "title": "Quiz 4: Dynamic Video Editing & Retention Mechanics (CapCut & Mobile)",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-4-dynamic-video-editing-retention-mechanics-capcut-mobile/",
+            "summary": "Test your understanding of pacing, J-cuts/L-cuts, sound effects, B-roll timing, and visual pattern interrupts. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "627",
+    "title": "30-DAY AI AUTOMATION MASTERCLASS (WITH N8N &amp; AGENTS)",
+    "instructor": "Expressteck Instructor",
+    "category": "Development",
+    "originalPrice": 15000,
+    "price": 8000,
+    "discount": 40,
+    "studentsCount": 120,
+    "rating": 4.8,
+    "reviewsCount": 35,
+    "daysLeft": 5,
+    "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/3-1024x576.jpeg",
+    "description": "The definitive 30-Day AI Automation boot camp by Coach Denis. Master n8n workflows, AI customer support agents, WhatsApp &amp; Telegram chatbots, RAG vector pipelines with Pinecone, LinkedIn &amp; Instagram auto-posting, and landing high-paying freelance workflow clients.",
+    "isEnrolled": false,
+    "progress": 0,
+    "modules": [
+      {
+        "id": "587",
+        "title": "Week 1: Foundations, Local Setup & First Autonomous Agents",
+        "lessons": [
+          {
+            "id": "588",
+            "title": "Day 00: Essential Course Onboarding & Roadmap",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=cNVbugbSQMk",
+            "url": "https://expressteck.tech/lesson/day-00-essential-course-onboarding-roadmap/",
+            "summary": "Watch this mandatory orientation before starting to avoid common beginner traps and maximize your learning curve.",
+            "isCompleted": false
+          },
+          {
+            "id": "589",
+            "title": "Day 01: Course Overview & Setting Your Development Environment",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=IIIXBSixo-Q",
+            "url": "https://expressteck.tech/lesson/day-01-course-overview-setting-your-development-environment/",
+            "summary": "Introduction to the 30-day challenge and how to navigate the automation landscape.",
+            "isCompleted": false
+          },
+          {
+            "id": "590",
+            "title": "Day 02: Installing n8n & Running Locally on Docker",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=Zli729IWGY4",
+            "url": "https://expressteck.tech/lesson/day-02-installing-n8n-running-locally-on-docker/",
+            "summary": "Step-by-step local setup running n8n containerized on Docker without recurring software fees.",
+            "isCompleted": false
+          },
+          {
+            "id": "591",
+            "title": "Day 03: Triggers, Nodes & Connections Deep Dive",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=CP4_w2n379E",
+            "url": "https://expressteck.tech/lesson/day-03-triggers-nodes-connections-deep-dive/",
+            "summary": "The fundamental building blocks of n8n: polling triggers, webhooks, action nodes, and execution branches.",
+            "isCompleted": false
+          },
+          {
+            "id": "592",
+            "title": "Day 04: JSON Data Structures & Variable Typing",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=zYZo0V_fBrM",
+            "url": "https://expressteck.tech/lesson/day-04-json-data-structures-variable-typing/",
+            "summary": "Mastering data passing between nodes, array mapping, JSON objects, and practical troubleshooting.",
+            "isCompleted": false
+          },
+          {
+            "id": "593",
+            "title": "Day 05: Building Your First Production Workflow & Variables",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=LlYKW8mUcVs",
+            "url": "https://expressteck.tech/lesson/day-05-building-your-first-production-workflow-variables/",
+            "summary": "Constructing an end-to-end operational workflow using environment variables and custom logic.",
+            "isCompleted": false
+          },
+          {
+            "id": "594",
+            "title": "Day 06: Building Your First AI Chatbot",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=H1Zkz8gGavY",
+            "url": "https://expressteck.tech/lesson/day-06-building-your-first-ai-chatbot/",
+            "summary": "Connecting Large Language Models (LLMs) to construct an interactive conversational agent.",
+            "isCompleted": false
+          },
+          {
+            "id": "595",
+            "title": "Day 07: Autonomous AI Customer Support Agent",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=Qrm6lHQxLRo",
+            "url": "https://expressteck.tech/lesson/day-07-autonomous-ai-customer-support-agent/",
+            "summary": "Deploying a 24/7 intelligent tier-1 support agent that understands context and resolves customer inquiries.",
+            "isCompleted": false
+          },
+          {
+            "id": "744",
+            "title": "Quiz 1: n8n Architecture, Nodes & Webhooks Fundamentals",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-1-n8n-architecture-nodes-webhooks-fundamentals/",
+            "summary": "Assess your mastery of n8n workflow execution, node triggering, JSON data structures, and webhook protocols. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "750",
+            "title": "Practical Assignment 1: Deploy n8n & Build an Automated Lead Ingestion Pipeline",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-1-deploy-n8n-build-an-automated-lead-ingestion-pipeline",
+            "summary": "Objective\nBuild and test an end-to-end webhook ingestion workflow in n8n that parses incoming JSON lead data, validates email integrity, and routes qualified leads.\n\nStep-by-Step Requirements\n\n    Create a workflow with a Webhook Trigger Node accepting HTTP POST requests.\n    Use a Code (JavaScript) Node or Edit Fields Node to sanitize the lead data: extract `name`, `email`, `company`, and `budget`.\n    Add an IF Node to branch logic:\n        \n            Branch True (Qualified): Budget $ge$ $2,000 $\rightarrow$ Send an alert message to Telegram / Discord / Slack with lead details.\n            Branch False (Standard): Budget $&lt;$ $2,000 $\rightarrow$ Log the entry to a Google Sheet or formatted JSON output.\n        \n    \n    Send a live test payload via Postman, cURL, or webhook tester to verify both branches work.\n\n\nSubmission Format\nSubmit your exported n8n workflow JSON file along with a screenshot of the completed canvas execution showing a successful run.\n\nGrading Rubric (100 Points)\n\n    Functional Webhook configuration &amp; test payload capture: 25 pts\n    Accurate JSON data extraction &amp; sanitization: 25 pts\n    Correct conditional branching (IF node) logic: 25 pts\n    Integration output (Telegram/Slack/Google Sheet) verification: 25 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "596",
+        "title": "Week 2: AI Tooling, Content Engines & Multi-Platform Bots",
+        "lessons": [
+          {
+            "id": "597",
+            "title": "Day 08: Configuring Google Credentials & OpenAI API Keys",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=qo8WA0C3mGA",
+            "url": "https://expressteck.tech/lesson/day-08-configuring-google-credentials-openai-api-keys/",
+            "summary": "Securing enterprise API tokens, OAuth consents, and Google Cloud workspace authorizations.",
+            "isCompleted": false
+          },
+          {
+            "id": "598",
+            "title": "Day 09: Automated Daily Content Generator & Research Agent",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=BEhat2_eIPk",
+            "url": "https://expressteck.tech/lesson/day-09-automated-daily-content-generator-research-agent/",
+            "summary": "Architecting an agent that autonomously conducts web research, extracts facts, and drafts polished articles.",
+            "isCompleted": false
+          },
+          {
+            "id": "599",
+            "title": "Day 10: WhatsApp Business AI Chatbot Automation",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=6dhIUKvKSBM",
+            "url": "https://expressteck.tech/lesson/day-10-whatsapp-business-ai-chatbot-automation/",
+            "summary": "Integrating WhatsApp Cloud API with n8n to handle incoming buyer inquiries on complete autopilot.",
+            "isCompleted": false
+          },
+          {
+            "id": "600",
+            "title": "Bonus: Facebook Ads Lead Gen to WhatsApp & Website",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=jFu1h53mqLw",
+            "url": "https://expressteck.tech/lesson/bonus-facebook-ads-lead-gen-to-whatsapp-website/",
+            "summary": "Running paid traffic campaigns that funnel qualified prospects directly into your automated pipelines.",
+            "isCompleted": false
+          },
+          {
+            "id": "601",
+            "title": "Day 11: Building a RAG Pipeline with Pinecone Vector DB",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=hncpf4zmVGE",
+            "url": "https://expressteck.tech/lesson/day-11-building-a-rag-pipeline-with-pinecone-vector-db/",
+            "summary": "Vectorizing company knowledge bases and creating dynamic embeddings to power high-accuracy AI responses.",
+            "isCompleted": false
+          },
+          {
+            "id": "602",
+            "title": "Day 12: Automated LinkedIn Post & Image Generator",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=zgr4WVXe5UE",
+            "url": "https://expressteck.tech/lesson/day-12-automated-linkedin-post-image-generator/",
+            "summary": "Creating an organic LinkedIn thought-leadership pipeline with AI image generation and scheduling.",
+            "isCompleted": false
+          },
+          {
+            "id": "603",
+            "title": "Day 13: Voice-Operated AI Assistant for Auto-Messaging",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=FgqGWPgo4Rc",
+            "url": "https://expressteck.tech/lesson/day-13-voice-operated-ai-assistant-for-auto-messaging/",
+            "summary": "Building voice-to-action pipelines: trigger actions, create posts, or send emails with your voice.",
+            "isCompleted": false
+          },
+          {
+            "id": "604",
+            "title": "Day 14: Prompt Engineering to Build Any Workflow with AI",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=k1EWoxBkEAk",
+            "url": "https://expressteck.tech/lesson/day-14-prompt-engineering-to-build-any-workflow-with-ai/",
+            "summary": "How to prompt AI coding agents to generate error-free n8n JSON nodes and complex logic expressions.",
+            "isCompleted": false
+          },
+          {
+            "id": "751",
+            "title": "Quiz 2: AI Tooling, Vector Databases & RAG Pipelines",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-2-ai-tooling-vector-databases-rag-pipelines/",
+            "summary": "Test your knowledge of Retrieval-Augmented Generation (RAG), embeddings, Pinecone/Supabase, and LLM tool calling. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "757",
+            "title": "Practical Assignment 2: Build an Automated AI Research & Content Generation Pipeline",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-2-build-an-automated-ai-research-content-generation-pipeline",
+            "summary": "Objective\nBuild an autonomous n8n workflow that monitors industry news, researches key insights with an AI agent, and outputs a formatted markdown intelligence report.\n\nStep-by-Step Requirements\n\n    Trigger: Schedule trigger (runs daily) or manual trigger for testing.\n    Research: An HTTP Request node or Serper/Tavily search node to fetch recent news on a chosen topic (e.g. 'AI Automation Trends').\n    Analysis: Connect an OpenAI / Anthropic LLM node with structured system prompt:\n        \n            Synthesize the 3 most important breakthroughs.\n            Identify tactical opportunities for businesses.\n            Draft a ready-to-publish LinkedIn / Twitter executive summary.\n        \n    \n    Delivery: Send the finished markdown briefing to a designated email, Slack channel, or Telegram group.\n\n\nSubmission Format\nSubmit your workflow JSON export and a sample markdown report generated by the autonomous pipeline.\n\nGrading Rubric (100 Points)\n\n    Automated data fetching &amp; search integration: 25 pts\n    High-quality prompt engineering &amp; structured outputs: 30 pts\n    Clean markdown output formatting &amp; synthesis: 25 pts\n    End-to-end messaging / delivery execution: 20 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "605",
+        "title": "Week 3: Messaging Ecosystems, Front-End UI & APIs",
+        "lessons": [
+          {
+            "id": "606",
+            "title": "Day 15: Telegram Human-In-The-Loop AI Chatbot",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=A2zheQ40Zb4",
+            "url": "https://expressteck.tech/lesson/day-15-telegram-human-in-the-loop-ai-chatbot/",
+            "summary": "Implementing approval checkpoints where human operators can review and override AI actions in Telegram.",
+            "isCompleted": false
+          },
+          {
+            "id": "607",
+            "title": "Day 16: Telegram Voice Workflow Automation",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=4gfoZIJHpks",
+            "url": "https://expressteck.tech/lesson/day-16-telegram-voice-workflow-automation/",
+            "summary": "Transcribing Telegram voice notes, analyzing user intent with LLMs, and executing backend tasks.",
+            "isCompleted": false
+          },
+          {
+            "id": "608",
+            "title": "Day 17: Blueprinting & Systems Architecture Before Building",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=jQD2qCiJM-0",
+            "url": "https://expressteck.tech/lesson/day-17-blueprinting-systems-architecture-before-building/",
+            "summary": "Crucial pre-flight checklist: mapping triggers, rate limits, data schemas, and edge case fallbacks.",
+            "isCompleted": false
+          },
+          {
+            "id": "609",
+            "title": "Day 18: Building Front-End Interfaces for Your Automations",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=uWjZXUM7sw4",
+            "url": "https://expressteck.tech/lesson/day-18-building-front-end-interfaces-for-your-automations/",
+            "summary": "Creating client-friendly user portals and web dashboards to trigger and monitor n8n workflows.",
+            "isCompleted": false
+          },
+          {
+            "id": "610",
+            "title": "Day 19: The Real Meaning of APIs & How Systems Communicate",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=tWm_WQE-MZ0",
+            "url": "https://expressteck.tech/lesson/day-19-the-real-meaning-of-apis-how-systems-communicate/",
+            "summary": "Mastering REST APIs, HTTP methods, headers, pagination, and webhook payloads without confusion.",
+            "isCompleted": false
+          },
+          {
+            "id": "611",
+            "title": "Day 20: Automated Daily Job Research & Application Bot",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=lQhS1P5ffkc",
+            "url": "https://expressteck.tech/lesson/day-20-automated-daily-job-research-application-bot/",
+            "summary": "Building an automated agent that scours job platforms, tailors your CV, and applies automatically.",
+            "isCompleted": false
+          },
+          {
+            "id": "612",
+            "title": "Day 21: LinkedIn Email Scraping & Apify Lead Generation",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=rg2XH-V2uXw",
+            "url": "https://expressteck.tech/lesson/day-21-linkedin-email-scraping-apify-lead-generation/",
+            "summary": "Deploying Apify actors to extract verified B2B emails and feed lead pipelines automatically.",
+            "isCompleted": false
+          },
+          {
+            "id": "758",
+            "title": "Quiz 3: Messaging Ecosystems, Web APIs & Human-in-the-Loop",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-3-messaging-ecosystems-web-apis-human-in-the-loop/",
+            "summary": "Evaluate your ability to integrate Telegram/WhatsApp APIs, manage conversational state, and implement Human-in-the-Loop review. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "764",
+            "title": "Practical Assignment 3: Build a 2-Way Telegram AI Assistant with Human Approval",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-3-build-a-2-way-telegram-ai-assistant-with-human-approval",
+            "summary": "Objective\nBuild an interactive Telegram AI Bot in n8n that answers customer FAQs from a knowledge base and routes quote requests to a human approval step before replying.\n\nStep-by-Step Requirements\n\n    Connect a Telegram Trigger Node using a bot created via @BotFather.\n    Use an AI Agent Node with memory to converse naturally with users.\n    Intent Classification:\n        \n            If user asks general questions: AI responds immediately on Telegram.\n            If user requests a customized price quote: AI drafts the quote, triggers a Wait Node, and sends an approval message to your admin Telegram chat with 'Approve' and 'Reject' callback buttons.\n        \n    \n    Once approved, the bot dispatches the finalized quote to the customer on Telegram.\n\n\nSubmission Format\nSubmit a short video walkthrough (Loom/screen recording) or screenshots demonstrating the Telegram conversation and successful human approval dispatch.\n\nGrading Rubric (100 Points)\n\n    Telegram Bot connection &amp; conversational memory: 25 pts\n    Intent detection &amp; prompt routing: 25 pts\n    Functional Human-in-the-Loop Wait node &amp; approval buttons: 30 pts\n    End-to-end customer delivery upon approval: 20 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "613",
+        "title": "Week 4: Antigravity UI, Social Automation & Multi-Agent Swarms",
+        "lessons": [
+          {
+            "id": "614",
+            "title": "Day 22: Setting Up Antigravity & Overcoming Environment Hurdles",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=xz4SUxqw_Mo",
+            "url": "https://expressteck.tech/lesson/day-22-setting-up-antigravity-overcoming-environment-hurdles/",
+            "summary": "Configuring the Antigravity developer environment smoothly and resolving setup obstacles.",
+            "isCompleted": false
+          },
+          {
+            "id": "615",
+            "title": "Day 23: Building Workflow Front-Ends with Antigravity",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=NCG-XEr5Kos",
+            "url": "https://expressteck.tech/lesson/day-23-building-workflow-front-ends-with-antigravity/",
+            "summary": "Rapidly assembling modern interactive front-ends for your automation workflows using Antigravity.",
+            "isCompleted": false
+          },
+          {
+            "id": "616",
+            "title": "Day 24: Connecting n8n to Instagram API for Daily Automation",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=-BRlUvr6ois",
+            "url": "https://expressteck.tech/lesson/day-24-connecting-n8n-to-instagram-api-for-daily-automation/",
+            "summary": "Setting up Meta Graph API credentials and authorizing Instagram Business accounts for publishing.",
+            "isCompleted": false
+          },
+          {
+            "id": "617",
+            "title": "Day 25: Automated Instagram Reels Creation & Scheduling Flow",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=KfiiTUB7bGc",
+            "url": "https://expressteck.tech/lesson/day-25-automated-instagram-reels-creation-scheduling-flow/",
+            "summary": "End-to-end video pipeline: script writing, voiceover generation, subtitle rendering, and reel publishing.",
+            "isCompleted": false
+          },
+          {
+            "id": "618",
+            "title": "Day 26: Automated Instagram Image & Caption Generation",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=kS24PwL12IM",
+            "url": "https://expressteck.tech/lesson/day-26-automated-instagram-image-caption-generation/",
+            "summary": "Generating on-brand carousels, image graphics, and high-converting captions on daily schedules.",
+            "isCompleted": false
+          },
+          {
+            "id": "619",
+            "title": "Day 27: Multi-Agent AI Orchestration (Agents Working Together)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=vAHRddOYqEk",
+            "url": "https://expressteck.tech/lesson/day-27-multi-agent-ai-orchestration-agents-working-together/",
+            "summary": "Hierarchical AI architectures: supervisory agents delegating sub-tasks to specialized worker agents.",
+            "isCompleted": false
+          },
+          {
+            "id": "620",
+            "title": "Day 28: Automated PDF Data Extraction & Document Parsing",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=LAKcrfBIqYw",
+            "url": "https://expressteck.tech/lesson/day-28-automated-pdf-data-extraction-document-parsing/",
+            "summary": "Extracting invoices, tabular data, and receipts from PDF documents with high accuracy.",
+            "isCompleted": false
+          },
+          {
+            "id": "765",
+            "title": "Quiz 4: Multi-Agent Swarms & Autonomous Workflow Orchestration",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-4-multi-agent-swarms-autonomous-workflow-orchestration/",
+            "summary": "Test your understanding of supervisor-worker architectures, shared state management, and multi-agent coordination. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "771",
+            "title": "Practical Assignment 4: Deploy a Multi-Agent Autonomous Social Media Swarm",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-4-deploy-a-multi-agent-autonomous-social-media-swarm",
+            "summary": "Objective\nArchitect and deploy a multi-agent orchestration workflow in n8n featuring at least two cooperating agents with distinct roles and tool capabilities.\n\nStep-by-Step Requirements\n\n    Agent 1 (Research &amp; Ideation):\n        \n            Role: Industry trend scout.\n            Tool: Web search tool (e.g. Tavily, Serper, or HTTP scraper).\n            Output: Structured outline of a high-impact topic with verified sources.\n        \n    \n    Agent 2 (Brand Copywriter &amp; Formatter):\n        \n            Role: Content creator and visual prompt artist.\n            Input: Research brief from Agent 1.\n            Output: High-engagement carousel slides text + midjourney visual prompt for cover slide.\n        \n    \n    State coordination: Pass the structured payload seamlessly from Agent 1 to Agent 2 through n8n nodes.\n    Storage / Publishing: Save the final package to Notion, Airtable, or Google Sheets.\n\n\nSubmission Format\nSubmit the n8n workflow export JSON and an exported sample record from Notion/Google Sheets showing the combined multi-agent deliverable.\n\nGrading Rubric (100 Points)\n\n    Architectural separation of agent roles &amp; system prompts: 30 pts\n    Functional tool integration for Agent 1 (search/scrape): 25 pts\n    Data passing &amp; state continuity between agents: 25 pts\n    Final publication/storage execution in Notion or Google Sheet: 20 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "621",
+        "title": "Week 5: Error Handling, Client Acquisition, Bonuses & Capstone Projects",
+        "lessons": [
+          {
+            "id": "622",
+            "title": "Day 29: Universal Error Handling & Auto-Alert Workflows",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=VNnUWsliKYQ",
+            "url": "https://expressteck.tech/lesson/day-29-universal-error-handling-auto-alert-workflows/",
+            "summary": "How to build one unified global error workflow that catches failures across all workflows and alerts you.",
+            "isCompleted": false
+          },
+          {
+            "id": "623",
+            "title": "Day 30: The Business of Automation — Land Your First High-Ticket Client",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=J6sV-0SwvGs",
+            "url": "https://expressteck.tech/lesson/day-30-the-business-of-automation-land-your-first-high-ticket-client/",
+            "summary": "Packaging automation services, pricing retainers, outreach strategies, and closing your first $1,500+ client.",
+            "isCompleted": false
+          },
+          {
+            "id": "624",
+            "title": "Bonus 1: How to Build Workflows with n8n Templates in 10 Minutes",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=nHXDXBjhlLs",
+            "url": "https://expressteck.tech/lesson/bonus-1-how-to-build-workflows-with-n8n-templates-in-10-minutes/",
+            "summary": "Leveraging community and official n8n templates to deploy commercial automations in minutes.",
+            "isCompleted": false
+          },
+          {
+            "id": "625",
+            "title": "Bonus 2: How to Build Full Workflows with AI in 4 Minutes",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=yq4z5TBMhDw",
+            "url": "https://expressteck.tech/lesson/bonus-2-how-to-build-full-workflows-with-ai-in-4-minutes/",
+            "summary": "Rapid prototyping strategies to generate complete workflows with zero friction.",
+            "isCompleted": false
+          },
+          {
+            "id": "626",
+            "title": "Capstone Course Projects: 3 Practical Master Portfolio Builds",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=y_uPxVKAUx8",
+            "url": "https://expressteck.tech/lesson/capstone-course-projects-3-practical-master-portfolio-builds/",
+            "summary": "Complete these 3 capstone portfolio projects to prove your mastery and earn your verified certification.",
+            "isCompleted": false
+          },
+          {
+            "id": "772",
+            "title": "Quiz 5: Production Hardening, Error Monitoring & Agency Client Delivery",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-5-production-hardening-error-monitoring-agency-client-delivery/",
+            "summary": "Test your expertise in enterprise error handling, retry policies, SLAs, and packaging high-ticket automation services. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "778",
+            "title": "Capstone Portfolio Project: Enterprise Client Automation System",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=capstone-portfolio-project-enterprise-client-automation-system",
+            "summary": "Objective\nDeploy and document a comprehensive, end-to-end client-ready automation system demonstrating production architecture, error handling, and business value.\n\nSystem Specifications\n\n    Core Workflow: Select a high-value business use case:\n        \n            Option A: Automated Lead Ingestion, AI Scoring, CRM Enrichment, and Slack Alert System.\n            Option B: Intelligent Customer Support Ticketing Bot with Knowledge Retrieval and Escalation.\n            Option C: Multi-Platform Automated Content Production &amp; Social Publishing Pipeline.\n        \n    \n    Production Requirements:\n        \n            Dedicated Error Trigger flow with automated alerts.\n            Encrypted credential configuration (zero plaintext secrets).\n            Data validation before processing (handling missing fields gracefully).\n        \n    \n    Client Documentation: A 1-2 page Architecture Overview PDF with a visual flow diagram (Mermaid or Lucidchart) and operational instructions.\n\n\nSubmission Format\nSubmit a ZIP package or Google Drive link containing the workflow JSON, Architecture PDF, and a 3-minute video walkthrough demonstration.\n\nGrading Rubric (100 Points)\n\n    End-to-End workflow completeness &amp; reliability: 35 pts\n    Production error handling &amp; retry architecture: 25 pts\n    Client Architecture documentation &amp; diagram: 20 pts\n    Video presentation &amp; practical demonstration: 20 pts",
+            "isCompleted": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "584",
+    "title": "COMPLETE SOCIAL MEDIA MANAGEMENT COURSE",
+    "instructor": "Expressteck Instructor",
+    "category": "Development",
+    "originalPrice": 10000,
+    "price": 4500,
+    "discount": 40,
+    "studentsCount": 120,
+    "rating": 4.8,
+    "reviewsCount": 35,
+    "daysLeft": 5,
+    "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/001974_20261013_182627_0000.jpg-1024x576.jpeg",
+    "description": "Master social media strategy, content creation, high-converting ad campaigns, viral organic growth, and client management. Taught by Coach Denis at Express Tech Academy.",
+    "isEnrolled": false,
+    "progress": 0,
+    "modules": [
+      {
+        "id": "574",
+        "title": "Module 1: Social Media Strategy & Brand Foundations",
+        "lessons": [
+          {
+            "id": "575",
+            "title": "Part 1: Social Media Management Foundations & Ecosystem Strategy",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=PQ7K9yhLZGA",
+            "url": "https://expressteck.tech/lesson/part-1-social-media-management-foundations-ecosystem-strategy/",
+            "summary": "Introduction to professional social media management with Coach Denis. Building the foundation: brand voice, target audience personas, content pillars, and platform selection.",
+            "isCompleted": false
+          },
+          {
+            "id": "820",
+            "title": "Quiz 1: Social Media Strategy, Positioning & Brand Foundations",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-1-social-media-strategy-positioning-brand-foundations/",
+            "summary": "Evaluate your ability to formulate client brand personas, competitor gap analyses, and core content pillars. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "826",
+            "title": "Practical Assignment 1: Brand Strategy, ICP & Content Pillar Matrix",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-1-brand-strategy-icp-content-pillar-matrix",
+            "summary": "Objective\nFormulate an end-to-end Brand Strategy Document for a selected brand (e.g., local fitness gym, boutique skincare brand, or B2B SaaS agency).\n\nRequired Document Sections\n\n    Brand Voice &amp; Identity: Core brand values, tone of voice guidelines (e.g. authoritative yet accessible, humorous vs solemn), and visual color palette tokens.\n    Ideal Customer Persona (ICP): Demographics, primary frustration/pain point, trigger event that makes them seek a solution, and why past alternatives failed.\n    Content Pillars (4 Pillars):\n        \n            Pillar 1: Educational / How-To (Actionable value)\n            Pillar 2: Authority / Proof (Case studies, client testimonials)\n            Pillar 3: Connection / Culture (Behind the scenes, founder stories)\n            Pillar 4: Conversion / Promotional (Direct offers and lead magnets)\n        \n    \n    Primary Distribution Channels: Selected platforms with justification based on audience habits.\n\n\nSubmission Format\nSubmit a professional 2-3 page PDF Brand Strategy Deck.\n\nGrading Rubric (100 Points)\n\n    Clarity and coherence of brand voice &amp; positioning: 25 pts\n    In-depth, realistic Ideal Customer Persona: 25 pts\n    Structured 4-pillar content architecture: 30 pts\n    Professional agency-standard presentation formatting: 20 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "576",
+        "title": "Module 2: Content Creation, Copywriting & Visual Design",
+        "lessons": [
+          {
+            "id": "577",
+            "title": "Part 2: High-Impact Content Creation, Workflows & Viral Copywriting",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=lA3K5lVRK7Q",
+            "url": "https://expressteck.tech/lesson/part-2-high-impact-content-creation-workflows-viral-copywriting/",
+            "summary": "Practical production workflows: writing compelling hooks, designing eye-catching carousels, batch-producing video content, and leveraging AI tools efficiently.",
+            "isCompleted": false
+          },
+          {
+            "id": "827",
+            "title": "Quiz 2: Copywriting Frameworks, Hook Psychology & Carousel Architecture",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-2-copywriting-frameworks-hook-psychology-carousel-architecture/",
+            "summary": "Test your knowledge of the AIDA/PAS frameworks, 3-second visual hooks, carousel swipe-rate mechanics, and conversion CTAs. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "833",
+            "title": "Practical Assignment 2: Build a 30-Day Social Content Calendar & Hook Matrix",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-2-build-a-30-day-social-content-calendar-hook-matrix",
+            "summary": "Objective\nBuild a complete 1-month (30-day) editorial calendar and caption copywriting vault for a brand, demonstrating structured pillar rotation and varied formats.\n\nCalendar Specifications\n\n    Create a Google Sheet, Notion database, or Airtable matrix with the following columns:\n        \n            Date &amp; Day of Week: Planned publishing schedule.\n            Content Pillar: Education, Authority, Culture, or Conversion.\n            Format: Short-form Reel/TikTok, Multi-slide Carousel, Single Image Graphic, or Text/Story post.\n            The Hook Line: Scroll-stopping opening line or visual cover text.\n            Full Caption Copy: Written copy following AIDA, PAS, or storytelling frameworks with line breaks.\n            Call to Action (CTA): Specific micro-commitment requested.\n            Hashtag / Keyword Cluster: 5-8 targeted niche keywords.\n        \n    \n    Provide complete written copy for at least 8 flagship posts across the calendar.\n\n\nSubmission Format\nSubmit a shareable link (or exported PDF/CSV) to your completed 30-Day Content Matrix.\n\nGrading Rubric (100 Points)\n\n    Strategic pillar balance and formatting variety: 30 pts\n    Hook copywriting quality and psychological curiosity: 30 pts\n    Full caption structure, readability, and CTAs: 25 pts\n    Calendar usability, organization, and professional schema: 15 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "578",
+        "title": "Module 3: Growth Algorithms & Community Management",
+        "lessons": [
+          {
+            "id": "579",
+            "title": "Part 3: Platform Algorithms, Organic Reach & Audience Engagement",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=b_PmjgsX6Hc",
+            "url": "https://expressteck.tech/lesson/part-3-platform-algorithms-organic-reach-audience-engagement/",
+            "summary": "Deep dive into organic growth mechanics: how recommendation algorithms work, boosting engagement rates, hashtag strategy, and community building that drives loyalty.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "580",
+        "title": "Module 4: Paid Campaigns & Performance Analytics",
+        "lessons": [
+          {
+            "id": "581",
+            "title": "Part 4: Paid Social Advertising, Campaign Structure & Analytics",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=GN9_JLwvXgI",
+            "url": "https://expressteck.tech/lesson/part-4-paid-social-advertising-campaign-structure-analytics/",
+            "summary": "Mastering paid ads: targeting, campaign budget optimization, ad creatives, reading metrics (ROAS, CPA, CTR), and generating comprehensive client reporting.",
+            "isCompleted": false
+          },
+          {
+            "id": "834",
+            "title": "Quiz 3: Paid Social Advertising & Performance Analytics",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-3-paid-social-advertising-performance-analytics/",
+            "summary": "Assess your mastery of Meta Ads Manager, ROAS vs CPA metrics, custom audiences, and campaign scaling. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "840",
+            "title": "Practical Assignment 3: Paid Social Ad Campaign Architecture & Creative Brief",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-3-paid-social-ad-campaign-architecture-creative-brief",
+            "summary": "Objective\nArchitect a full Meta Ads campaign structure for an e-commerce or lead generation client, including campaign setup, audience targeting tiers, and creative briefs.\n\nCampaign Structure Deliverables\n\n    Campaign Level: Objective (Sales / Leads) and Budget Strategy (Advantage Campaign Budget vs Ad Set Budget).\n    Ad Set Tier 1 (Cold Prospecting - TOFU): Broad / Interest-based targeting or 1-2% Lookalike Audience of past buyers.\n    Ad Set Tier 2 (Warm Retargeting - MOFU/BOFU): 30-day website visitors and 90-day social media engagers who have not yet purchased.\n    Ad Creatives (3 Distinct Concepts):\n        \n            Concept 1: Short Video Hook / UGC Problem-Solution ad.\n            Concept 2: High-contrast Carousel showing product features / proof.\n            Concept 3: Single Image with bold customer testimonial and star badge.\n        \n    \n    Write headlines, primary copy, and CTA button choices for all 3 concepts.\n\n\nSubmission Format\nSubmit a 2-3 page PDF Campaign Architecture Deck with ad copy scripts and visual wireframes.\n\nGrading Rubric (100 Points)\n\n    Logical campaign hierarchy &amp; audience tiering: 30 pts\n    Creative diversity &amp; hook copywriting quality: 35 pts\n    Data tracking (Pixel/CAPI events) plan: 20 pts\n    Professional agency presentation standard: 15 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "582",
+        "title": "Module 5: Client Acquisition, Pricing & Agency Scaling",
+        "lessons": [
+          {
+            "id": "583",
+            "title": "Part 5: Landing High-Paying Clients, Retainer Pricing & Career Mastery [END]",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=3VsgdPCYWQI",
+            "url": "https://expressteck.tech/lesson/part-5-landing-high-paying-clients-retainer-pricing-career-mastery-end/",
+            "summary": "The business of SMM: portfolio setup, client discovery calls, proposal writing, contract negotiation, charging monthly retainers, and scaling to an agency model.",
+            "isCompleted": false
+          },
+          {
+            "id": "841",
+            "title": "Quiz 4: Client Acquisition, Retainer Pricing & Agency Operations",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-4-client-acquisition-retainer-pricing-agency-operations/",
+            "summary": "Test your knowledge of high-ticket monthly retainers, client onboarding kickoff calls, scope creep boundaries, and monthly reporting. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "496",
+    "title": "PAYPAL MASTERY COURSE",
+    "instructor": "Expressteck Instructor",
+    "category": "Development",
+    "originalPrice": 10000,
+    "price": 5000,
+    "discount": 40,
+    "studentsCount": 120,
+    "rating": 4.8,
+    "reviewsCount": 35,
+    "daysLeft": 5,
+    "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/5-1024x576.jpeg",
+    "description": "Master international PayPal account creation, verification, and seamless withdrawals from unsupported countries. Learn Serbian and UK PayPal setup, linking foreign bank accounts (USD &amp; GBP), security protocols, and hassle-free global checkout.",
+    "isEnrolled": false,
+    "progress": 0,
+    "modules": [
+      {
+        "id": "548",
+        "title": "Module 1: Introduction To PayPal Mastery",
+        "lessons": [
+          {
+            "id": "549",
+            "title": "Welcome to PayPal Mastery",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/01_welcome_to_paypal_mastery.mp4",
+            "url": "https://expressteck.tech/lesson/welcome-to-paypal-mastery/",
+            "summary": "Welcome and overview of the PayPal Mastery training. Understanding what PayPal is, global account tiers, and why cross-border accounts are essential.",
+            "isCompleted": false
+          },
+          {
+            "id": "550",
+            "title": "Introduction to Global PayPal Accounts",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/02_introduction_to_global_paypal.mp4",
+            "url": "https://expressteck.tech/lesson/introduction-to-global-paypal-accounts/",
+            "summary": "Understanding sending vs receiving restrictions, country jurisdiction tiers, and key rules for staying fully compliant.",
+            "isCompleted": false
+          },
+          {
+            "id": "551",
+            "title": "Account Prerequisites & Setup Requirements",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/03_account_prerequisites_and_setup.mp4",
+            "url": "https://expressteck.tech/lesson/account-prerequisites-setup-requirements/",
+            "summary": "Essential documents, clean browsing profiles, email specifications, and verification data required before opening an account.",
+            "isCompleted": false
+          },
+          {
+            "id": "552",
+            "title": "How To Extract Info From Foreign ID Documents",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/04_how_to_extract_info_from_foreign_id.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-extract-info-from-foreign-id-documents/",
+            "summary": "Step-by-step guidance on extracting, formatting, and verifying addresses, postal codes, and identity numbers from foreign identification.",
+            "isCompleted": false
+          },
+          {
+            "id": "553",
+            "title": "Banks & Cards That Link With PayPal",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/05_banks_and_cards_that_link_with_paypal.mp4",
+            "url": "https://expressteck.tech/lesson/banks-cards-that-link-with-paypal/",
+            "summary": "Comprehensive breakdown of virtual bank accounts and cards (USD &amp; EUR routing numbers) that link smoothly with PayPal.",
+            "isCompleted": false
+          },
+          {
+            "id": "554",
+            "title": "Critical Security Tips To Stay Safe & Avoid Bans",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/06_security_tips_to_stay_safe.mp4",
+            "url": "https://expressteck.tech/lesson/critical-security-tips-to-stay-safe-avoid-bans/",
+            "summary": "Golden security protocols: IP management, device fingerprints, transaction velocity, and avoiding artificial red flags.",
+            "isCompleted": false
+          },
+          {
+            "id": "847",
+            "title": "Quiz 1: PayPal Ecosystem, Policies & Account Security Foundations",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-1-paypal-ecosystem-policies-account-security-foundations/",
+            "summary": "Evaluate your understanding of account classifications, holding periods, reserve requirements, and risk triggers. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "555",
+        "title": "Module 2: Serbian PayPal Account Creation",
+        "lessons": [
+          {
+            "id": "556",
+            "title": "How To Create A Verified Serbian PayPal Account",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/07_how_to_create_verified_serbian_paypal.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-create-a-verified-serbian-paypal-account/",
+            "summary": "Live walkthrough of registering and setting up a fully functional Serbian PayPal account with legitimate credentials.",
+            "isCompleted": false
+          },
+          {
+            "id": "557",
+            "title": "How To Change Phone Number Immediately After Creation",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/08_change_phone_number_after_creation.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-change-phone-number-immediately-after-creation/",
+            "summary": "Essential security procedure: replacing temporary registration numbers with your permanent personal contact number.",
+            "isCompleted": false
+          },
+          {
+            "id": "558",
+            "title": "Currency Configuration & Email Confirmation Protocol",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/09_currency_config_and_email_confirm.mp4",
+            "url": "https://expressteck.tech/lesson/currency-configuration-email-confirmation-protocol/",
+            "summary": "Setting your primary wallet currency to USD/EUR, clearing auto-conversion markups, and confirming your primary email.",
+            "isCompleted": false
+          },
+          {
+            "id": "559",
+            "title": "How To Link Your US Bank Account To Serbian PayPal",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/10_link_us_bank_to_serbian_paypal.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-link-your-us-bank-account-to-serbian-paypal/",
+            "summary": "Connecting your virtual US checking account routing and account numbers to enable direct electronic funds transfers.",
+            "isCompleted": false
+          },
+          {
+            "id": "853",
+            "title": "Practical Assignment 1: Account Setup Compliance & Warm-Up Checklist",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-1-account-setup-compliance-warm-up-checklist",
+            "summary": "Objective\nCreate a comprehensive pre-flight verification checklist and 30-day transaction warm-up schedule to ensure compliant, ban-free international PayPal operation.\n\nChecklist Deliverables\n\n    Digital Environment Preparation:\n        \n            Browser profile isolation (Anti-detect browser or dedicated clean profile).\n            Static Residential IP / clean connection protocol (checking against blacklists).\n            Clean email creation (custom domain or reputable provider, no temporary burner emails for permanent business accounts).\n        \n    \n    Document &amp; Verification Matrix:\n        \n            Government Photo ID requirements.\n            Proof of Address requirements (utility bill, bank statement matching exact name format).\n            Virtual / Physical bank account linking roadmap (Wise, Payoneer, or local bank).\n        \n    \n    30-Day Transaction Warm-Up Roadmap:\n        \n            Week 1: Receiving low-dollar test transactions ($10-$50).\n            Week 2-3: Gradual scaling ($100-$300) with immediate tracking number attachment.\n            Week 4: Standard commercial volume handling and withdrawal pacing rules.\n        \n    \n\n\nSubmission Format\nSubmit a structured 2-page PDF Document or Spreadsheet detailing your complete Compliance &amp; Warm-Up Protocol.\n\nGrading Rubric (100 Points)\n\n    Digital environment &amp; clean IP isolation rules: 30 pts\n    Document compliance &amp; verification protocol: 30 pts\n    Realistic 30-day volume warm-up roadmap: 25 pts\n    Professional formatting &amp; operational clarity: 15 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "560",
+        "title": "Module 3: UK PayPal Account Creation",
+        "lessons": [
+          {
+            "id": "561",
+            "title": "How To Create A Verified UK PayPal Account",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/11_how_to_create_uk_paypal.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-create-a-verified-uk-paypal-account/",
+            "summary": "Detailed live walkthrough for creating an authentic United Kingdom PayPal account with proper UK address and profile format.",
+            "isCompleted": false
+          },
+          {
+            "id": "562",
+            "title": "How To Confirm Email & Secure Your UK PayPal",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/12_confirm_email_uk_paypal.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-confirm-email-secure-your-uk-paypal/",
+            "summary": "Locking down security settings, 2FA backup codes, and completing full email verification on your UK profile.",
+            "isCompleted": false
+          },
+          {
+            "id": "563",
+            "title": "How To Add A Bank Account To UK PayPal",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/13_add_bank_to_uk_paypal.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-add-a-bank-account-to-uk-paypal/",
+            "summary": "Connecting sort codes and UK account numbers to your wallet for fast, unrestricted deposits and withdrawals.",
+            "isCompleted": false
+          },
+          {
+            "id": "564",
+            "title": "How To Link A Foreign GBP Account To UK PayPal",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/14_link_gbp_account_to_uk_paypal.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-link-a-foreign-gbp-account-to-uk-paypal/",
+            "summary": "Connecting digital fintech multi-currency GBP receiving accounts to complete your UK banking integration.",
+            "isCompleted": false
+          },
+          {
+            "id": "854",
+            "title": "Quiz 2: UK & International PayPal Accounts and Multi-Currency Banking",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-2-uk-international-paypal-accounts-and-multi-currency-banking/",
+            "summary": "Test your knowledge of UK business accounts, virtual bank account sort codes, Wise/Payoneer integration, and international KYC. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "565",
+        "title": "Module 4: Money Transfer, Withdrawals & Online Checkout",
+        "lessons": [
+          {
+            "id": "566",
+            "title": "How To Make Online Payments & Checkout (Part 1)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/15_online_payments_checkout_part1.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-make-online-payments-checkout-part-1/",
+            "summary": "Executing smooth e-commerce purchases and digital service payments via PayPal balance and linked cards.",
+            "isCompleted": false
+          },
+          {
+            "id": "567",
+            "title": "How To Make Online Payments & Checkout (Part 2)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/16_online_payments_checkout_part2.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-make-online-payments-checkout-part-2/",
+            "summary": "Handling 3D secure prompts, merchant billing agreements, and resolving checkout declined issues.",
+            "isCompleted": false
+          },
+          {
+            "id": "568",
+            "title": "How To Send Funds From PayPal To PayPal",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/17_send_funds_paypal_to_paypal.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-send-funds-from-paypal-to-paypal/",
+            "summary": "Sending peer-to-peer (P2P) transfers, understanding Friends &amp; Family vs Goods &amp; Services fees, and protecting buyer/seller status.",
+            "isCompleted": false
+          },
+          {
+            "id": "569",
+            "title": "How To Transfer Money From PayPal To US Bank",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/18_transfer_money_to_us_bank.mp4",
+            "url": "https://expressteck.tech/lesson/how-to-transfer-money-from-paypal-to-us-bank/",
+            "summary": "Withdrawing your PayPal balance into your US virtual bank account and transferring funds to your local bank account.",
+            "isCompleted": false
+          },
+          {
+            "id": "860",
+            "title": "Practical Assignment 2: Bulletproof Invoicing & Chargeback Defense Template",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-2-bulletproof-invoicing-chargeback-defense-template",
+            "summary": "Objective\nCreate an institutional-grade service invoice template and dispute defense protocol to protect international digital payments against unauthorized claims and chargebacks.\n\nRequired Template Elements\n\n    Invoice Architecture:\n        \n            Detailed line-item descriptions (specifying 'Digital Service / Intangible Goods - Non-Refundable Once Delivered').\n            Explicit scope of work and completion criteria.\n            Client acknowledgement clause (confirming order authorization and waiving buyer remorse disputes).\n        \n    \n    Delivery Proof Protocol:\n        \n            Checklist of evidence to gather during service delivery (timestamped email delivery, IP address logs, client Slack confirmation, signed delivery sign-off).\n        \n    \n    Resolution Center Dispute Response Script:\n        \n            Formal response template to submit in PayPal's Resolution Center when a buyer files an 'Item Not Received' (INR) or 'Unauthorized Transaction' claim.\n        \n    \n\n\nSubmission Format\nSubmit an exported PDF of your completed Invoice Template along with the written Dispute Evidence Protocol.\n\nGrading Rubric (100 Points)\n\n    Legal service description clarity &amp; protective clauses: 35 pts\n    Comprehensive proof-of-delivery evidence checklist: 35 pts\n    Resolution Center dispute defense response script: 30 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "570",
+        "title": "Module 5: Temp Mail & Identity Best Practices (Must Watch)",
+        "lessons": [
+          {
+            "id": "571",
+            "title": "Creating PayPal With Temp Mail & NIN Verification (Essential Guide)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://expressteck.tech/wp-content/uploads/courses-video/paypal/19_temp_mail_and_nin_verification.mp4",
+            "url": "https://expressteck.tech/lesson/creating-paypal-with-temp-mail-nin-verification-essential-guide/",
+            "summary": "Crucial survival guide: Best practices for email selection, using temporary email safely during setup, and how to utilize NIN documents without triggering compliance flags.",
+            "isCompleted": false
+          },
+          {
+            "id": "861",
+            "title": "Quiz 3: Digital Identity Hygiene, Browser Fingerprints & Account Lifespan",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-3-digital-identity-hygiene-browser-fingerprints-account-lifespan/",
+            "summary": "Assess your mastery of multi-account isolation, WebRTC leaks, 2FA security apps, and account recovery protocols. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "467",
+    "title": "COMPLETE FOREX TRADING COURSE",
+    "instructor": "Expressteck Instructor",
+    "category": "Development",
+    "originalPrice": 15000,
+    "price": 8000,
+    "discount": 40,
+    "studentsCount": 120,
+    "rating": 4.8,
+    "reviewsCount": 35,
+    "daysLeft": 5,
+    "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/4.jpeg",
+    "description": "Master professional Forex trading from scratch with this comprehensive 15-module master course. Learn market structure, high-probability candlestick patterns, technical analysis, Fibonacci retracements, top-down execution, risk management, and trading psychology with live video classes.",
+    "isEnrolled": false,
+    "progress": 0,
+    "modules": [
+      {
+        "id": "436",
+        "title": "Module 1: Introduction to Forex Trading and Everything You Need to Know",
+        "lessons": [
+          {
+            "id": "437",
+            "title": "Introduction to Forex Trading and Everything You Need to Know",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=7U2ZY9kh6xY",
+            "url": "https://expressteck.tech/lesson/introduction-to-forex-trading-and-everything-you-need-to-know/",
+            "summary": "An all-inclusive foundational masterclass covering how currency markets operate, major/minor pairs, pips, lots, leverage, margins, order types, and selecting a regulated broker.",
+            "isCompleted": false
+          },
+          {
+            "id": "705",
+            "title": "Quiz 1: Forex Fundamentals & Market Basics",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-1-forex-fundamentals-market-basics/",
+            "summary": "Test your understanding of currency pairs, pips, leverage, and global market trading sessions. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "438",
+        "title": "Module 2: How to Use MT4 and MT5 - Features & Live Execution Explained",
+        "lessons": [
+          {
+            "id": "439",
+            "title": "How to Use MT4 and MT5 - Features & Live Execution Explained",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=mOTZlv4TVgE",
+            "url": "https://expressteck.tech/lesson/how-to-use-mt4-and-mt5-features-live-execution-explained/",
+            "summary": "Complete interface tour and practical guide for MetaTrader 4 &amp; MetaTrader 5: chart setups, custom indicators, terminal windows, drawing tools, and executing market orders with precision.",
+            "isCompleted": false
+          },
+          {
+            "id": "711",
+            "title": "Practical Assignment 1: MT4/MT5 Platform Setup & Position Sizing Execution",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-1-mt4-mt5-platform-setup-position-sizing-execution",
+            "summary": "Objective\nDemonstrate terminal proficiency by setting up a demo trading account on MT4 or MT5, configuring standard charts, and calculating correct lot sizing based on strict risk parameters.\n\nTasks &amp; Deliverables\n\n    Install and connect to a MetaTrader 4 (MT4) or MetaTrader 5 (MT5) demo account with $10,000 balance.\n    Clean chart configuration: Set up EUR/USD and GBP/USD on clean 1-hour and 4-hour candlestick charts (remove grid, set green/red candles).\n    Execute a test trade: Open a 0.05 or 0.10 lot position with predefined Stop Loss (20 pips) and Take Profit (40 pips).\n    Calculate position size: Show the mathematical formula used to ensure the Stop Loss risk does not exceed 1% ($100) of account balance.\n\n\nSubmission Format\nSubmit a PDF or screenshot collage displaying your active demo trade terminal, open trade panel with SL/TP, and a brief note explaining your lot size calculation.\n\nGrading Rubric (100 Points)\n\n    Clean MT4/MT5 chart layout &amp; configuration: 25 pts\n    Accurate Stop Loss &amp; Take Profit entry: 25 pts\n    Correct 1% position sizing mathematical calculation: 30 pts\n    Professional formatting &amp; explanation: 20 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "440",
+        "title": "Module 3: Technical Analysis - How to Analyse the FX Market to Buy or Sell",
+        "lessons": [
+          {
+            "id": "441",
+            "title": "Technical Analysis - How to Analyse the FX Market to Buy or Sell",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=XG7m1SQ9rjA",
+            "url": "https://expressteck.tech/lesson/technical-analysis-how-to-analyse-the-fx-market-to-buy-or-sell/",
+            "summary": "Learn how to read naked charts, map out high-timeframe support and resistance zones, evaluate trend direction, and identify multi-factor confluence before taking positions.",
+            "isCompleted": false
+          },
+          {
+            "id": "712",
+            "title": "Quiz 2: Technical Analysis & Support and Resistance",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-2-technical-analysis-support-and-resistance/",
+            "summary": "Evaluate your ability to identify horizontal key levels, trendlines, and price action zones. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "442",
+        "title": "Module 4: High-Probability Candlestick Patterns Mastery",
+        "lessons": [
+          {
+            "id": "443",
+            "title": "High-Probability Candlestick Patterns Mastery",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=3zc8CXDpm9k",
+            "url": "https://expressteck.tech/lesson/high-probability-candlestick-patterns-mastery/",
+            "summary": "Deep dive into essential single, double, and triple candlestick formations: hammer, pin bar, engulfing, doji, morning star, and evening star patterns in context of key supply &amp; demand levels.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "444",
+        "title": "Module 5: The Best Top-Down Analysis Strategy",
+        "lessons": [
+          {
+            "id": "445",
+            "title": "The Best Top-Down Analysis Strategy",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=ObVQ9AS6JP0",
+            "url": "https://expressteck.tech/lesson/the-best-top-down-analysis-strategy/",
+            "summary": "How institutional traders dissect the charts from Monthly, Weekly, and Daily trends down to 4-Hour and 15-Minute execution timeframes to trade with dominant market momentum.",
+            "isCompleted": false
+          },
+          {
+            "id": "718",
+            "title": "Practical Assignment 2: Top-Down Multi-Timeframe Chart Breakdown",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-2-top-down-multi-timeframe-chart-breakdown",
+            "summary": "Objective\nPerform an end-to-end Top-Down Technical Analysis on a major forex pair (EUR/USD, GBP/USD, or USD/JPY) combining Daily, 4-Hour, and 15-Minute charts.\n\nTasks &amp; Deliverables\n\n    Daily (D1) Analysis: Identify the macro trend (bullish/bearish/ranging) and mark key institutional support and resistance zones.\n    4-Hour (H4) Analysis: Identify intermediate market structure (Higher Highs / Higher Lows or Lower Highs / Lower Lows) and key Fibonacci retracement levels.\n    15-Minute (M15) Execution Plan: Define the exact trigger condition (e.g. candlestick rejection, CHOCH, or trendline break) required for entering a high-probability trade.\n    State your defined Risk-to-Reward ratio (must be at least 1:2 or higher).\n\n\nSubmission Format\nSubmit a PDF document or high-resolution chart images annotated with labels (Trend, Key Level, Entry Trigger, Stop Loss, Target).\n\nGrading Rubric (100 Points)\n\n    Accurate Higher-Timeframe (D1) trend &amp; levels: 30 pts\n    Clear 4-Hour intermediate structure &amp; key zones: 25 pts\n    Logical 15-Minute entry trigger criteria: 25 pts\n    Minimum 1:2 Risk-to-Reward ratio compliance: 20 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "446",
+        "title": "Module 6: How to Set Up Take Profit and Stop Loss Properly",
+        "lessons": [
+          {
+            "id": "447",
+            "title": "How to Set Up Take Profit and Stop Loss Properly",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=vFJhgzHgdb8",
+            "url": "https://expressteck.tech/lesson/how-to-set-up-take-profit-and-stop-loss-properly/",
+            "summary": "Logical, structure-based stop loss placement techniques and target profit sizing to prevent premature stop-outs and guarantee a positive risk-to-reward ratio on every setup.",
+            "isCompleted": false
+          },
+          {
+            "id": "719",
+            "title": "Quiz 3: Order Execution, Stop Loss & Take Profit Mechanics",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-3-order-execution-stop-loss-take-profit-mechanics/",
+            "summary": "Assess your mastery of order types, stop-loss protection rules, and risk-reward optimization. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "448",
+        "title": "Module 7: Fibonacci Retracement Strategy",
+        "lessons": [
+          {
+            "id": "449",
+            "title": "Fibonacci Retracement Strategy",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=KCQ5toHo8j8",
+            "url": "https://expressteck.tech/lesson/fibonacci-retracement-strategy/",
+            "summary": "Discover how to properly map Fibonacci retracements from swing lows to swing highs, identifying golden pocket reversals (50%, 61.8%, 78.6%) for high-confluence entries.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "450",
+        "title": "Module 8: Market Orders Demystified (Sell Limit, Sell Stop, Buy Limit, Buy Stop)",
+        "lessons": [
+          {
+            "id": "451",
+            "title": "Market Orders Demystified (Sell Limit, Sell Stop, Buy Limit, Buy Stop)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=MwQYLuf8Va4",
+            "url": "https://expressteck.tech/lesson/market-orders-demystified-sell-limit-sell-stop-buy-limit-buy-stop/",
+            "summary": "Master all 4 pending order types to automate your entries, catch breakouts or pullbacks without being glued to your screens 24/7.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "452",
+        "title": "Module 9: Market Structure Explained - Higher Highs & Higher Lows Strategy",
+        "lessons": [
+          {
+            "id": "453",
+            "title": "Market Structure Explained - Higher Highs & Higher Lows Strategy",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=5DczhzXMMhg",
+            "url": "https://expressteck.tech/lesson/market-structure-explained-higher-highs-higher-lows-strategy/",
+            "summary": "Decode raw market cycles: identifying valid higher highs, higher lows, lower highs, lower lows, break of structure (BOS), and change of character (CHoCH).",
+            "isCompleted": false
+          },
+          {
+            "id": "725",
+            "title": "Quiz 4: Market Structure & Price Action Dynamics",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-4-market-structure-price-action-dynamics/",
+            "summary": "Test your understanding of market structure shifts, Higher Highs/Lows, and Break of Structure (BOS). Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "454",
+        "title": "Module 10: Breakout Trading Strategy",
+        "lessons": [
+          {
+            "id": "455",
+            "title": "Breakout Trading Strategy",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=niI6ilbcXEQ",
+            "url": "https://expressteck.tech/lesson/breakout-trading-strategy/",
+            "summary": "How to filter genuine high-volume breakouts from deceptive liquidity traps and fakeouts, with entry triggers on retests of key structural boundaries.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "456",
+        "title": "Module 11: Moving Average Trading Strategy",
+        "lessons": [
+          {
+            "id": "457",
+            "title": "Moving Average Trading Strategy",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=wxDj2hfptOs",
+            "url": "https://expressteck.tech/lesson/moving-average-trading-strategy/",
+            "summary": "Using Exponential Moving Averages (EMAs) as dynamic support and resistance, capitalizing on momentum crossovers and trend-continuation pullbacks.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "458",
+        "title": "Module 12: Professional Risk Management & Capital Preservation",
+        "lessons": [
+          {
+            "id": "459",
+            "title": "Professional Risk Management & Capital Preservation",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=rWdEreCKvvg",
+            "url": "https://expressteck.tech/lesson/professional-risk-management-capital-preservation/",
+            "summary": "The mathematical foundation of sustainable trading profitability: the 1% to 2% capital risk rule, exact lot size formulas, and drawdown mitigation strategies.",
+            "isCompleted": false
+          },
+          {
+            "id": "731",
+            "title": "Quiz 5: Professional Risk Management & Capital Preservation",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-5-professional-risk-management-capital-preservation/",
+            "summary": "Test your mastery of drawdown recovery mathematics, position sizing, and emotional capital discipline. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          },
+          {
+            "id": "737",
+            "title": "Practical Assignment 3: Comprehensive Trading Plan & Risk Management Rulebook",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-3-comprehensive-trading-plan-risk-management-rulebook",
+            "summary": "Objective\nFormulate your personalized, professional Forex Trading Plan and Capital Preservation Protocol to remove emotion and ensure strict risk consistency.\n\nRequired Sections in Your Plan\n\n    Capital &amp; Risk Parameters:\n        \n            Max risk percentage per trade (e.g. 1.0%).\n            Max daily drawdown limit before halting trading for the day (e.g. 3.0%).\n            Max weekly drawdown limit before halting trading for the week.\n        \n    \n    Market Selection &amp; Session Hours: Specific currency pairs traded and precise trading sessions (London, New York, or Asian).\n    Entry &amp; Exit Checklist: Exact technical conditions required before placing any trade (Trend alignment, Key level, Entry candlestick trigger, minimum 1:2 R:R).\n    Trading Journal Template: Columns and metrics you will record for every trade (Date, Pair, Direction, Risk $, R:R, Screenshot, Lesson Learned).\n\n\nSubmission Format\nSubmit a structured PDF or Word document (2-3 pages) outlining your complete Trading Plan.\n\nGrading Rubric (100 Points)\n\n    Defined Risk Parameters &amp; Drawdown circuit breakers: 30 pts\n    Concrete, unambiguous entry &amp; exit rules: 30 pts\n    Trading Journal schema &amp; metrics tracking: 20 pts\n    Professional formatting &amp; discipline commitments: 20 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "460",
+        "title": "Module 13: Chart Pattern Strategy Explanations",
+        "lessons": [
+          {
+            "id": "461",
+            "title": "Chart Pattern Strategy Explanations",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=0t9LxRzTFNQ",
+            "url": "https://expressteck.tech/lesson/chart-pattern-strategy-explanations/",
+            "summary": "Master the highest-probability geometric chart formations: Double Tops/Bottoms, Head &amp; Shoulders, Ascending/Descending Triangles, and Bull/Bear Flags.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "462",
+        "title": "Module 14: 60 Laws of Trading Psychology",
+        "lessons": [
+          {
+            "id": "463",
+            "title": "60 Laws of Trading Psychology",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=GVvfbEpKfsA",
+            "url": "https://expressteck.tech/lesson/60-laws-of-trading-psychology/",
+            "summary": "The ultimate mindset training: conquering fear of missing out (FOMO), revenge trading, greed, and hesitation while cultivating institutional-grade emotional mastery.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "464",
+        "title": "Module 15: Forex Trading Fundamentals & Economic News",
+        "lessons": [
+          {
+            "id": "465",
+            "title": "Forex Trading Fundamentals & Economic News",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=4RjTeqkr5H0",
+            "url": "https://expressteck.tech/lesson/forex-trading-fundamentals-economic-news/",
+            "summary": "How economic indicators, interest rate decisions, CPI inflation numbers, Non-Farm Payrolls (NFP), and central bank monetary policies impact currency valuation.",
+            "isCompleted": false
+          },
+          {
+            "id": "738",
+            "title": "Quiz 6: Fundamental Catalysts, Economic News & Sentiment",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-6-fundamental-catalysts-economic-news-sentiment/",
+            "summary": "Evaluate your understanding of central bank interest rates, Non-Farm Payrolls (NFP), and economic calendars. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "466",
+    "title": "VIRTUAL ASSISTANT MASTER COURSE",
+    "instructor": "Expressteck Instructor",
+    "category": "Development",
+    "originalPrice": 15000,
+    "price": 5000,
+    "discount": 40,
+    "studentsCount": 120,
+    "rating": 4.8,
+    "reviewsCount": 35,
+    "daysLeft": 5,
+    "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/6-1024x576.jpeg",
+    "description": "The Virtual Assistant Master Course by Express Tech Academy is a practical, end-to-end training program designed to help beginners and aspiring remote workers learn essential&hellip;",
+    "isEnrolled": false,
+    "progress": 0,
+    "modules": [
+      {
+        "id": "368",
+        "title": "Module 1: Introduction to Virtual Assistance – Core Skills, Mindset, and Industry Overview",
+        "lessons": [
+          {
+            "id": "369",
+            "title": "WHO IS A VIRTUAL ASSISTANT/ SKILLS, TOOLS AND TIPS FOR SUCCESS",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=f3Rg6cujyTQ&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk&index=13",
+            "url": "https://expressteck.tech/lesson/who-is-a-virtual-assistant-skills-tools-and-tips-for-success/",
+            "summary": "In this introductory lesson instructor Sam Dennis introduces the core concepts, industry demand, and necessary skill set required to build a successful career as a professional Virtual Assistant (VA).\nKey Topics Covered:\n\n\nDefining the Virtual Assistant: Understanding the role of a remote professional providing administrative, technical, and creative support to business owners, executives, and organizations.\n\n\nIndustry Overview &amp; Opportunities: Exploring why virtual assistance is rapidly growing, the benefits of remote work flexibility, and high income potential across international client markets.\n\n\nTarget Industries &amp; Niches: Identifying key sectors relying on VAs, including entrepreneurs, real estate agents, online coaches, e-commerce sellers, content creators, and corporate executives.\n\n\nHard Skills vs. Soft Skills:\n\n\nHard Skills: Data entry, calendar management, travel booking, email management, presentation design, and project coordination.\n\n\nSoft Skills: Emotional intelligence, strict client confidentiality, discretion, proactive communication, and problem-solving.\n\n\n\n\nThe 7 Cs of Effective Communication: Applying clear, concise, concrete, correct, coherent, complete, and courteous communication standard.Time Management &amp; Productivity: Utilizing tools like the Eisenhower Prioritization Matrix, Google Calendar, Trello, and Asana to optimize workflow efficiency.\n\n\nPractical Assignments Included:\n\n\nInterpersonal Communication Skill Assessment\n\n\nTime Management Self-Evaluation Test\n\n\nDaily Prioritization Matrix Exercise\n\n\nPeer-to-Peer Coaching &amp; Reflection Submission",
+            "isCompleted": false
+          },
+          {
+            "id": "867",
+            "title": "Quiz 1: Virtual Assistant Core Competencies, Ethics & Industry Overview",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-1-virtual-assistant-core-competencies-ethics-industry-overview/",
+            "summary": "Evaluate your understanding of VA specializations, client confidentiality (NDA), asynchronous communication, and remote etiquette. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "346",
+        "title": "Module 2:Creating a Virtual Assistant Portfolio with Canva",
+        "lessons": [
+          {
+            "id": "347",
+            "title": "THE VIRTUAL ASSISTANT PORTFOLIO THAT WILL GET YOU HIRED (FREE WITH CANVA)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=yRjCOLYoU58&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk&index=2",
+            "url": "https://expressteck.tech/lesson/the-virtual-assistant-portfolio-that-will-get-you-hired-free-with-canva/",
+            "summary": "Overview\nA standout portfolio is essential to standing out in the competitive remote job market. In this hands-on lesson, Coach Denis guides you step-by-step through creating a professional, high-converting Virtual Assistant website portfolio for free using Canva. Learn how to present your skills, structure key services, display real-world tools, and present client testimonials that convert prospects into paying clients.\n\nWhat You Will Learn\n\n\nSelecting &amp; Customizing Canva Templates:\n\n\nHow to search for free website portfolio templates on Canva (for both desktop and mobile users) without paying for premium elements.\n\n\n\n\nStructuring Your Portfolio Pages:\n\n\nHero Section: Setting up a professional headshot, clear job title, and quick link to your resume/CV.\n\n\nAbout Me &amp; Services: Communicating the core value you bring and highlighting essential VA services (administrative support, data entry, project coordination, communication).\n\n\nTools &amp; Software Expertise: Showcasing specific software proficiency (e.g., Asana, Google Workspace, MS Office) with logos and practical descriptions instead of over-listing tools.\n\n\nWork Experience &amp; Testimonials: Presenting client results, organizing proof of work, and adding screenshots of client feedback and reviews.\n\n\n\n\nInteractive &amp; Technical Setup:\n\n\nAdding hyperlinked buttons to jump directly to your CV on Google Docs.\n\n\nEmbedding clickable mailto: email links and direct WhatsApp click-to-chat links for seamless client communication.\n\n\n\n\n\nKey Takeaways &amp; Action Plan\n\n\nFocus on Quality: Keep your tools list focused on what you actually master rather than overwhelming recruiters with too many software icons.\n\n\nConsistency Across Materials: Ensure company names, job titles, and experiences listed in your Canva portfolio match your resume/CV exactly.\n\n\nMobile &amp; Desktop Optimization: Preview your Canva portfolio site on both desktop and mobile viewports before sharing it with potential clients.",
+            "isCompleted": false
+          },
+          {
+            "id": "873",
+            "title": "Practical Assignment 1: Design a High-Impact Multi-Page VA Portfolio on Canva",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-1-design-a-high-impact-multi-page-va-portfolio-on-canva",
+            "summary": "Objective\nCreate a stunning, agency-grade Virtual Assistant Portfolio presentation on Canva to showcase your professional service packages and attract premium remote clients.\n\nRequired Portfolio Slides / Pages\n\n    Cover Page: Professional headline, your photo/avatar, branding colors, and core value proposition (e.g., 'Executive Virtual Assistant &amp; Operations Specialist').\n    About Me &amp; Background: Summary of your strengths, work philosophy, and remote reliability.\n    Core Services &amp; Packages: 3 distinct service offerings (e.g. Executive Calendar &amp; Inbox Management, Travel Coordination, Project Management &amp; Research).\n    Software &amp; Tool Stack: Visual grid of tools you master (Google Workspace, Notion, Asana, Slack, Canva, Trello, Zoom, ChatGPT).\n    Mock Work Samples: 2 visual deliverables (e.g. Sample Travel Itinerary, Formatted Meeting Minutes, or Executive Weekly Brief).\n    Contact &amp; Call to Action: Professional email, LinkedIn profile link, and booking link (Calendly).\n\n\nSubmission Format\nSubmit a public Canva View Link and the exported multi-page PDF document.\n\nGrading Rubric (100 Points)\n\n    Visual aesthetics, clean typography &amp; layout: 30 pts\n    Clear service offerings &amp; practical tool stack: 30 pts\n    High-quality mock work deliverables: 25 pts\n    Professional contact information &amp; Call to Action: 15 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "348",
+        "title": "Module 3: Lead Generation & Email Outreach",
+        "lessons": [
+          {
+            "id": "349",
+            "title": "Mastering Cold & Warm Emails for Lead Generation",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=TAZByfvEzlI&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk&index=3",
+            "url": "https://expressteck.tech/lesson/mastering-cold-warm-emails-for-lead-generation/",
+            "summary": "Overview\nA step-by-step module from Express Tech Academy’s Virtual Assistant Course on using cold and warm emails to generate leads, land clients, and grow a virtual assistant career.\n\nKey Takeaways\n\n\nCold Outreach: Define target clients, capture attention immediately, use pain-point-focused email templates, and follow up every 7 days.\n\n\nProspecting: Source leads across LinkedIn, Facebook groups, and freelance platforms by targeting business owners, managers, and growing tech companies.\n\n\nWarm Outreach: Re-engage former clients, colleagues, and network connections with free-trial offers and personalized pitch templates.\n\n\nHands-on Demo: Extract lead contact details directly using Google Maps and email lookup tools.",
+            "isCompleted": false
+          },
+          {
+            "id": "874",
+            "title": "Quiz 2: Lead Generation & Cold Outreach for Remote Clients",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-2-lead-generation-cold-outreach-for-remote-clients/",
+            "summary": "Test your knowledge of B2B prospecting, Apollo/LinkedIn sales navigation, cold email deliverability, and follow-up cadences. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "350",
+        "title": "Module 4: Building a Standout VA Portfolio",
+        "lessons": [
+          {
+            "id": "351",
+            "title": "CREATING A VIRTUAL ASSISTANT PORTFOLIO THAT STANDS OUT (FOR BEGINNERS",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=1DAqg0-oA0U&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk&index=4",
+            "url": "https://expressteck.tech/lesson/creating-a-virtual-assistant-portfolio-that-stands-out-for-beginners/",
+            "summary": "Overview\nIn this step-by-step tutorial, beginner Virtual Assistants (VAs) learn how to build a free, professional, multi-page web portfolio using Google Sites—without paying for web hosting or a custom domain. The lesson covers setting up a clean layout, showcasing hands-on work samples, attaching credentials, and creating an interactive contact workflow to impress potential recruiters and land high-paying clients.\n\nKey Takeaways &amp; Structure\n1. Introduction Page (Home)\n\n\nProfessional Headshot &amp; Bio: Introduce yourself with a clear photo and compelling personal statement.\n\n\nCore Competencies: List essential VA skills and software experience (e.g., Google Workspace, CRM platforms like HubSpot, Trello, Asana, Zapier).\n\n\nCall to Action: Insert a custom navigation button directing visitors straight to your work samples.\n\n\nSocial Links: Embed direct links to your professional profiles (LinkedIn, Instagram, Facebook).\n\n\n2. Work Samples Page\n\n\nProof-of-Work: Organize practical exercises and projects to demonstrate hands-on ability, even as a beginner.\n\n\nSchedule Management: Display schedule management capabilities via Google Calendar embeds or screenshots.\n\n\nTravel Planning: Showcase custom travel itineraries created in Canva, linked or embedded via Google Drive PDFs.\n\n\nWorkflow Automation: Embed task boards and automated workflows built with tools like Trello, Asana, and Zapier.\n\n\n3. Certifications &amp; Testimonials Page\n\n\nCredentials: Highlight industry certifications and completed training to build instant credibility.\n\n\nSocial Proof: Feature client reviews, feedback quotes, and proof-of-concept screenshots.\n\n\nResume/CV: Embed or link an up-to-date CV directly from Google Docs.\n\n\n4. Interactive \"Let's Talk\" Page\n\n\nInquiry Streamlining: Set up a dedicated page designed to handle incoming client messages.\n\n\nContact Form: Embed a custom Google Form to capture client needs, project scope, and contact details smoothly.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "352",
+        "title": "Module 5: Professional Packaging & Personal Branding",
+        "lessons": [
+          {
+            "id": "353",
+            "title": "LinkedIn Profile Optimization for Virtual Assistants",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=ScgyYGZvCwo&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk&index=5",
+            "url": "https://expressteck.tech/lesson/linkedin-profile-optimization-for-virtual-assistants/",
+            "summary": "Overview\nLearn how to build and optimize a professional LinkedIn profile tailored for Virtual Assistants. This lesson covers profile setup, custom banner design, headline and summary optimization, networking, and applying for remote job opportunities.\nKey Learning Objectives\n\n\nUnderstand why employers use LinkedIn to hire remote talent.\n\n\nCreate custom profile banners using Canva.\n\n\nOptimize headlines, summaries, technical skills, and service listings.\n\n\nEnable the \"Open to Work\" status for recruiter visibility.\n\n\nNetwork with industry professionals and navigate LinkedIn's job board.\n\n\nLesson Outline\n\n\nIntroduction: LinkedIn's role in securing remote client work.\n\n\nAccount Setup &amp; Visuals: Selecting professional photos and designing a Canva banner.\n\n\nProfile Optimization: Writing impactful headlines, summaries, skills, and services.\n\n\nVisibility &amp; Portfolios: Activating \"Open to Work\" and linking resume/portfolio documents.\n\n\nNetworking &amp; Job Search: Following industry leaders and applying via \"Easy Apply\" and external portals.\n\n\nAction Steps\n\n\nSet up your profile with a headshot and custom Canva banner.\n\n\nComplete your \"About\" section and add at least 5 key technical skills.\n\n\nFollow 10 relevant companies or virtual assistants to build your feed.\n\n\nCopy your clean LinkedIn URL for job applications.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "354",
+        "title": "Module 6: Mastering Job Applications & Cover Letters",
+        "lessons": [
+          {
+            "id": "355",
+            "title": "THE BEST COVER LETTER HACKS TO LAND YOUR DREAM JOB",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=82AsnKYbyDU&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk&index=6",
+            "url": "https://expressteck.tech/lesson/the-best-cover-letter-hacks-to-land-your-dream-job/",
+            "summary": "Lesson Description: In this lesson of the Virtual Assistant Course Academy, you will learn how to leverage AI tools like ChatGPT to craft compelling, professional cover letters that stand out to recruiters. You will explore time-saving hacks for tailoring your applications directly to the roles you want, ensuring your skills align perfectly with employer expectations.\nKey Takeaways:\n\n\nAI-Generated Cover Letters: Learn how to prompt ChatGPT to write a one-page, professional cover letter based on your existing CV.\n\n\nTargeted Applications: Discover how to generate a custom cover letter tailored directly to a specific job description for maximum impact.\n\n\nDocument Formatting: Understand best practices for structuring your application, including combining your CV and cover letter into a single tailored document.\n\n\nSubmission Strategies: Learn the optimal ways to send your application to employers, whether downloading as a unified PDF or sharing via an accessible Google Drive link.",
+            "isCompleted": false
+          },
+          {
+            "id": "880",
+            "title": "Practical Assignment 2: High-Converting Upwork Proposal & Job Application",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-2-high-converting-upwork-proposal-job-application",
+            "summary": "Objective\nDraft a tailored, winning proposal for a real or simulated executive VA job post on Upwork/Fiverr, applying the Problem-Agitate-Proof-CTA framework.\n\nRequired Proposal Structure\n\n    The Hook (First 2 Lines): Address the client's specific bottleneck directly without generic fluff ('Dear Hiring Manager' or 'I am writing to apply...').\n    Understanding &amp; Solution: Demonstrate that you thoroughly read the post by summarizing their core problem and outlining your step-by-step action plan to solve it.\n    Proof of Competence: Link to 1 relevant work sample or past case study demonstrating similar execution.\n    Low-Friction Closing: A simple, easy question inviting a brief chat (e.g. 'Are you looking to onboard someone this week, or are you still finalizing the task list?').\n\n\nSubmission Format\nSubmit a Word/PDF document containing the original Job Posting text, your written proposal draft, and a breakdown of why each paragraph was structured as written.\n\nGrading Rubric (100 Points)\n\n    Immediate scroll-stopping hook (avoiding generic clichés): 30 pts\n    Accurate diagnosis of client pain point &amp; practical solution: 30 pts\n    Relevant work sample integration &amp; proof: 20 pts\n    Low-friction call to action and closing etiquette: 20 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "356",
+        "title": "Module 7: Crafting a Winning Virtual Assistant Resume",
+        "lessons": [
+          {
+            "id": "357",
+            "title": "STEP BY STEP TUTORIAL ON HOW TO CREATE A VIRTUAL ASSISTANT RESUME",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=xBL3xz6EoTo&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk&index=7",
+            "url": "https://expressteck.tech/lesson/step-by-step-tutorial-on-how-to-create-a-virtual-assistant-resume/",
+            "summary": "Lesson Description: In this part of the Virtual Assistant Course by Express Tech Academy, you will learn step-by-step how to create a high-quality resume that can help you land top-paying virtual assistant roles. The lesson covers two effective methods for building your CV: creating one from scratch using Google Docs templates and modifying a proven, winning resume template used by the instructor to secure international jobs.\nKey Takeaways:\n\n\nSetting up via Google Docs: How to navigate Google Workspace to find professional resume templates.\n\n\nStructuring Your Resume: Best practices for formatting, including limiting your resume to two pages, using appropriate location tags, and linking your professional LinkedIn profile.\n\n\nAI-Assisted Skills &amp; Experience: How to use ChatGPT to generate a comprehensive list of technical and soft skills, as well as role responsibilities tailored to a virtual assistant.\n\n\nAdding Certifications: Instructions on securely uploading your course certificates to Google Drive and hyperlinking them directly into your resume for recruiters to view.\n\n\nCustomizing the Professional Summary: Tips on writing a strong professional summary to showcase your value right at the top of the CV.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "358",
+        "title": "Module 8: Project Management & Workflow Automation",
+        "lessons": [
+          {
+            "id": "359",
+            "title": "PROJECT MANAGEMENT FOR A VIRTUAL ASSISTANT",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "http://youtube.com/watch?v=oz5togoXHNk&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk&index=8",
+            "url": "https://expressteck.tech/lesson/project-management-for-a-virtual-assistant/",
+            "summary": "Welcome to day five of the virtual assistant course with Express Tech Academy. Today’s practical class covers how to use project management and automation tools to organize work effectively as a virtual assistant.\n\n\nTrello: Demonstrates creating workspace boards, adding lists (To-Do, Doing, Done), creating cards for subtasks, setting due dates, adding descriptions, assigning members, attaching documents, and sharing board links with clients or team members.\n\n\nAsana: Teaches building projects from scratch, navigating views (List, Board, Timeline, Dashboard), creating sections, assigning tasks to team members via email, adding subtasks, setting dates, and tracking milestones.\n\n\nZapier: Explains workflow automation through triggers and actions. Demonstrates two examples: automatically sending a customized Gmail response when a Google Form is submitted, and linking Google Drive actions to Google Calendar and Asana tasks before testing and publishing the Zap.",
+            "isCompleted": false
+          },
+          {
+            "id": "881",
+            "title": "Quiz 3: Project Management & Workflow Organization (Asana, Trello, ClickUp)",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-3-project-management-workflow-organization-asana-trello-clickup/",
+            "summary": "Test your knowledge of Kanban boards, task dependencies, sprint organization, and automated recurring tasks. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "360",
+        "title": "Module 9: Advanced Virtual Assistance — Data Entry, Internet Research & Meeting Management",
+        "lessons": [
+          {
+            "id": "361",
+            "title": "MASTERING DATA ENTRY, RESEARCH AND MEETING MANAGEMENT AS A VIRTUAL ASSISTANT",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=YEw-VMbkTpo&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk&index=9",
+            "url": "https://expressteck.tech/lesson/mastering-data-entry-research-and-meeting-management-as-a-virtual-assistant/",
+            "summary": "In this comprehensive, practical training session from the Express Academy Virtual Assistant series, learners master three fundamental competencies required to provide executive-level administrative support:\n\n\nInternet Research &amp; Content Synthesis:\n\n\nMaster informational research, in-depth academic inquiry, and data compilation techniques.\n\n\nApply advanced search syntax (operators +, -, *, filetype:pdf) and utilize platforms such as Google Scholar, Statista, and AnswerThePublic.\n\n\nLeverage AI research tools (ChatGPT, Google Gemini) responsibly alongside grammar refinement platforms (Grammarly, QuillBot).\n\n\nDraft concise executive summaries in Google Docs with embedded source hyperlinks and access controls.\n\n\n\n\nData Entry &amp; Visualization:\n\n\nBuild and organize structured datasets within Google Sheets and Excel.\n\n\nFormat tables, insert media cells, and transform raw figures into clean visual charts and graphs.\n\n\nManage document sharing settings to deliver interactive cloud link reports to clients securely.\n\n\n\n\nEnd-to-End Meeting Management:\n\n\nPre-Meeting Preparation: Create professional meeting agendas using Canva templates and coordinate scheduling via Google Calendar.\n\n\nIn-Meeting Execution: Record meeting discussions and automate real-time transcriptions using AI meeting assistants (Fireflies.ai, Otter.ai, Read.ai).\n\n\nPost-Meeting Follow-Up: Draft, format, and distribute clear Meeting Minutes detailing discussion points, key decisions, action items, and assignment deadlines.",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "362",
+        "title": "Module 10: Executive Travel Management & Planning for Virtual Assistants",
+        "lessons": [
+          {
+            "id": "363",
+            "title": "PLAN LIKE A PRO: How To Manage Travel Arrangement As A Virtual Assistant",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=P7f2P0V9z9Q&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk&index=10",
+            "url": "https://expressteck.tech/lesson/plan-like-a-pro-how-to-manage-travel-arrangement-as-a-virtual-assistant/",
+            "summary": "Overview:\nIn this comprehensive hands-on lesson, virtual assistants learn step-by-step how to coordinate end-to-end travel itineraries for executives, clients, or corporate teams. The session covers client intake strategies, official requirement research, presentation design, and leveraging smart tools to streamline travel logistics.\nKey Topics Covered:\n\n\nClient Intake &amp; Preference Gathering: How to set up and send a Google Form or cloud document to collect essential travel parameters, including travel dates, class/seat preferences, budget constraints, accommodation needs, dietary/health guidelines, and travel purpose.\n\n\nEntry, Exit &amp; Visa Research: How to verify valid passport timelines, official entry/exit policies, and visa requirements using verified government (.gov) portals and the IATA Travel Centre.\n\n\nBuilding a Professional Travel Itinerary Deck: Step-by-step walk-through using Canva to design an executive presentation containing:\n\n\nEntry/exit rules and passport requirements\n\n\nFlight details and rental car arrangements\n\n\nVetted accommodations with photos and room descriptions\n\n\nCurated city attractions, dining recommendations, and local social norms\n\n\nItemized budget breakdowns and day-by-day itineraries\n\n\n\n\nInteractive Linking &amp; Navigation: Embedding external flight booking links, Google Maps locations, and business websites directly into presentation slides, alongside internal slide-navigation links and interactive tables of content.\n\n\nAutomating Itineraries with AI Tools: Introduction to AI-powered travel tools (such as TripIt) to automate and simplify complex travel plans.",
+            "isCompleted": false
+          },
+          {
+            "id": "887",
+            "title": "Practical Assignment 3: Executive Multi-City Travel Management & Master Itinerary",
+            "duration": "15m",
+            "type": "assignment",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/?mto-assignment=practical-assignment-3-executive-multi-city-travel-management-master-itinerary",
+            "summary": "Objective\nPlan and assemble a comprehensive, flawless Executive Travel Itinerary for a busy CEO traveling between London and New York for an investor conference.\n\nRequired Itinerary Details\n\n    Flight Options &amp; Time Zone Conversion: Outbound and return flights, airline, flight numbers, terminal, seat preference (aisle), and clear GMT vs EST time zone schedule.\n    Ground Transportation: Coordinated airport transfer (Uber Black / chauffeur service) with pickup window and driver contact details.\n    Hotel Accommodations: 4-star hotel near conference center with booking confirmation, address, check-in/out times, and cancellation policy.\n    Executive Daily Schedule: Chronological hourly schedule for a 3-day trip incorporating meetings, dinners, conference keynote times, and buffer transit windows.\n    Emergency Contingency Sheet: Nearest embassy, travel insurance policy details, and local emergency numbers.\n\n\nSubmission Format\nSubmit an executive-ready formatted PDF Itinerary document (ready to be emailed directly to a C-suite executive).\n\nGrading Rubric (100 Points)\n\n    Accurate logistics &amp; time-zone coordination: 30 pts\n    Thorough ground transport, lodging &amp; meeting details: 30 pts\n    Executive layout, scannability &amp; premium formatting: 25 pts\n    Emergency contingencies &amp; travel buffer planning: 15 pts",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "364",
+        "title": "Module 11: Essential Google Workspace Tools for Virtual Assistants",
+        "lessons": [
+          {
+            "id": "365",
+            "title": "How To Use Google Work Space Tools As a Virtual Assistant",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=jmBx4RsBV7o&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk&index=11",
+            "url": "https://expressteck.tech/lesson/how-to-use-google-work-space-tools-as-a-virtual-assistant/",
+            "summary": "Overview:\nIn this practical, step-by-step video guide, virtual assistants learn how to leverage core Google Workspace applications to streamline client communication, organize administrative workflows, manage calendars, and collaborate on documents in real time.\nKey Topics Covered:\n\n\nGmail Management &amp; Email Organization: How to navigate inbox categories, prioritize important emails using stars and snooze functions, build custom labels (e.g., location or project-specific), and create automated filters to keep client inboxes organized.\n\n\nGoogle Meet Scheduling: Creating meeting links, scheduling calendar video calls for clients across time zones, and sharing join credentials professionally.\n\n\nGoogle Docs Collaboration: Working on live documents, sharing restricted or open link permissions (\"Anyone with the link\"), formatting content, and delivering viewable document links to clients instead of heavy file attachments.\n\n\nGoogle Calendar Management: Scheduling appointments, time-blocking daily task lists, configuring reminder notifications (such as email alerts 30 minutes prior), and embedding Google Meet links directly inside event invites.\n\n\nGoogle Slides for Presentations: Using template decks to prepare executive presentations and slide shows.\n\n\nGoogle Drive Cloud Storage: Structuring folders, uploading files, creating back-ups for essential documents, and managing link-sharing permissions safely.\n\n\nGoogle Sheets Basics: Managing data, maintaining lists, and sharing live spreadsheets as a cloud-native alternative to Microsoft Excel.",
+            "isCompleted": false
+          },
+          {
+            "id": "888",
+            "title": "Quiz 4: Google Workspace & Cloud Productivity Mastery",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-4-google-workspace-cloud-productivity-mastery/",
+            "summary": "Assess your mastery of Gmail filters, Google Calendar appointment scheduling, Google Sheets formulas, and Drive permission management. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "366",
+        "title": "Module 12: Customer Relationship Management (CRM) & Client Support for Virtual Assistants",
+        "lessons": [
+          {
+            "id": "367",
+            "title": "How To Use CRM Tools as a Virtual Assistant",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=9AVkOe6aeHc&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk&index=12",
+            "url": "https://expressteck.tech/lesson/how-to-use-crm-tools-as-a-virtual-assistant/",
+            "summary": "Overview:\nThis lesson guides virtual assistants on mastering Customer Relationship Management (CRM) tools to deliver customer support and maintain organized client databases. Focusing on HubSpot as a primary platform, the lesson covers account setup, logging customer profiles, tracking inquiry histories, and managing team handoffs during support shifts.\nKey Topics Covered:\n\n\nUnderstanding CRM &amp; Customer Support Roles: The fundamentals of managing client interactions, handling customer feedback, and representing a business professionally.\n\n\nHubSpot Platform Navigation: Accessing the HubSpot interface, understanding user permissions, and navigating the CRM contact management dashboard.\n\n\nCreating and Managing Contacts: Entering customer profile data during live calls or support interactions—including names, email addresses, phone numbers, and job titles.\n\n\nLogging Interactions with Notes: Recording detailed logs of customer complaints or requests to enable seamless shift handoffs between team members.\n\n\nTask Scheduling &amp; Reminders: Setting up follow-up tasks, establishing resolution deadlines, and configuring advance email reminders to keep support tickets on track.\n\n\nDirect Communication Tools: Connecting email inboxes to send messages directly from the CRM interface and managing call workflows.\n\n\nDatabase Search &amp; Import Features: Querying existing contact records to prevent duplicate entries, reviewing interaction histories, and importing contact lists from spreadsheets.",
+            "isCompleted": false
+          },
+          {
+            "id": "894",
+            "title": "Quiz 5: Customer Relationship Management (CRM) & Client Support",
+            "duration": "900m",
+            "type": "quiz",
+            "videoUrl": "",
+            "url": "https://expressteck.tech/quiz/quiz-5-customer-relationship-management-crm-client-support/",
+            "summary": "Test your understanding of CRM lead pipelines, support ticketing SLAs, de-escalation scripts, and contact hygiene. Passing score: 80% (4/5 correct).",
+            "isCompleted": false
+          }
+        ]
+      },
+      {
+        "id": "344",
+        "title": "Module 13: Job Acquisition, Profile Optimization & Remote Placement Strategies",
+        "lessons": [
+          {
+            "id": "345",
+            "title": "How To Land a Job As a Virtual Assistant (IN ONE WEEK)",
+            "duration": "15m",
+            "type": "video",
+            "videoUrl": "https://www.youtube.com/watch?v=FJFUMLHSoek&list=PLmwrepp6JTxcLwBwI7cHoGK25YCZvn4lk",
+            "url": "https://expressteck.tech/lesson/how-to-land-a-job-as-a-virtual-assistant-in-one-week/",
+            "summary": "Overview\nWelcome to the final phase of the Virtual Assistant Master Course! In this lesson, you will learn how to transition from learning skills to landing your first paid remote job. Whether you want to earn in USD, GBP, or other strong currencies, this session walks you step-by-step through setting up your application materials, optimizing your online presence, and navigating 30 top global hiring platforms.\n\nWhat You Will Learn\n\n\nEssential Application Documents:\n\n\nResume/CV: How to structure a professional virtual assistant resume.\n\n\nCover Letter: Proven strategies to write persuasive cover letters that stand out to employers.\n\n\nPortfolio: How to showcase past work and assignments using Canva and Google Sites.\n\n\nContact Setup: Establishing clean, professional communication channels.\n\n\n\n\nProfile Optimization Strategy:\n\n\nKey steps to setting up your bio, cover photo, skills, and portfolio across job boards so recruiters take you seriously the moment you apply.\n\n\n\n\nNavigating Top Remote Job Platforms:\n\n\nPractical advice on using platforms such as LinkedIn, Upwork, Fiverr, ZipRecruiter, Indeed, and Freelancer.\n\n\n\n\nBonus Strategy — Social Media Client Acquisition:\n\n\nHow to leverage Facebook and LinkedIn groups to find direct client opportunities without competing on traditional freelance boards.\n\n\n\n\n\nKey Takeaways &amp; Action Plan\n\n\nApply Consistently: Submit 2–4 targeted applications daily to maximize callback rates.\n\n\nStay Persistent: Finding remote work takes consistent effort and resilience.\n\n\nOptimize Before Applying: Never hit \"Apply\" until your profile, resume, and portfolio are completely filled out and refined.",
+            "isCompleted": false
+          }
+        ]
+      }
+    ]
+  }
+];

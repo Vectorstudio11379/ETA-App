@@ -40,9 +40,16 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course, horizontal = tru
       >
         <View style={styles.imageContainer}>
           <Image source={{ uri: course.thumbnail }} style={styles.horizontalImage} />
-          <View style={[styles.tagBadge, { backgroundColor: colors.primary }]}>
-            <Text style={styles.tagBadgeText}>{course.category}</Text>
+          <View style={[styles.tagBadge, { backgroundColor: course.isBundle ? colors.accent : colors.accentLight, borderColor: colors.accentBorder, borderWidth: 1 }]}>
+            <Text style={[styles.tagBadgeText, { color: course.isBundle ? '#FFF' : colors.accent }]}>
+              {course.isBundle ? (course.bundleBadge || 'Special Bundle') : course.category}
+            </Text>
           </View>
+          {course.isBundle && course.packages && course.packages.length > 0 && (
+            <View style={styles.packageCountBadge}>
+              <Text style={styles.packageCountText}>{course.packages.length} In-1 Bundle</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.horizontalContent}>
@@ -78,7 +85,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course, horizontal = tru
             <TouchableOpacity
               style={[
                 styles.cartBtn,
-                { backgroundColor: isInCart ? '#10B981' : colors.primary },
+                { backgroundColor: isInCart ? '#10B981' : colors.accent },
               ]}
               onPress={handleCartPress}
             >
@@ -113,7 +120,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course, horizontal = tru
           <TouchableOpacity
             style={[
               styles.smallCartBtn,
-              { backgroundColor: isInCart ? '#10B981' : colors.primary },
+              { backgroundColor: isInCart ? '#10B981' : colors.accent },
             ]}
             onPress={handleCartPress}
           >
@@ -187,6 +194,22 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  packageCountBadge: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    backgroundColor: 'rgba(6, 9, 18, 0.85)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(249, 115, 22, 0.3)',
+  },
+  packageCountText: {
+    color: '#f97316',
+    fontSize: 10,
+    fontWeight: '700',
   },
   horizontalContent: {
     padding: 12,

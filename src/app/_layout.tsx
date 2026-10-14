@@ -3,7 +3,10 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AppProvider } from '../context/AppContext';
 import { Toast } from '../components/Toast';
+import { LogBox } from 'react-native';
 import { Colors } from '../constants/theme';
+
+LogBox.ignoreAllLogs(true);
 
 export default function RootLayout() {
   return (
@@ -18,6 +21,7 @@ export default function RootLayout() {
           animation: 'slide_from_right',
         }}
       >
+        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="auth/splash" options={{ headerShown: false }} />
         <Stack.Screen name="auth/onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="auth/signup" options={{ headerShown: false }} />

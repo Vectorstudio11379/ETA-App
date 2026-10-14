@@ -5,15 +5,15 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  RefreshControl,
 } from 'react-native';
 import { Header } from '../../components/Header';
 import { SearchBar } from '../../components/SearchBar';
 import { CourseCard } from '../../components/CourseCard';
-import { MOCK_CATEGORIES, MOCK_BUNDLES } from '../../data/mockData';
 import { useApp } from '../../context/AppContext';
 
 export default function ExploreScreen() {
-  const { courses, colors } = useApp();
+  const { courses, bundles, categories, colors, isRefreshing, refreshLiveData } = useApp();
   const [activeTab, setActiveTab] = useState<'courses' | 'bundles'>('courses');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -27,7 +27,7 @@ export default function ExploreScreen() {
     return matchesCategory && matchesSearch;
   });
 
-  const filteredBundles = MOCK_BUNDLES.filter((bundle) => {
+  const filteredBundles = bundles.filter((bundle) => {
     return (
       bundle.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       bundle.instructor.toLowerCase().includes(searchQuery.toLowerCase())
@@ -41,7 +41,7 @@ export default function ExploreScreen() {
       {/* Top Segment Switcher */}
       <View style={[styles.segmentContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <TouchableOpacity
-          style={[styles.segmentBtn, activeTab === 'courses' && { backgroundColor: colors.primary }]}
+          style={[styles.segmentBtn, activeTab === 'courses' && { backgroundColor: colors.accent }]}
           onPress={() => setActiveTab('courses')}
         >
           <Text style={[styles.segmentText, { color: activeTab === 'courses' ? '#FFF' : colors.textSecondary }]}>
@@ -50,7 +50,7 @@ export default function ExploreScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.segmentBtn, activeTab === 'bundles' && { backgroundColor: colors.primary }]}
+          style={[styles.segmentBtn, activeTab === 'bundles' && { backgroundColor: colors.accent }]}
           onPress={() => setActiveTab('bundles')}
         >
           <Text style={[styles.segmentText, { color: activeTab === 'bundles' ? '#FFF' : colors.textSecondary }]}>
@@ -59,7 +59,18 @@ export default function ExploreScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={refreshLiveData}
+            colors={[colors.primary, colors.secondary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -79,16 +90,16 @@ export default function ExploreScreen() {
                 style={[
                   styles.catBadge,
                   { backgroundColor: colors.surface, borderColor: colors.border },
-                  selectedCategory === 'All' && { backgroundColor: colors.secondary, borderColor: colors.secondary },
+                  selectedCategory === 'All' && { backgroundColor: colors.accent, borderColor: colors.accent },
                 ]}
                 onPress={() => setSelectedCategory('All')}
               >
-                <Text style={[styles.catText, { color: selectedCategory === 'All' ? '#000' : colors.text }]}>
+                <Text style={[styles.catText, { color: selectedCategory === 'All' ? '#FFF' : colors.text }]}>
                   All
                 </Text>
               </TouchableOpacity>
 
-              {MOCK_CATEGORIES.map((cat) => {
+              {categories.map((cat) => {
                 const isSelected = selectedCategory === cat.name;
                 return (
                   <TouchableOpacity
@@ -96,11 +107,11 @@ export default function ExploreScreen() {
                     style={[
                       styles.catBadge,
                       { backgroundColor: colors.surface, borderColor: colors.border },
-                      isSelected && { backgroundColor: colors.secondary, borderColor: colors.secondary },
+                      isSelected && { backgroundColor: colors.accent, borderColor: colors.accent },
                     ]}
                     onPress={() => setSelectedCategory(isSelected ? 'All' : cat.name)}
                   >
-                    <Text style={[styles.catText, { color: isSelected ? '#000' : colors.text }]}>
+                    <Text style={[styles.catText, { color: isSelected ? '#FFF' : colors.text }]}>
                       {cat.name}
                     </Text>
                   </TouchableOpacity>

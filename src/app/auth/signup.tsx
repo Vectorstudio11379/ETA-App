@@ -77,6 +77,13 @@ export default function SignUpScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Text style={[styles.backText, { color: colors.secondary }]}>‹ Back</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.topSkipBtn, { backgroundColor: colors.accentLight, borderColor: colors.accentBorder }]}
+          onPress={() => router.replace('/(tabs)')}
+        >
+          <Text style={[styles.topSkipText, { color: colors.accent }]}>Skip to Courses</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -169,12 +176,20 @@ export default function SignUpScreen() {
 
         {/* Create Account CTA */}
         <TouchableOpacity
-          style={[styles.submitBtn, { backgroundColor: colors.primary }]}
+          style={[styles.submitBtn, { backgroundColor: colors.accent }]}
           activeOpacity={0.88}
           onPress={handleNextStep}
         >
           <Text style={styles.submitText}>Continue</Text>
         </TouchableOpacity>
+
+        {/* Switch to Login */}
+        <View style={styles.footerRow}>
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>Already have an account? </Text>
+          <TouchableOpacity onPress={() => router.push('/auth/login')}>
+            <Text style={[styles.signupText, { color: colors.accent }]}>Log In</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Social Sign-in Options */}
         <Text style={[styles.otherOptionText, { color: colors.textSecondary }]}>Sign in other option</Text>
@@ -197,8 +212,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 12,
+  },
+  topSkipBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  topSkipText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
   backBtn: {
     paddingVertical: 6,
@@ -257,11 +285,24 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     marginTop: 24,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   submitText: {
     color: '#FFF',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  footerText: {
+    fontSize: 13,
+  },
+  signupText: {
+    fontSize: 13,
     fontWeight: 'bold',
   },
   otherOptionText: {

@@ -1,6 +1,6 @@
 import { API_CONFIG } from '../config/apiConfig';
 import { apiClient, ApiResponse } from './apiClient';
-import { NotificationItem, MOCK_NOTIFICATIONS } from '../data/mockData';
+import { NotificationItem } from '../data/mockData';
 import { storageService } from './storage';
 
 export const userDataService = {
@@ -23,7 +23,7 @@ export const userDataService = {
       }
     }
     const stored = await storageService.getItem(storageService.STORAGE_KEYS.CART_IDS);
-    return stored ? JSON.parse(stored) : ['c6'];
+    return stored ? JSON.parse(stored) : [];
   },
 
   /**
@@ -45,7 +45,7 @@ export const userDataService = {
       }
     }
     const stored = await storageService.getItem(storageService.STORAGE_KEYS.WISHLIST_IDS);
-    return stored ? JSON.parse(stored) : ['c8'];
+    return stored ? JSON.parse(stored) : [];
   },
 
   /**
@@ -58,6 +58,6 @@ export const userDataService = {
         return { success: true, data: res.data };
       }
     }
-    return { success: true, data: MOCK_NOTIFICATIONS };
+    return { success: true, data: [] };
   },
 };

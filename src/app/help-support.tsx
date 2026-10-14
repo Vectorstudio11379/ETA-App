@@ -18,16 +18,18 @@ import { useApp } from '../context/AppContext';
 export default function HelpSupportScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors } = useApp();
+  const { colors, siteInfo } = useApp();
 
   const statusBarPadding = Platform.OS === 'android'
     ? Math.max(insets.top, StatusBar.currentHeight || 24) + 6
     : Math.max(insets.top, 12);
 
-  const faqs = [
-    { q: 'How do I download course certificates?', a: 'Once you reach 100% completion on all video lessons in a course, your certificate will automatically generate under My Courses → Certificate tab.' },
-    { q: 'Can I access courses offline?', a: 'Yes! Tap the download icon next to any lesson video to save it for offline playback inside the ETA app.' },
-    { q: 'What payment options are supported?', a: 'We accept local debit cards, bank transfers (Paystack / Flutterwave), and Google Pay.' },
+  const contactEmail = siteInfo?.contactEmail || 'support@expressteck.tech';
+  const faqs = (siteInfo?.faqs && siteInfo.faqs.length > 0) ? siteInfo.faqs : [
+    { q: 'After payment is confirmed, how do I begin?', a: 'Sign in to your account and open My Learning to begin immediately.' },
+    { q: 'What format are the courses?', a: 'Courses are self-paced video classes. Any live-session information is shared inside the relevant course.' },
+    { q: 'When does my certificate become available?', a: 'After completing all required lessons and activities, your certificate becomes available from your learning dashboard.' },
+    { q: 'How do Course Bundles work?', a: 'Course Bundles combine related masterclasses at a huge discount (up to 57% off) with immediate access to all courses.' },
   ];
 
   return (
@@ -41,12 +43,20 @@ export default function HelpSupportScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Support SLA Banner */}
+        <View style={[styles.slaCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.slaTitle, { color: colors.primary }]}>Dedicated Student Support</Text>
+          <Text style={[styles.slaSub, { color: colors.textSecondary }]}>
+            Average Response Time: {'< 24 Hours'} • 1-on-1 Academic & Technical Mentorship
+          </Text>
+        </View>
+
         {/* Support Channels */}
         <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Contact Support</Text>
 
         <TouchableOpacity
           style={[styles.contactCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => Linking.openURL('https://wa.me/2348000000000?text=Hello%20AQskill%20Support')}
+          onPress={() => Linking.openURL('https://wa.me/2348000000000?text=Hello%20Express%20Tech%20Academy%20Support')}
         >
           <View style={[styles.iconBox, { backgroundColor: 'rgba(37, 211, 102, 0.12)' }]}>
             <HugeiconsIcon icon={WhatsappIcon} size={22} color="#25D366" />
@@ -59,14 +69,14 @@ export default function HelpSupportScreen() {
 
         <TouchableOpacity
           style={[styles.contactCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => Linking.openURL('mailto:support@aqskill.com')}
+          onPress={() => Linking.openURL(`mailto:${contactEmail}`)}
         >
           <View style={[styles.iconBox, { backgroundColor: colors.surfaceLight }]}>
             <HugeiconsIcon icon={Mail01Icon} size={22} color={colors.primary} />
           </View>
           <View style={styles.contactTextCol}>
             <Text style={[styles.contactName, { color: colors.text }]}>Email Support</Text>
-            <Text style={[styles.contactSub, { color: colors.textSecondary }]}>support@aqskill.com</Text>
+            <Text style={[styles.contactSub, { color: colors.textSecondary }]}>{contactEmail}</Text>
           </View>
         </TouchableOpacity>
 
@@ -110,6 +120,21 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 40,
     gap: 10,
+  },
+  slaCard: {
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 6,
+  },
+  slaTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  slaSub: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   sectionTitle: {
     fontSize: 13,

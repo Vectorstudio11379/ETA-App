@@ -12,20 +12,20 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SearchBar } from '../../components/SearchBar';
-import { MOCK_INSTRUCTORS, Instructor } from '../../data/mockData';
+import { Instructor } from '../../data/mockData';
 import { useApp } from '../../context/AppContext';
 
 export default function InstructorsListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors } = useApp();
+  const { colors, instructors } = useApp();
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const statusBarPadding = Platform.OS === 'android'
     ? Math.max(insets.top, StatusBar.currentHeight || 24) + 6
     : Math.max(insets.top, 12);
 
-  const filteredInstructors = MOCK_INSTRUCTORS.filter(
+  const filteredInstructors = (instructors || []).filter(
     (inst) =>
       inst.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       inst.role.toLowerCase().includes(searchQuery.toLowerCase())
@@ -36,7 +36,7 @@ export default function InstructorsListScreen() {
       {/* Header with Safe Area Padding */}
       <View style={[styles.headerRow, { paddingTop: statusBarPadding }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={[styles.backText, { color: colors.secondary }]}>‹ Back</Text>
+          <Text style={[styles.backText, { color: colors.accent }]}>‹ Back</Text>
         </TouchableOpacity>
       </View>
 
@@ -64,7 +64,7 @@ export default function InstructorsListScreen() {
 
               <View style={styles.infoCol}>
                 <Text style={[styles.name, { color: colors.text }]}>{inst.name}</Text>
-                <Text style={[styles.role, { color: colors.textSecondary }]}>{inst.role}</Text>
+                <Text style={[styles.role, { color: colors.accent }]}>{inst.role}</Text>
                 <Text style={[styles.joinedText, { color: colors.textMuted }]}>
                   Joined Since {inst.joinedYear}
                 </Text>

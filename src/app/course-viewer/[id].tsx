@@ -6,29 +6,48 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Play, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { CertificatePreview } from '../../components/CertificatePreview';
-import { MOCK_MODULES } from '../../data/mockData';
 import { useApp } from '../../context/AppContext';
+
+import { INITIAL_COURSES } from '../../data/initialCourses';
 
 export default function CourseViewerScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { courses, colors } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'content' | 'certificate'>('content');
-  const [expandedModules, setExpandedModules] = useState<string[]>(['m1', 'm2']);
+  const course =
+    courses.find((c) => String(c.id) === String(id) || String(c.product_id) === String(id) || c.slug === id) ||
+    INITIAL_COURSES.find((c) => String(c.id) === String(id) || String(c.product_id) === String(id) || c.slug === id);
 
-  const course = courses.find((c) => c.id === id) || courses[5];
-  const progressPercent = course.progress || 0;
+  const courseModules = course?.modules || [];
+  const [activeTab, setActiveTab] = useState<'content' | 'certificate'>('content');
+  const [expandedModules, setExpandedModules] = useState<string[]>(courseModules[0]?.id ? [courseModules[0].id] : []);
+  const progressPercent = course?.progress || 0;
 
   const toggleModule = (moduleId: string) => {
     setExpandedModules((prev) =>
       prev.includes(moduleId) ? prev.filter((m) => m !== moduleId) : [...prev, moduleId]
     );
   };
+
+  const firstLessonId = courseModules[0]?.lessons?.[0]?.id || '683';
+
+  if (!course) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
+        <Text style={{ color: colors.textSecondary, marginTop: 16, fontSize: 15 }}>Loading course content...</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+          <Text style={{ color: colors.accent, fontWeight: '600' }}>‹ Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -66,7 +85,7 @@ export default function CourseViewerScreen() {
               onPress={() =>
                 router.push({
                   pathname: '/player/[lessonId]',
-                  params: { lessonId: 'l1' },
+                  params: { lessonId: firstLessonId, courseId: course.id },
                 })
               }
             >
@@ -104,7 +123,7 @@ export default function CourseViewerScreen() {
 
         {activeTab === 'content' ? (
           <View style={styles.modulesContainer}>
-            {MOCK_MODULES.map((module) => {
+            {courseModules.map((module) => {
               const isExpanded = expandedModules.includes(module.id);
               return (
                 <View key={module.id} style={[styles.moduleCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -135,7 +154,7 @@ export default function CourseViewerScreen() {
                           onPress={() =>
                             router.push({
                               pathname: '/player/[lessonId]',
-                              params: { lessonId: lesson.id },
+                              params: { lessonId: lesson.id, courseId: course.id },
                             })
                           }
                         >

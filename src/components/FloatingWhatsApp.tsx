@@ -5,7 +5,7 @@ import { WhatsappIcon } from '@hugeicons/core-free-icons';
 
 export const FloatingWhatsApp: React.FC = () => {
   const handlePress = () => {
-    Linking.openURL('https://wa.me/2348000000000?text=Hello%20AQskill%20Support');
+    Linking.openURL('https://wa.me/2348000000000?text=Hello%20Express%20Tech%20Academy%20Support');
   };
 
   return (

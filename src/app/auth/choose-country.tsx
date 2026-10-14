@@ -9,9 +9,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { Search01Icon, Tick01Icon } from '@hugeicons/core-free-icons';
-import { MOCK_COUNTRIES, CountryItem } from '../../data/mockData';
+import { SUPPORTED_COUNTRIES, CountryItem } from '../../data/mockData';
 import { useApp } from '../../context/AppContext';
 
 export default function ChooseCountryScreen() {
@@ -23,13 +24,14 @@ export default function ChooseCountryScreen() {
     password?: string;
   }>();
 
+  const insets = useSafeAreaInsets();
   const { colors, signup } = useApp();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCountry, setSelectedCountry] = useState<string>('NG');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const filteredCountries = MOCK_COUNTRIES.filter(
+  const filteredCountries = SUPPORTED_COUNTRIES.filter(
     (c) =>
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.dialCode.includes(searchQuery)
@@ -39,7 +41,7 @@ export default function ChooseCountryScreen() {
     setIsLoading(true);
     setErrorMsg(null);
 
-    const countryObj = MOCK_COUNTRIES.find((c) => c.code === selectedCountry);
+    const countryObj = SUPPORTED_COUNTRIES.find((c) => c.code === selectedCountry);
     const countryName = countryObj ? countryObj.name : 'Nigeria';
 
     try {
@@ -134,7 +136,16 @@ export default function ChooseCountryScreen() {
       />
 
       {/* Sticky Bottom Proceed Button */}
-      <View style={[styles.bottomBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+      <View
+        style={[
+          styles.bottomBar,
+          {
+            backgroundColor: colors.background,
+            borderTopColor: colors.border,
+            paddingBottom: Math.max(insets.bottom, 16) + 16,
+          },
+        ]}
+      >
         <TouchableOpacity
           style={[styles.proceedBtn, { backgroundColor: colors.primary, opacity: isLoading ? 0.7 : 1 }]}
           activeOpacity={0.88}

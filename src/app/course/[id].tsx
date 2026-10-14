@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Play,
   Share2,
@@ -18,27 +20,47 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  HelpCircle,
+  FileText,
 } from 'lucide-react-native';
 import { CertificatePreview } from '../../components/CertificatePreview';
-import { MOCK_MODULES } from '../../data/mockData';
 import { useApp } from '../../context/AppContext';
+
+import { INITIAL_COURSES } from '../../data/initialCourses';
 
 export default function CourseDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { courses, wishlistIds, toggleWishlist, addToCart, formatPrice, colors } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'info' | 'content' | 'review'>('info');
-  const [expandedModules, setExpandedModules] = useState<string[]>(['m1']);
+  const course =
+    courses.find((c) => String(c.id) === String(id) || String(c.product_id) === String(id) || c.slug === id) ||
+    INITIAL_COURSES.find((c) => String(c.id) === String(id) || String(c.product_id) === String(id) || c.slug === id);
 
-  const course = courses.find((c) => c.id === id) || courses[1];
-  const isWishlisted = wishlistIds.includes(course.id);
+  const courseModules = course?.modules || [];
+
+  const [activeTab, setActiveTab] = useState<'info' | 'content' | 'review'>('info');
+  const [expandedModules, setExpandedModules] = useState<string[]>(courseModules[0]?.id ? [courseModules[0].id] : []);
+  const isWishlisted = wishlistIds.includes(course?.id || '');
 
   const toggleModule = (moduleId: string) => {
     setExpandedModules((prev) =>
       prev.includes(moduleId) ? prev.filter((m) => m !== moduleId) : [...prev, moduleId]
     );
   };
+
+  if (!course) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
+        <Text style={{ color: colors.textSecondary, marginTop: 16, fontSize: 15 }}>Loading course details...</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+          <Text style={{ color: colors.accent, fontWeight: '600' }}>‹ Back to Courses</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -196,28 +218,33 @@ export default function CourseDetailScreen() {
             {/* What will you learn */}
             <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>What will you learn in this course?</Text>
-              <View style={styles.learnRow}>
-                <CheckCircle2 size={18} color={colors.success} />
-                <Text style={[styles.learnText, { color: colors.textSecondary }]}>
-                  Build and interpret comprehensive financial models, enhancing practical Excel skills.
-                </Text>
-              </View>
-              <View style={styles.learnRow}>
-                <CheckCircle2 size={18} color={colors.success} />
-                <Text style={[styles.learnText, { color: colors.textSecondary }]}>
-                  Apply theoretical knowledge to real-world financial data through case study analysis.
-                </Text>
-              </View>
+              {(course.outcomes && course.outcomes.length > 0 ? course.outcomes : [
+                'Master end-to-end practical workflows and modern technical architecture.',
+                'Build and deploy production-ready projects with zero guesswork.',
+                'Acquire high-demand capabilities matching international employer standards.'
+              ]).map((outcome, idx) => (
+                <View key={idx} style={styles.learnRow}>
+                  <CheckCircle2 size={18} color={colors.success} />
+                  <Text style={[styles.learnText, { color: colors.textSecondary }]}>{outcome}</Text>
+                </View>
+              ))}
             </View>
 
             {/* Requirements & FAQs */}
             <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>What are the course requirements?</Text>
-              <Text style={[styles.bodyText, { color: colors.textSecondary }]}>Access to a laptop.</Text>
+              {(course.requirements && course.requirements.length > 0 ? course.requirements : [
+                'Access to a computer, laptop, or smartphone with internet connection.',
+                'Willingness to apply concepts into hands-on practical exercises.'
+              ]).map((req, idx) => (
+                <Text key={idx} style={[styles.bodyText, { color: colors.textSecondary, marginBottom: 4 }]}>
+                  • {req}
+                </Text>
+              ))}
 
               <Text style={[styles.cardHeaderTitle, { color: colors.text, marginTop: 14 }]}>Will the certificate be issued?</Text>
               <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
-                Yes, a certificate of completion will be issued at the end of the course at No charge.
+                Yes, your official Express Tech Academy Certificate is issued at no extra charge upon completing all modules, quizzes, and practical assignments.
               </Text>
             </View>
 
@@ -234,7 +261,7 @@ export default function CourseDetailScreen() {
           <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border, marginHorizontal: 16 }]}>
             <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>Course Content</Text>
 
-            {MOCK_MODULES.map((module) => {
+            {courseModules.map((module) => {
               const isExpanded = expandedModules.includes(module.id);
               return (
                 <View key={module.id} style={[styles.moduleBox, { backgroundColor: colors.surfaceLight }]}>
@@ -245,7 +272,7 @@ export default function CourseDetailScreen() {
                     <View style={styles.moduleHeaderLeft}>
                       <Text style={[styles.moduleTitle, { color: colors.text }]}>{module.title}</Text>
                       <Text style={[styles.moduleSub, { color: colors.textSecondary }]}>
-                        {module.lecturesCount} Lectures | {module.durationMinutes} Minutes
+                        {module.lecturesCount} Items | {module.durationMinutes} Minutes
                       </Text>
                     </View>
 
@@ -258,22 +285,45 @@ export default function CourseDetailScreen() {
 
                   {isExpanded && module.lessons && (
                     <View style={[styles.lessonsContainer, { borderTopColor: colors.border }]}>
-                      {module.lessons.map((lesson) => (
-                        <TouchableOpacity
-                          key={lesson.id}
-                          style={styles.lessonItem}
-                          onPress={() =>
-                            router.push({
-                              pathname: '/player/[lessonId]',
-                              params: { lessonId: lesson.id },
-                            })
-                          }
-                        >
-                          <Play size={14} color={colors.primary} />
-                          <Text style={[styles.lessonTitle, { color: colors.text }]}>{lesson.title}</Text>
-                          <Text style={[styles.lessonDuration, { color: colors.textMuted }]}>{lesson.duration}</Text>
-                        </TouchableOpacity>
-                      ))}
+                      {module.lessons.map((lesson) => {
+                        const isQuiz = lesson.type === 'quiz';
+                        const isAssignment = lesson.type === 'assignment';
+
+                        return (
+                          <TouchableOpacity
+                            key={lesson.id}
+                            style={styles.lessonItem}
+                            onPress={() =>
+                              router.push({
+                                pathname: '/player/[lessonId]',
+                                params: { lessonId: lesson.id },
+                              })
+                            }
+                          >
+                            {isQuiz ? (
+                              <HelpCircle size={15} color="#f97316" />
+                            ) : isAssignment ? (
+                              <FileText size={15} color="#3b82f6" />
+                            ) : (
+                              <Play size={14} color={colors.primary} />
+                            )}
+                            <Text style={[styles.lessonTitle, { color: colors.text }]} numberOfLines={1}>
+                              {lesson.title}
+                            </Text>
+                            {isQuiz && (
+                              <View style={[styles.typeBadge, { backgroundColor: 'rgba(249, 115, 22, 0.15)' }]}>
+                                <Text style={[styles.typeBadgeText, { color: '#f97316' }]}>Quiz</Text>
+                              </View>
+                            )}
+                            {isAssignment && (
+                              <View style={[styles.typeBadge, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
+                                <Text style={[styles.typeBadgeText, { color: '#3b82f6' }]}>Lab</Text>
+                              </View>
+                            )}
+                            <Text style={[styles.lessonDuration, { color: colors.textMuted }]}>{lesson.duration}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
                     </View>
                   )}
                 </View>
@@ -284,16 +334,25 @@ export default function CourseDetailScreen() {
       </ScrollView>
 
       {/* Sticky Bottom Bar */}
-      <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+      <View
+        style={[
+          styles.bottomBar,
+          {
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+            paddingBottom: Math.max(insets.bottom, 14) + 16,
+          },
+        ]}
+      >
         <View>
-          <Text style={[styles.bottomPrice, { color: colors.primary }]}>{formatPrice(course.price)}</Text>
+          <Text style={[styles.bottomPrice, { color: colors.accent }]}>{formatPrice(course.price)}</Text>
           <Text style={[styles.bottomDiscount, { color: colors.textSecondary }]}>
             {course.discount}% Disc. {formatPrice(course.originalPrice)}
           </Text>
         </View>
 
         <TouchableOpacity
-          style={[styles.ctaBtn, { backgroundColor: colors.primary }]}
+          style={[styles.ctaBtn, { backgroundColor: colors.accent }]}
           onPress={() => {
             addToCart(course.id);
             router.push('/cart');
@@ -500,6 +559,15 @@ const styles = StyleSheet.create({
   lessonTitle: {
     flex: 1,
     fontSize: 12,
+  },
+  typeBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  typeBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   lessonDuration: {
     fontSize: 11,

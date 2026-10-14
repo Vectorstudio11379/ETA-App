@@ -8,35 +8,49 @@ import {
   StyleSheet,
   Platform,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CourseCard } from '../../components/CourseCard';
-import { MOCK_INSTRUCTORS, MOCK_COURSES } from '../../data/mockData';
 import { useApp } from '../../context/AppContext';
 
 export default function InstructorDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors } = useApp();
+  const { courses, instructors, colors } = useApp();
   const [activeTab, setActiveTab] = useState<'about' | 'courses'>('about');
 
-  const instructor = MOCK_INSTRUCTORS.find((inst) => inst.id === id) || MOCK_INSTRUCTORS[0];
-  const instructorCourses = MOCK_COURSES.filter(
-    (c) => c.instructor.toLowerCase().includes(instructor.name.toLowerCase()) || c.instructor.includes('Awesome')
-  );
+  const instructor = instructors.find((inst) => inst.id === id) || instructors[0];
+  const instructorCourses = instructor ? courses.filter(
+    (c) => c.instructor.toLowerCase().includes(instructor.name.toLowerCase()) ||
+           instructor.name.includes('Express Tech') ||
+           courses.length <= 5
+  ) : [];
 
   const statusBarPadding = Platform.OS === 'android'
     ? Math.max(insets.top, StatusBar.currentHeight || 24) + 6
     : Math.max(insets.top, 12);
+
+  if (!instructor) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+        <ActivityIndicator size="large" color={colors.accent} />
+        <Text style={{ color: colors.textSecondary, marginTop: 16, fontSize: 15 }}>Loading instructor details...</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+          <Text style={{ color: colors.accent, fontWeight: '600' }}>‹ Back to Instructors</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.headerRow, { paddingTop: statusBarPadding }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={[styles.backText, { color: colors.secondary }]}>‹ Back</Text>
+          <Text style={[styles.backText, { color: colors.accent }]}>‹ Back</Text>
         </TouchableOpacity>
       </View>
 
@@ -46,7 +60,7 @@ export default function InstructorDetailScreen() {
           <Image source={{ uri: instructor.avatar }} style={styles.avatar} />
           <View style={styles.profileTextCol}>
             <Text style={[styles.name, { color: colors.text }]}>{instructor.name}</Text>
-            <Text style={[styles.role, { color: colors.textSecondary }]}>{instructor.role}</Text>
+            <Text style={[styles.role, { color: colors.accent }]}>{instructor.role}</Text>
             <Text style={[styles.joinedText, { color: colors.textMuted }]}>
               Joined Since {instructor.joinedYear}
             </Text>
@@ -56,7 +70,7 @@ export default function InstructorDetailScreen() {
         {/* Segmented Switcher Tabs */}
         <View style={[styles.segmentContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <TouchableOpacity
-            style={[styles.segmentBtn, activeTab === 'about' && { backgroundColor: colors.primary }]}
+            style={[styles.segmentBtn, activeTab === 'about' && { backgroundColor: colors.accent }]}
             onPress={() => setActiveTab('about')}
           >
             <Text style={[styles.segmentText, { color: activeTab === 'about' ? '#FFF' : colors.textSecondary }]}>
@@ -65,7 +79,7 @@ export default function InstructorDetailScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.segmentBtn, activeTab === 'courses' && { backgroundColor: colors.primary }]}
+            style={[styles.segmentBtn, activeTab === 'courses' && { backgroundColor: colors.accent }]}
             onPress={() => setActiveTab('courses')}
           >
             <Text style={[styles.segmentText, { color: activeTab === 'courses' ? '#FFF' : colors.textSecondary }]}>

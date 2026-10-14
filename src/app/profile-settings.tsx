@@ -22,7 +22,7 @@ export default function ProfileSettingsScreen() {
   const { userProfile, colors } = useApp();
 
   const [name, setName] = useState<string>(userProfile.name);
-  const [email, setEmail] = useState<string>('elijah.kola@aqskill.com');
+  const [email, setEmail] = useState<string>(userProfile.email || 'student@expressteck.tech');
   const [phone, setPhone] = useState<string>('+234 810 000 1122');
   const [country, setCountry] = useState<string>(userProfile.country);
 

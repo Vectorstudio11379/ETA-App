@@ -35,32 +35,6 @@ export const authService = {
       });
     }
 
-    // 3. Fallback to local session if server route is missing (rest_no_route 404) or offline
-    if (!res.success && (res.statusCode === 404 || API_CONFIG.ENABLE_MOCK_FALLBACK)) {
-      console.log('[AuthService] Using local authentication session.');
-      
-      const mockProfile: UserProfile = {
-        name: usernameOrEmail.includes('@') ? usernameOrEmail.split('@')[0] : usernameOrEmail || 'Elijah Kola',
-        greeting: 'What would you like to learn today?',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop',
-        joinedYear: new Date().getFullYear().toString(),
-        country: 'Nigeria',
-        email: usernameOrEmail.includes('@') ? usernameOrEmail : undefined,
-      };
-
-      const mockToken = `mock_wp_token_${Date.now()}`;
-      await storageService.setUserToken(mockToken);
-      await storageService.setItem(storageService.STORAGE_KEYS.USER_PROFILE, JSON.stringify(mockProfile));
-
-      return {
-        success: true,
-        data: {
-          token: mockToken,
-          user: mockProfile,
-        },
-      };
-    }
-
     if (!res.success || (!res.data?.token && !res.data?.user)) {
       return {
         success: false,
@@ -105,11 +79,6 @@ export const authService = {
         country: payload.country,
       },
     });
-
-    if (!res.success && res.statusCode === 404 && API_CONFIG.ENABLE_MOCK_FALLBACK) {
-      console.log('[AuthService] Using local registration session.');
-      return this.login(payload.email, payload.password);
-    }
 
     if (!res.success) {
       return {

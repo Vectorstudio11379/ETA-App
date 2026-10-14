@@ -27,13 +27,13 @@ export default function PremiumScreen() {
   const perks = [
     'Unlimited Access to 80+ Premium Tech Courses',
     'Download Lessons for Offline Playback',
-    'Official Verified AQskill Certificates',
+    'Official Verified Express Tech Academy Certificates',
     'Direct Mentorship from Top Instructors',
     'Exclusive Datathon & Hackathon Entry Pass',
   ];
 
   const handleSubscribe = () => {
-    Alert.alert('Subscribed!', 'Welcome to ETA Premium All-Access!');
+    Alert.alert('Subscribed!', 'Welcome to Express Tech Academy All-Access!');
     router.back();
   };
 

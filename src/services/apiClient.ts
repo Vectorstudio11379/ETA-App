@@ -33,6 +33,7 @@ export const apiClient = {
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      headers['X-ETA-Auth-Token'] = token;
     }
 
     const controller = new AbortController();

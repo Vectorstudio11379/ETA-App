@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { HugeiconsIcon } from '@hugeicons/react-native';
@@ -14,17 +15,41 @@ import {
   StarIcon,
   UserGroupIcon,
   Award01Icon,
+  BookOpen01Icon,
 } from '@hugeicons/core-free-icons';
 import { Header } from '../../components/Header';
 import { SearchBar } from '../../components/SearchBar';
 import { useApp } from '../../context/AppContext';
+import { courseService } from '../../services/courseService';
+import { Course } from '../../data/mockData';
 
 export default function MyCoursesScreen() {
   const router = useRouter();
-  const { courses, wishlistIds, colors } = useApp();
+  const { courses, wishlistIds, colors, isRefreshing, refreshLiveData } = useApp();
   const [activeTab, setActiveTab] = useState<'all' | 'favourite' | 'certificate'>('all');
+  const [liveEnrolled, setLiveEnrolled] = useState<Course[]>([]);
 
-  const enrolledCourses = courses.filter((c) => c.isEnrolled || c.progress !== undefined);
+  const loadEnrolled = useCallback(async () => {
+    try {
+      console.log('[MyCourses] Calling fetchEnrolledCourses...');
+      const res = await courseService.fetchEnrolledCourses();
+      console.log('[MyCourses] fetchEnrolledCourses result:', JSON.stringify(res));
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        setLiveEnrolled(res.data);
+      }
+    } catch (e) {
+      console.warn('[MyCourses] Error fetching enrolled:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadEnrolled();
+    refreshLiveData();
+  }, [loadEnrolled, refreshLiveData]);
+
+  const enrolledFromCourses = courses.filter((c) => c.isEnrolled || (c.progress !== undefined && c.progress > 0));
+  const enrolledCourses = liveEnrolled.length > 0 ? liveEnrolled : enrolledFromCourses;
+  console.log('[MyCourses] RENDER enrolledCourses count:', enrolledCourses.length, 'liveEnrolled:', liveEnrolled.length);
   const favouriteCourses = courses.filter((c) => wishlistIds.includes(c.id));
 
   return (
@@ -34,7 +59,7 @@ export default function MyCoursesScreen() {
       {/* Segment Tabs */}
       <View style={[styles.tabsRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <TouchableOpacity
-          style={[styles.tabPill, activeTab === 'all' && { backgroundColor: colors.primary }]}
+          style={[styles.tabPill, activeTab === 'all' && { backgroundColor: colors.accent }]}
           onPress={() => setActiveTab('all')}
         >
           <Text
@@ -48,7 +73,7 @@ export default function MyCoursesScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabPill, activeTab === 'favourite' && { backgroundColor: colors.primary }]}
+          style={[styles.tabPill, activeTab === 'favourite' && { backgroundColor: colors.accent }]}
           onPress={() => setActiveTab('favourite')}
         >
           <Text
@@ -62,7 +87,7 @@ export default function MyCoursesScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabPill, activeTab === 'certificate' && { backgroundColor: colors.primary }]}
+          style={[styles.tabPill, activeTab === 'certificate' && { backgroundColor: colors.accent }]}
           onPress={() => setActiveTab('certificate')}
         >
           <Text
@@ -76,16 +101,52 @@ export default function MyCoursesScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => {
+              loadEnrolled();
+              refreshLiveData();
+            }}
+            colors={[colors.primary, colors.secondary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
         <SearchBar />
 
         {/* Tab 1: All Enrolled Courses */}
         {activeTab === 'all' && (
+          enrolledCourses.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <HugeiconsIcon icon={BookOpen01Icon} size={48} color={colors.textMuted} />
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>No Enrolled Courses Yet</Text>
+              <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
+                Enroll in any of our production-ready courses or bundles to begin learning!
+              </Text>
+              <TouchableOpacity
+                style={[styles.emptyCtaBtn, { backgroundColor: colors.primary }]}
+                onPress={() => router.push('/(tabs)/explore')}
+              >
+                <Text style={styles.emptyCtaText}>Browse Courses</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
           enrolledCourses.map((course) => {
             const progressPercent = course.progress || 0;
             return (
-              <View
+              <TouchableOpacity
                 key={course.id}
+                activeOpacity={0.9}
+                onPress={() =>
+                  router.push({
+                    pathname: '/course-viewer/[id]',
+                    params: { id: course.id },
+                  })
+                }
                 style={[styles.courseCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
               >
                 <View style={styles.topRow}>
@@ -103,7 +164,7 @@ export default function MyCoursesScreen() {
                       <View style={[styles.statPill, { backgroundColor: colors.surfaceLight }]}>
                         <HugeiconsIcon icon={UserGroupIcon} size={11} color={colors.textSecondary} />
                         <Text style={[styles.statText, { color: colors.textSecondary }]}>
-                          {course.studentsCount.toLocaleString()}
+                          {(course.studentsCount || 120).toLocaleString()}
                         </Text>
                       </View>
                       <View style={[styles.statPill, { backgroundColor: colors.surfaceLight }]}>
@@ -124,7 +185,7 @@ export default function MyCoursesScreen() {
                 {/* Progress Bar & Play Button */}
                 <View style={styles.progressRow}>
                   <TouchableOpacity
-                    style={[styles.playCircleBtn, { backgroundColor: colors.primary }]}
+                    style={[styles.playCircleBtn, { backgroundColor: colors.accent }]}
                     onPress={() =>
                       router.push({
                         pathname: '/course-viewer/[id]',
@@ -139,17 +200,17 @@ export default function MyCoursesScreen() {
                     <View
                       style={[
                         styles.progressBarFill,
-                        { width: `${progressPercent}%`, backgroundColor: colors.secondary },
+                        { width: `${progressPercent}%`, backgroundColor: colors.accent },
                       ]}
                     />
                   </View>
 
                   <Text style={[styles.progressPercentText, { color: colors.text }]}>{progressPercent}%</Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })
-        )}
+        ))}
 
         {/* Tab 2: My Favourite */}
         {activeTab === 'favourite' && (
