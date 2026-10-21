@@ -19,12 +19,14 @@ import { PaystackCheckoutModal } from '../components/PaystackCheckoutModal';
 WebBrowser.maybeCompleteAuthSession();
 
 export interface UserProfile {
+  id?: number | string;
   name: string;
   greeting: string;
   avatar: string;
   joinedYear: string;
   country: string;
   email?: string;
+  phone?: string;
 }
 
 export interface CategoryItem {
@@ -71,6 +73,15 @@ export interface AppContextType {
   login: (usernameOrEmail: string, password: string) => Promise<boolean>;
   signup: (payload: RegisterPayload) => Promise<boolean>;
   logout: () => Promise<void>;
+  updateUserProfile: (payload: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    country?: string;
+    password?: string;
+    avatar?: string;
+    avatarBase64?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
   refreshLiveData: () => Promise<void>;
   isRefreshing: boolean;
 
@@ -354,6 +365,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('Logged out successfully');
   };
 
+  // Real Database User Profile Update
+  const updateUserProfile = async (payload: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    country?: string;
+    password?: string;
+    avatar?: string;
+    avatarBase64?: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await authService.updateProfile({
+        name: payload.name,
+        email: payload.email,
+        phone: payload.phone,
+        country: payload.country,
+        password: payload.password,
+        avatar: payload.avatar,
+        avatar_base64: payload.avatarBase64,
+      });
+
+      if (res.success && res.data) {
+        setUserProfile(res.data);
+        showToast('Profile updated successfully!');
+        return { success: true };
+      } else {
+        const errorMsg = res.error || 'Failed to update profile';
+        showToast(errorMsg);
+        return { success: false, error: errorMsg };
+      }
+    } catch (err: any) {
+      const msg = err.message || 'Failed to update profile';
+      showToast(msg);
+      return { success: false, error: msg };
+    }
+  };
+
   // Cart Management with DB Sync
   const addToCart = (courseId: string) => {
     setCartIds((prev) => {
@@ -535,6 +583,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         login,
         signup,
         logout,
+        updateUserProfile,
         refreshLiveData,
         isRefreshing,
 

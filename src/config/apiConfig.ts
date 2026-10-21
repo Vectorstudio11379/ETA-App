@@ -18,6 +18,9 @@ export const API_CONFIG = {
     // Auth (ETA API Bridge & JWT Endpoints)
     LOGIN: '/wp-json/eta/v1/login',
     REGISTER: '/wp-json/eta/v1/register',
+    FORGOT_PASSWORD: '/wp-json/eta/v1/auth/forgot-password',
+    VERIFY_RESET_CODE: '/wp-json/eta/v1/auth/verify-reset-code',
+    RESET_PASSWORD: '/wp-json/eta/v1/auth/reset-password',
     JWT_LOGIN_FALLBACK: '/wp-json/jwt-auth/v1/token',
 
     // Live Public Course Catalog Endpoints (Masteriyo WP REST API)
@@ -25,8 +28,10 @@ export const API_CONFIG = {
     ETA_COURSES: '/wp-json/eta/v1/courses',
     MASTERIYO_COURSES: '/wp-json/masteriyo/v1/courses',
 
-    // WordPress Core User Endpoints
-    CURRENT_USER: '/wp-json/wp/v2/users/me',
+    // WordPress User Profile Endpoints
+    USER_PROFILE: '/wp-json/eta/v1/profile',
+    UPDATE_PROFILE: '/wp-json/eta/v1/profile',
+    CURRENT_USER: '/wp-json/eta/v1/profile',
 
     // Standard WordPress Core Post Types Fallback
     COURSES: '/wp-json/wp/v2/courses',

