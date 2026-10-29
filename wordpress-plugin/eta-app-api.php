@@ -41,6 +41,7 @@ class ETA_Mobile_API_Bridge {
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this, 'add_cors_support' ) );
+		add_action( 'template_redirect', array( $this, 'handle_maintenance_actions' ), 2 );
 		add_action( 'template_redirect', array( $this, 'handle_web_payment_endpoints' ), 5 );
 		add_filter( 'pre_get_avatar_data', array( $this, 'filter_custom_avatar_data' ), 10, 2 );
 	}
@@ -188,6 +189,18 @@ class ETA_Mobile_API_Bridge {
 			'permission_callback' => '__return_true',
 		) );
 
+		// 11b. Google Authentication
+		register_rest_route( self::NAMESPACE, '/auth/google', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'google_auth_user' ),
+			'permission_callback' => '__return_true',
+		) );
+		register_rest_route( self::NAMESPACE, '/google-login', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'google_auth_user' ),
+			'permission_callback' => '__return_true',
+		) );
+
 		// 12. Dynamic Instructors Directory
 		register_rest_route( self::NAMESPACE, '/instructors', array(
 			'methods'             => 'GET',
@@ -244,6 +257,13 @@ class ETA_Mobile_API_Bridge {
 			'permission_callback' => '__return_true',
 		) );
 
+		// 16b. Mark Notifications Read (POST /notifications/mark-read)
+		register_rest_route( self::NAMESPACE, '/notifications/mark-read', array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'mark_notifications_read' ),
+			'permission_callback' => '__return_true',
+		) );
+
 		// 17. Remote Synchronizer for Cloudflare Media
 		register_rest_route( self::NAMESPACE, '/fix-cloudflare-media', array(
 			'methods'             => array( 'GET', 'POST' ),
@@ -272,6 +292,276 @@ class ETA_Mobile_API_Bridge {
 			'callback'            => array( $this, 'handle_reset_password' ),
 			'permission_callback' => '__return_true',
 		) );
+
+		// 19. Database Repair & Table Optimization
+		register_rest_route( self::NAMESPACE, '/database-repair', array(
+			'methods'             => array( 'GET', 'POST' ),
+			'callback'            => array( $this, 'handle_database_repair_endpoint' ),
+			'permission_callback' => '__return_true',
+		) );
+	}
+
+	public function handle_maintenance_actions() {
+		if ( isset( $_GET['eta_action'] ) && 'database_repair' === $_GET['eta_action'] ) {
+			$authorized = current_user_can( 'manage_options' );
+			$key = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '';
+			if ( ! $authorized && 'eta_cf_secure_sync_2026' !== $key ) {
+				wp_die( 'Unauthorized maintenance request.', 'Unauthorized', array( 'response' => 403 ) );
+			}
+			$lock = get_transient( 'eta_db_repair_cooldown' );
+			if ( $lock && ! $authorized ) {
+				header( 'Content-Type: application/json; charset=utf-8' );
+				echo wp_json_encode( array(
+					'status'   => 'throttled',
+					'message'  => 'Database repair ran recently. Cooldown active to protect database performance.',
+					'last_run' => $lock,
+				), JSON_PRETTY_PRINT );
+				exit;
+			}
+			set_transient( 'eta_db_repair_cooldown', gmdate( 'Y-m-d H:i:s \U\T\C' ), 900 );
+			$report = $this->execute_database_repair_and_optimization();
+			header( 'Content-Type: application/json; charset=utf-8' );
+			echo wp_json_encode( $report, JSON_PRETTY_PRINT );
+			exit;
+		}
+	}
+
+	public function handle_database_repair_endpoint( $request ) {
+		$authorized = current_user_can( 'manage_options' );
+		$key = $request->get_param( 'key' );
+		if ( ! $authorized && 'eta_cf_secure_sync_2026' !== $key ) {
+			return new WP_REST_Response( array( 'error' => 'Unauthorized' ), 403 );
+		}
+		$lock = get_transient( 'eta_db_repair_cooldown' );
+		if ( $lock && ! $authorized ) {
+			return new WP_REST_Response( array(
+				'status'   => 'throttled',
+				'message'  => 'Database repair ran recently. Cooldown active to protect database performance.',
+				'last_run' => $lock,
+			), 429 );
+		}
+		set_transient( 'eta_db_repair_cooldown', gmdate( 'Y-m-d H:i:s \U\T\C' ), 900 );
+		$report = $this->execute_database_repair_and_optimization();
+		return new WP_REST_Response( $report, 200 );
+	}
+
+	public function execute_database_repair_and_optimization() {
+		global $wpdb;
+		@set_time_limit( 300 );
+		@ini_set( 'memory_limit', '512M' );
+
+		$start_time = microtime( true );
+
+		$report = array(
+			'status'                 => 'running',
+			'timestamp'              => gmdate( 'Y-m-d H:i:s \U\T\C' ),
+			'diagnostic_logs'        => array(),
+			'table_repairs'          => array(),
+			'table_optimizes'        => array(),
+			'sessions_purged'        => 0,
+			'cart_transients_purged' => 0,
+			'expired_transients_purged' => 0,
+			'actionscheduler'        => array(),
+			'cart_benchmark'         => array(),
+		);
+
+		// 1. Collect recent diagnostic error logs before repairs (filtering out customer PII)
+		$debug_log = WP_CONTENT_DIR . '/debug.log';
+		if ( file_exists( $debug_log ) ) {
+			$lines = @file( $debug_log );
+			if ( is_array( $lines ) ) {
+				$report['diagnostic_logs']['debug_log_tail'] = array_slice( $lines, -30 );
+			}
+		}
+
+		$wc_logs_dir = WP_CONTENT_DIR . '/uploads/wc-logs';
+		if ( is_dir( $wc_logs_dir ) ) {
+			$files = @scandir( $wc_logs_dir );
+			if ( is_array( $files ) ) {
+				$log_files = array_filter( $files, function( $f ) { return substr( $f, -4 ) === '.log'; } );
+				usort( $log_files, function( $a, $b ) use ( $wc_logs_dir ) {
+					return filemtime( $wc_logs_dir . '/' . $b ) - filemtime( $wc_logs_dir . '/' . $a );
+				} );
+
+				foreach ( array_slice( $log_files, 0, 5 ) as $lf ) {
+					// Omit transactional email and user-sensitive logs from diagnostic dump
+					if ( false !== strpos( $lf, 'transactional-emails' ) ) {
+						continue;
+					}
+					$lines = @file( $wc_logs_dir . '/' . $lf );
+					if ( is_array( $lines ) ) {
+						$err_lines = array_filter( $lines, function( $line ) {
+							return ( stripos( $line, 'fatal' ) !== false || stripos( $line, 'error' ) !== false || stripos( $line, 'Commands out of sync' ) !== false || stripos( $line, 'duplicate' ) !== false );
+						} );
+						if ( ! empty( $err_lines ) ) {
+							$report['diagnostic_logs'][ $lf ] = array_slice( array_values( $err_lines ), -15 );
+						}
+					}
+				}
+			}
+		}
+
+		// 2. Tables list for REPAIR and OPTIMIZE
+		$tables = array(
+			$wpdb->options,
+			$wpdb->prefix . 'woocommerce_sessions',
+			$wpdb->prefix . 'woocommerce_api_keys',
+			$wpdb->prefix . 'woocommerce_attribute_taxonomies',
+			$wpdb->prefix . 'woocommerce_downloadable_product_permissions',
+			$wpdb->prefix . 'woocommerce_order_items',
+			$wpdb->prefix . 'woocommerce_order_itemmeta',
+			$wpdb->prefix . 'woocommerce_tax_rates',
+			$wpdb->prefix . 'woocommerce_tax_rate_locations',
+			$wpdb->prefix . 'woocommerce_shipping_zones',
+			$wpdb->prefix . 'woocommerce_shipping_zone_locations',
+			$wpdb->prefix . 'woocommerce_shipping_zone_methods',
+			$wpdb->prefix . 'woocommerce_payment_tokens',
+			$wpdb->prefix . 'woocommerce_payment_tokenmeta',
+			$wpdb->prefix . 'woocommerce_log',
+			$wpdb->prefix . 'actionscheduler_actions',
+			$wpdb->prefix . 'actionscheduler_claims',
+			$wpdb->prefix . 'actionscheduler_groups',
+			$wpdb->prefix . 'actionscheduler_logs',
+			$wpdb->posts,
+			$wpdb->postmeta,
+			$wpdb->users,
+			$wpdb->usermeta,
+		);
+
+		// Ensure WooCommerce table schema exists
+		if ( class_exists( 'WC_Install' ) && method_exists( 'WC_Install', 'create_tables' ) ) {
+			WC_Install::create_tables();
+		}
+
+		// Ensure wp_woocommerce_attribute_taxonomies exists
+		$attr_table = $wpdb->prefix . 'woocommerce_attribute_taxonomies';
+		$attr_exists = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $wpdb->esc_like( $attr_table ) ) );
+		if ( ! $attr_exists ) {
+			$collate = $wpdb->get_charset_collate();
+			$sql = "CREATE TABLE `{$attr_table}` (
+				attribute_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				attribute_name varchar(200) NOT NULL,
+				attribute_label varchar(200) NULL,
+				attribute_type varchar(20) NOT NULL,
+				attribute_orderby varchar(20) NOT NULL,
+				attribute_public int(1) NOT NULL DEFAULT 1,
+				PRIMARY KEY  (attribute_id),
+				KEY attribute_name (attribute_name(20))
+			) {$collate};";
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			dbDelta( $sql );
+		}
+
+		// Ensure wp_woocommerce_sessions table exists
+		$sess_table = $wpdb->prefix . 'woocommerce_sessions';
+		$sess_exists = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $wpdb->esc_like( $sess_table ) ) );
+		if ( ! $sess_exists ) {
+			$collate = $wpdb->get_charset_collate();
+			$sql = "CREATE TABLE `{$sess_table}` (
+				session_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				session_key char(32) NOT NULL,
+				session_value longtext NOT NULL,
+				session_expiry bigint(20) unsigned NOT NULL,
+				PRIMARY KEY  (session_id),
+				UNIQUE KEY session_key (session_key)
+			) {$collate};";
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			dbDelta( $sql );
+		}
+
+		// Execute REPAIR and OPTIMIZE on each table
+		foreach ( $tables as $tbl ) {
+			$exists = $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $wpdb->esc_like( $tbl ) ) );
+			if ( ! $exists ) {
+				continue;
+			}
+
+			$rep = $wpdb->get_results( "REPAIR TABLE `{$tbl}`", ARRAY_A );
+			$report['table_repairs'][ $tbl ] = $rep;
+
+			$opt = $wpdb->get_results( "OPTIMIZE TABLE `{$tbl}`", ARRAY_A );
+			$report['table_optimizes'][ $tbl ] = $opt;
+		}
+
+		// 3. Purge expired customer sessions
+		if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $sess_table ) ) ) {
+			$now = time();
+			$deleted_sessions = $wpdb->query( $wpdb->prepare( "DELETE FROM `{$sess_table}` WHERE session_expiry < %d", $now ) );
+			$report['sessions_purged'] = ( false !== $deleted_sessions ) ? $deleted_sessions : 0;
+		}
+
+		// 4. Purge cart session transients from wp_options
+		$deleted_cart_trans = $wpdb->query( "DELETE FROM `{$wpdb->options}` WHERE option_name LIKE '_transient_wc_session_%' OR option_name LIKE '_transient_timeout_wc_session_%'" );
+		$report['cart_transients_purged'] = ( false !== $deleted_cart_trans ) ? $deleted_cart_trans : 0;
+
+		// 5. Purge expired transients from wp_options
+		$now = time();
+		$expired_keys = $wpdb->get_col( $wpdb->prepare(
+			"SELECT option_name FROM `{$wpdb->options}` WHERE option_name LIKE %s AND option_value < %d",
+			'_transient_timeout_%',
+			$now
+		) );
+		$purged_count = 0;
+		if ( ! empty( $expired_keys ) ) {
+			foreach ( $expired_keys as $t_timeout ) {
+				$t_data = str_replace( '_transient_timeout_', '_transient_', $t_timeout );
+				$wpdb->query( $wpdb->prepare( "DELETE FROM `{$wpdb->options}` WHERE option_name IN (%s, %s)", $t_timeout, $t_data ) );
+				$purged_count++;
+			}
+		}
+		$report['expired_transients_purged'] = $purged_count;
+
+		// 6. ActionScheduler maintenance
+		$as_actions = $wpdb->prefix . 'actionscheduler_actions';
+		$as_logs    = $wpdb->prefix . 'actionscheduler_logs';
+		$as_claims  = $wpdb->prefix . 'actionscheduler_claims';
+		if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $as_actions ) ) ) {
+			$purged_claims = $wpdb->query( $wpdb->prepare( "DELETE FROM `{$as_claims}` WHERE claim_date_gmt < %s", gmdate( 'Y-m-d H:i:s', time() - 3600 ) ) );
+			$wpdb->query( $wpdb->prepare( "UPDATE `{$as_actions}` SET claim_id = 0 WHERE claim_id NOT IN (SELECT claim_id FROM `{$as_claims}`)" ) );
+			$seven_days_ago = gmdate( 'Y-m-d H:i:s', time() - ( 7 * DAY_IN_SECONDS ) );
+			$purged_as = $wpdb->query( $wpdb->prepare( "DELETE FROM `{$as_actions}` WHERE status = 'complete' AND scheduled_date_gmt < %s", $seven_days_ago ) );
+			$purged_as_logs = $wpdb->query( "DELETE FROM `{$as_logs}` WHERE action_id NOT IN (SELECT action_id FROM `{$as_actions}`)" );
+
+			$report['actionscheduler'] = array(
+				'expired_claims_purged'    => ( false !== $purged_claims ) ? $purged_claims : 0,
+				'completed_actions_purged' => ( false !== $purged_as ) ? $purged_as : 0,
+				'orphaned_logs_purged'     => ( false !== $purged_as_logs ) ? $purged_as_logs : 0,
+			);
+		}
+
+		// 7. Reset WooCommerce Transient Versions & Object Caches
+		if ( class_exists( 'WC_Cache_Helper' ) ) {
+			WC_Cache_Helper::get_transient_version( 'shipping', true );
+		}
+		if ( function_exists( 'wc_delete_expired_transients' ) ) {
+			wc_delete_expired_transients();
+		}
+		if ( function_exists( 'wp_cache_flush' ) ) {
+			wp_cache_flush();
+		}
+		if ( class_exists( 'LiteSpeed\Purge' ) ) {
+			\LiteSpeed\Purge::purge_all();
+		}
+
+		// 8. Benchmark WooCommerce Cart
+		$b_start = microtime( true );
+		$cart_count = 0;
+		$cart_total = 0;
+		if ( function_exists( 'WC' ) && WC()->cart ) {
+			WC()->cart->get_cart();
+			$cart_count = WC()->cart->get_cart_contents_count();
+			$cart_total = wp_strip_all_tags( WC()->cart->get_cart_total() );
+		}
+		$report['cart_benchmark'] = array(
+			'cart_contents_count' => $cart_count,
+			'cart_total'          => $cart_total,
+			'execution_ms'        => round( ( microtime( true ) - $b_start ) * 1000, 2 ),
+		);
+
+		$report['status'] = 'completed';
+		$report['total_duration_seconds'] = round( microtime( true ) - $start_time, 3 );
+
+		return $report;
 	}
 
 	public function fix_cloudflare_media_file( $request ) {
@@ -530,8 +820,21 @@ class ETA_Mobile_API_Bridge {
 				$sale_price    = get_post_meta( $post_id, '_price', true ) ?: get_post_meta( $post_id, 'price', true ) ?: 15000;
 
 				$thumbnail = get_the_post_thumbnail_url( $post_id, 'large' );
+				if ( ! $thumbnail && function_exists( 'eta_react_course_clean_thumbnail_url' ) ) {
+					$thumbnail = eta_react_course_clean_thumbnail_url( $post_id );
+				}
 				if ( ! $thumbnail ) {
-					$thumbnail = 'https://expressteck.tech/wp-content/uploads/2026/10/Getting-Started-with-Masteriyo-LMS-1.jpg';
+					$post_slug = get_post_field( 'post_name', $post_id );
+					$title_low = strtolower( $post->post_title );
+					if ( strpos( $post_slug, 'copywriting' ) !== false || strpos( $title_low, 'copywriting' ) !== false ) {
+						$thumbnail = 'https://expressteck.tech/wp-content/themes/express-tech-react/assets/images/copywriting-course-thumbnail.jpg';
+					} elseif ( strpos( $post_slug, 'content-writing' ) !== false || strpos( $title_low, 'content writing' ) !== false ) {
+						$thumbnail = 'https://expressteck.tech/wp-content/themes/express-tech-react/assets/images/content-writing-course-thumbnail.jpg';
+					} elseif ( strpos( $post_slug, 'graphic' ) !== false || strpos( $title_low, 'graphic' ) !== false ) {
+						$thumbnail = 'https://expressteck.tech/wp-content/themes/express-tech-react/assets/images/graphic-design-course-thumbnail.jpg';
+					} else {
+						$thumbnail = 'https://expressteck.tech/wp-content/uploads/2026/10/Getting-Started-with-Masteriyo-LMS-1.jpg';
+					}
 				}
 
 				// Resolve authentic category
@@ -546,6 +849,8 @@ class ETA_Mobile_API_Bridge {
 						$cat_name = 'Remote Work & Global Finance';
 					} elseif ( strpos( $title_lower, 'youtube' ) !== false || strpos( $title_lower, 'smm' ) !== false || strpos( $title_lower, 'creator' ) !== false || strpos( $title_lower, 'social' ) !== false ) {
 						$cat_name = 'Digital Media & Growth';
+					} elseif ( strpos( $title_lower, 'copywriting' ) !== false || strpos( $title_lower, 'content' ) !== false || strpos( $title_lower, 'writing' ) !== false || strpos( $title_lower, 'graphic' ) !== false || strpos( $title_lower, 'design' ) !== false ) {
+						$cat_name = 'Creative & Content Strategy';
 					} else {
 						$cat_name = 'Build Your First Course';
 					}
@@ -712,6 +1017,8 @@ class ETA_Mobile_API_Bridge {
 		$info = array(
 			'promoText'          => 'Limited Time Offer — Save up to 70% Across All Academy Tracks!',
 			'tagline'            => 'Production-First Tech Education',
+			'googleClientId'     => function_exists( 'eta_react_google_client_id' ) ? eta_react_google_client_id() : ( defined( 'ETA_GOOGLE_CLIENT_ID' ) ? ETA_GOOGLE_CLIENT_ID : '1075070762182-vlf41rha8ctjckt9ig2bnv28otd3n10l.apps.googleusercontent.com' ),
+			'googleLoginEnabled' => true,
 			'contactEmail'       => 'support@expressteck.tech',
 			'whatsappNumber'     => '2348000000000',
 			'avgResponseTime'    => '< 24 Hours',
@@ -1982,6 +2289,85 @@ class ETA_Mobile_API_Bridge {
 	}
 
 	/**
+	 * POST /wp-json/eta/v1/auth/google
+	 * POST /wp-json/eta/v1/google-login
+	 */
+	public function google_auth_user( $request ) {
+		$params     = $request->get_json_params() ?: $request->get_params();
+		$credential = trim( (string) ( $params['credential'] ?? $params['id_token'] ?? $params['token'] ?? '' ) );
+		$client_id  = function_exists( 'eta_react_google_client_id' ) ? eta_react_google_client_id() : ( defined( 'ETA_GOOGLE_CLIENT_ID' ) ? ETA_GOOGLE_CLIENT_ID : '1075070762182-vlf41rha8ctjckt9ig2bnv28otd3n10l.apps.googleusercontent.com' );
+
+		if ( empty( $credential ) ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Google credential/ID token is required.' ), 400 );
+		}
+
+		$response = wp_remote_get( 'https://oauth2.googleapis.com/tokeninfo?id_token=' . rawurlencode( $credential ), array( 'timeout' => 10 ) );
+		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Unable to verify Google credential with Google servers.' ), 401 );
+		}
+
+		$payload = json_decode( wp_remote_retrieve_body( $response ), true );
+		$email   = isset( $payload['email'] ) ? sanitize_email( $payload['email'] ) : '';
+
+		$valid = is_array( $payload )
+			&& isset( $payload['aud'], $payload['iss'], $payload['exp'] )
+			&& ( empty( $client_id ) || hash_equals( $client_id, (string) $payload['aud'] ) )
+			&& in_array( $payload['iss'], array( 'https://accounts.google.com', 'accounts.google.com' ), true )
+			&& time() < (int) $payload['exp']
+			&& is_email( $email )
+			&& isset( $payload['email_verified'] ) && in_array( $payload['email_verified'], array( 'true', true ), true );
+
+		if ( ! $valid ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Invalid or expired Google token.' ), 401 );
+		}
+
+		$user = get_user_by( 'email', $email );
+		if ( ! $user ) {
+			$base     = sanitize_user( current( explode( '@', $email ) ), true ) ?: 'learner';
+			$username = $base;
+			$counter  = 1;
+			while ( username_exists( $username ) ) {
+				$username = $base . $counter++;
+			}
+			$user_id = wp_create_user( $username, wp_generate_password( 24 ), $email );
+			if ( is_wp_error( $user_id ) ) {
+				return new WP_REST_Response( array( 'success' => false, 'error' => $user_id->get_error_message() ), 500 );
+			}
+			$name = isset( $payload['name'] ) ? sanitize_text_field( $payload['name'] ) : '';
+			wp_update_user( array(
+				'ID'           => $user_id,
+				'display_name' => $name ?: $username,
+				'first_name'   => isset( $payload['given_name'] ) ? sanitize_text_field( $payload['given_name'] ) : $name,
+			) );
+			$user = get_user_by( 'id', $user_id );
+		}
+
+		if ( ! empty( $payload['picture'] ) && $user ) {
+			$pic_url = esc_url_raw( $payload['picture'] );
+			update_user_meta( $user->ID, '_eta_app_custom_avatar_url', $pic_url );
+			update_user_meta( $user->ID, 'masteriyo_profile_avatar_url', $pic_url );
+		}
+
+		if ( $user && ! in_array( 'masteriyo_student', (array) $user->roles, true ) ) {
+			$user->add_role( 'masteriyo_student' );
+		}
+
+		$token = get_user_meta( $user->ID, '_eta_app_auth_token', true );
+		if ( empty( $token ) ) {
+			$token = wp_generate_password( 32, false );
+			update_user_meta( $user->ID, '_eta_app_auth_token', $token );
+		}
+
+		$user_data = $this->format_user_profile_data( $user->ID );
+
+		return new WP_REST_Response( array(
+			'success' => true,
+			'token'   => $token,
+			'user'    => $user_data,
+		), 200 );
+	}
+
+	/**
 	 * GET /wp-json/eta/v1/instructors
 	 * Returns real WordPress and Masteriyo instructors on the website.
 	 */
@@ -2466,50 +2852,120 @@ class ETA_Mobile_API_Bridge {
 
 		$notifications = array();
 
-		// 1. Personalized Welcome Notification
-		$notifications[] = array(
-			'id'        => 'notif_welcome',
-			'title'     => 'Welcome to Express Tech Academy!',
-			'message'   => 'Hi ' . $user_name . ', explore our industry-certified engineering & tech courses.',
-			'time'      => 'Just now',
-			'read'      => false,
-			'type'      => 'system',
-			'actionUrl' => '/(tabs)/explore',
-		);
+		// 1. Fetch global announcements from option store
+		$global_broadcasts = get_option( '_eta_global_broadcasts', array() );
+		$read_ids = ( $user_id > 0 ) ? (array) get_user_meta( $user_id, '_eta_read_broadcast_ids', true ) : array();
 
-		// 2. Dynamic Course Updates
-		if ( $user_id > 0 ) {
-			$enrolled_courses = $this->get_my_courses( $request );
-			$enrolled_data = $enrolled_courses instanceof WP_REST_Response ? $enrolled_courses->get_data() : array();
-			if ( ! empty( $enrolled_data ) && is_array( $enrolled_data ) ) {
-				$first_course = reset( $enrolled_data );
-				$c_title = is_array( $first_course ) ? ( $first_course['title'] ?? 'your course' ) : ( $first_course->title ?? 'your course' );
-				$notifications[] = array(
-					'id'        => 'notif_study_reminder',
-					'title'     => 'Ready to continue learning?',
-					'message'   => 'Pick up where you left off in ' . $c_title . '.',
-					'time'      => '1 hour ago',
-					'read'      => false,
-					'type'      => 'course',
-					'actionUrl' => '/my-courses',
-				);
+		if ( is_array( $global_broadcasts ) ) {
+			foreach ( $global_broadcasts as $gb ) {
+				$channels = isset( $gb['channels'] ) && is_array( $gb['channels'] ) ? $gb['channels'] : array( 'web', 'mobile' );
+				if ( in_array( 'mobile', $channels, true ) ) {
+					$gb_id = isset( $gb['id'] ) ? $gb['id'] : '';
+					$is_read = ( ! empty( $gb_id ) && in_array( $gb_id, $read_ids, true ) );
+					$notifications[] = array(
+						'id'         => $gb_id,
+						'title'      => ! empty( $gb['title'] ) ? $gb['title'] : 'Platform Announcement',
+						'message'    => ! empty( $gb['message'] ) ? $gb['message'] : '',
+						'time'       => ! empty( $gb['time'] ) ? $gb['time'] : 'Recent',
+						'read'       => $is_read,
+						'type'       => ! empty( $gb['type'] ) ? $gb['type'] : 'announcement',
+						'actionUrl'  => ! empty( $gb['actionUrl'] ) ? $gb['actionUrl'] : ( ! empty( $gb['url'] ) ? $gb['url'] : '/(tabs)/explore' ),
+						'created_at' => ! empty( $gb['created_at'] ) ? $gb['created_at'] : time(),
+					);
+				}
 			}
 		}
 
-		// 3. Platform Announcement
-		$notifications[] = array(
-			'id'        => 'notif_promo',
-			'title'     => 'New Flagship Bundles Released',
-			'message'   => 'Save up to 70% with our multi-course career track bundles.',
-			'time'      => 'Yesterday',
-			'read'      => true,
-			'type'      => 'announcement',
-			'actionUrl' => '/(tabs)/explore',
-		);
+		// 2. Fetch user-specific targeted notifications from user meta
+		if ( $user_id > 0 ) {
+			$user_notifs = get_user_meta( $user_id, '_eta_user_notifications', true );
+			if ( is_array( $user_notifs ) ) {
+				foreach ( $user_notifs as $un ) {
+					$channels = isset( $un['channels'] ) && is_array( $un['channels'] ) ? $un['channels'] : array( 'web', 'mobile' );
+					if ( in_array( 'mobile', $channels, true ) ) {
+						$notifications[] = array(
+							'id'         => isset( $un['id'] ) ? $un['id'] : ( 'notif_' . wp_rand( 1000, 9999 ) ),
+							'title'      => isset( $un['title'] ) ? $un['title'] : 'Update',
+							'message'    => isset( $un['message'] ) ? $un['message'] : '',
+							'time'       => isset( $un['time'] ) ? $un['time'] : 'Recent',
+							'read'       => ! empty( $un['read'] ),
+							'type'       => isset( $un['type'] ) ? $un['type'] : 'system',
+							'actionUrl'  => isset( $un['actionUrl'] ) ? $un['actionUrl'] : ( isset( $un['url'] ) ? $un['url'] : '/(tabs)/explore' ),
+							'created_at' => isset( $un['created_at'] ) ? $un['created_at'] : time(),
+						);
+					}
+				}
+			}
+		}
+
+		// If notifications list is still empty, provide friendly initial onboarding notifications
+		if ( empty( $notifications ) ) {
+			$notifications[] = array(
+				'id'         => 'notif_welcome',
+				'title'      => 'Welcome to Express Tech Academy!',
+				'message'    => 'Hi ' . $user_name . ', explore our industry-certified engineering & tech courses.',
+				'time'       => 'Just now',
+				'read'       => false,
+				'type'       => 'system',
+				'actionUrl'  => '/(tabs)/explore',
+				'created_at' => time(),
+			);
+		}
+
+		// Sort by created_at descending
+		usort( $notifications, function( $a, $b ) {
+			$time_a = isset( $a['created_at'] ) ? (int) $a['created_at'] : 0;
+			$time_b = isset( $b['created_at'] ) ? (int) $b['created_at'] : 0;
+			return $time_b - $time_a;
+		} );
 
 		return new WP_REST_Response( array(
 			'success' => true,
 			'data'    => $notifications,
+		), 200 );
+	}
+
+	/**
+	 * POST /wp-json/eta/v1/notifications/mark-read
+	 */
+	public function mark_notifications_read( $request ) {
+		$user_id  = $this->get_current_user_id();
+		$params   = array_merge( (array) $request->get_query_params(), (array) $request->get_json_params() );
+		$notif_id = isset( $params['id'] ) ? sanitize_text_field( $params['id'] ) : '';
+		$mark_all = ! empty( $params['all'] ) || empty( $notif_id );
+
+		if ( $user_id > 0 ) {
+			// Mark in user meta
+			$user_notifs = get_user_meta( $user_id, '_eta_user_notifications', true );
+			if ( is_array( $user_notifs ) ) {
+				foreach ( $user_notifs as &$item ) {
+					if ( $mark_all || ( isset( $item['id'] ) && $item['id'] === $notif_id ) ) {
+						$item['read'] = true;
+					}
+				}
+				unset( $item );
+				update_user_meta( $user_id, '_eta_user_notifications', $user_notifs );
+			}
+
+			// Mark in global broadcasts
+			$global_broadcasts = get_option( '_eta_global_broadcasts', array() );
+			$read_ids = (array) get_user_meta( $user_id, '_eta_read_broadcast_ids', true );
+			if ( is_array( $global_broadcasts ) ) {
+				foreach ( $global_broadcasts as $gb ) {
+					if ( ! empty( $gb['id'] ) ) {
+						if ( $mark_all || $gb['id'] === $notif_id ) {
+							$read_ids[] = $gb['id'];
+						}
+					}
+				}
+			}
+			$merged = array_values( array_unique( $read_ids ) );
+			update_user_meta( $user_id, '_eta_read_broadcast_ids', $merged );
+		}
+
+		return new WP_REST_Response( array(
+			'success' => true,
+			'message' => 'Notifications marked as read.',
 		), 200 );
 	}
 
@@ -2549,52 +3005,67 @@ class ETA_Mobile_API_Bridge {
 		$subject   = sprintf( 'Your %s Verification Code: %s', $site_name, $otp_code );
 		$user_name = $user->first_name ?: ( $user->display_name ?: 'Student' );
 
-		$html_message = '
+				$html_message = '
 		<!DOCTYPE html>
-		<html>
+		<html lang="en">
 		<head>
 			<meta charset="utf-8">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<title>Password Reset Code</title>
+			<style type="text/css">
+				body { margin: 0; padding: 0; min-width: 100%; width: 100% !important; background-color: #F8FAFC; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif; }
+				table { border-spacing: 0; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+				table td { border-collapse: collapse; }
+				@media screen and (max-width: 600px) {
+					.eta-container { width: 100% !important; border-radius: 0 !important; }
+				}
+			</style>
 		</head>
-		<body style="margin:0;padding:0;background-color:#0B0B0E;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;color:#E4E4E7;">
-			<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0B0B0E;padding:40px 20px;">
+		<body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;">
+			<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F8FAFC; padding: 32px 0; margin: 0; width: 100%;">
 				<tr>
-					<td align="center">
-						<table role="presentation" width="100%" style="max-width:520px;background-color:#16161B;border:1px solid #27272E;border-radius:18px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,0.5);" cellspacing="0" cellpadding="0">
-							<!-- Header Brand Banner -->
+					td align="center" style="padding: 0 12px;">
+						<table class="eta-container" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08); border: 1px solid #E2E8F0;">
+							<!-- Header -->
 							<tr>
-								<td style="padding:32px 32px 24px 32px;text-align:center;border-bottom:1px solid #222228;">
-									<h2 style="margin:0;color:#FFFFFF;font-size:22px;font-weight:700;letter-spacing:-0.5px;">Express Tech Academy</h2>
-									<p style="margin:6px 0 0 0;color:#9E9EA8;font-size:13px;font-weight:500;">Account Security &amp; Password Recovery</p>
+								td style="background-color: #0B0F19; padding: 24px 36px; text-align: left; border-bottom: 2px solid #4F46E5;">
+									<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+										<tr>
+											td align="left" style="vertical-align: middle;">
+												<span style="display: inline-block; width: 34px; height: 34px; line-height: 34px; background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: #FFFFFF; font-weight: 900; font-size: 15px; text-align: center; border-radius: 8px; margin-right: 12px;">ETA</span>
+												<span style="font-size: 19px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.02em;">EXPRESS<span style="color: #818CF8;">TECH</span> ACADEMY</span>
+											</td>
+											td align="right" style="vertical-align: middle;">
+												<span style="display: inline-block; padding: 5px 12px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(129, 140, 248, 0.3); border-radius: 20px; font-size: 11px; font-weight: 600; color: #A5B4FC; text-transform: uppercase;">Security</span>
+											</td>
+										</tr>
+									</table>
 								</td>
 							</tr>
 							<!-- Body -->
 							<tr>
-								<td style="padding:32px;">
-									<p style="margin:0 0 16px 0;font-size:15px;line-height:24px;color:#D4D4D8;">
-										Hello <strong>' . esc_html( $user_name ) . '</strong>,
-									</p>
-									<p style="margin:0 0 24px 0;font-size:14px;line-height:22px;color:#A1A1AA;">
-										We received a request to reset the password for your account (' . esc_html( $user->user_email ) . '). Use the 6-digit verification code below to complete your reset in the mobile application:
-									</p>
-									<!-- Code Box -->
-									<div style="background:linear-gradient(135deg, rgba(255,107,0,0.12), rgba(255,140,51,0.06));border:1.5px solid #FF6B00;border-radius:14px;padding:24px;text-align:center;margin-bottom:26px;">
-										<div style="font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:#FF6B00;font-weight:700;margin-bottom:8px;">Your Verification Code</div>
-										<div style="font-size:38px;font-weight:800;letter-spacing:8px;color:#FFFFFF;font-family:monospace;">' . esc_html( $otp_code ) . '</div>
-										<div style="font-size:12px;color:#A1A1AA;margin-top:10px;">Expires in 15 minutes</div>
+								td style="padding: 36px 36px 32px 36px; background-color: #FFFFFF; color: #1E293B;">
+									<h1 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #0F172A;">Password Reset Code 🔑</h1>
+									<p style="margin: 0 0 16px 0; font-size: 15px; color: #334155;">Hello <strong>\' . esc_html( $user_name ) . \'</strong>,</p>
+									<p style="margin: 0 0 20px 0; font-size: 15px; color: #334155; line-height: 1.6;">We received a request to reset the password for your account (\' . esc_html( $user->user_email ) . \'). Use the 6-digit verification code below to complete your reset in the mobile application:</p>
+									
+									<div style="background-color: #F8FAFC; border: 2px dashed #4F46E5; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+										<div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #4F46E5; font-weight: 700; margin-bottom: 8px;">Your 6-Digit Verification Code</div>
+										<div style="font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #0F172A; font-family: monospace;">\' . esc_html( $otp_code ) . \'</div>
+										<div style="font-size: 12px; color: #64748B; margin-top: 8px;">Expires in 15 minutes</div>
 									</div>
-									<p style="margin:0 0 8px 0;font-size:13px;line-height:20px;color:#71717A;">
-										If you did not request this password reset, you can safely ignore this email. Your password will remain unchanged.
-									</p>
+
+									<div style="background-color: #FEF3C7; border: 1px solid #FCD34D; border-radius: 8px; padding: 14px 18px; margin: 20px 0; font-size: 14px; color: #92400E;">
+										<strong>Security Note:</strong> If you did not request this password reset, please ignore this email. Your account credentials remain fully secure.
+									</div>
 								</td>
 							</tr>
 							<!-- Footer -->
 							<tr>
-								<td style="padding:20px 32px;background-color:#111115;border-top:1px solid #222228;text-align:center;">
-									<p style="margin:0;font-size:11px;color:#52525B;">
-										&copy; ' . date( 'Y' ) . ' Express Tech Academy. All rights reserved.
-									</p>
+								td style="padding: 24px 36px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0; text-align: center; font-size: 13px; color: #64748B;">
+									<p style="margin: 0 0 8px 0; font-weight: 600; color: #334155;">\' . esc_html( $site_name ) . \' &bull; Excellence in Practical Tech Education</p>
+									<p style="margin: 0 0 8px 0;">Need help? Reach out at <a href="mailto:support@expressteck.tech" style="color: #4F46E5; text-decoration: none; font-weight: 600;">support@expressteck.tech</a></p>
+									<p style="margin: 0; font-size: 11px; color: #94A3B8;">&copy; \' . gmdate( \'Y\' ) . \' \' . esc_html( $site_name ) . \'. All rights reserved.</p>
 								</td>
 							</tr>
 						</table>
@@ -2602,8 +3073,7 @@ class ETA_Mobile_API_Bridge {
 				</tr>
 			</table>
 		</body>
-		</html>
-		';
+		</html>';
 
 		$headers = array(
 			'Content-Type: text/html; charset=UTF-8',

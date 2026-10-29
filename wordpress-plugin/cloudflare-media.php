@@ -13,6 +13,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( defined( 'ETA_CLOUDFLARE_MEDIA_LOADED' ) ) {
+	return;
+}
+define( 'ETA_CLOUDFLARE_MEDIA_LOADED', true );
+
 if ( ! defined( 'ETA_MEDIA_GATEWAY_URL' ) ) {
 	define( 'ETA_MEDIA_GATEWAY_URL', 'https://media.expressteck.workers.dev' );
 }
@@ -33,6 +38,7 @@ if ( ! defined( 'ETA_MEDIA_DEFAULT_EXPIRY' ) ) {
  * @param int      $ttl        Validity window in seconds (default 4 hours)
  * @return string              Complete signed URL with signature, expiration, and user binding
  */
+if ( ! function_exists( 'eta_generate_secure_video_url' ) ) {
 function eta_generate_secure_video_url( $r2_key, $user_id = null, $ttl = ETA_MEDIA_DEFAULT_EXPIRY ) {
 	if ( empty( $r2_key ) ) {
 		return '';
@@ -64,6 +70,7 @@ function eta_generate_secure_video_url( $r2_key, $user_id = null, $ttl = ETA_MED
 
 	return ETA_MEDIA_GATEWAY_URL . '/' . $clean_key . '?token=' . $token . '&expires=' . $expires . '&uid=' . rawurlencode( $uid );
 }
+}
 
 /**
  * Retrieve the secured streaming URL for a given Masteriyo lesson post.
@@ -72,6 +79,7 @@ function eta_generate_secure_video_url( $r2_key, $user_id = null, $ttl = ETA_MED
  * @param int|null $user_id
  * @return string
  */
+if ( ! function_exists( 'eta_get_lesson_secure_video_url' ) ) {
 function eta_get_lesson_secure_video_url( $lesson_id, $user_id = null ) {
 	$lesson_id = (int) $lesson_id;
 	if ( ! $lesson_id ) {
@@ -132,6 +140,7 @@ function eta_get_lesson_secure_video_url( $lesson_id, $user_id = null ) {
 
 	return $vid_url;
 }
+}
 
 /**
  * Filter Masteriyo LMS lesson video source URL dynamically so that whenever
@@ -187,6 +196,7 @@ add_filter( 'get_post_metadata', function( $value, $object_id, $meta_key, $singl
 /**
  * Synchronize all course lessons in Masteriyo database to persist Cloudflare R2 keys
  */
+if ( ! function_exists( 'eta_run_cloudflare_video_db_sync' ) ) {
 function eta_run_cloudflare_video_db_sync() {
 	$map_file = dirname( __FILE__ ) . '/cloudflare_video_map.json';
 	if ( ! file_exists( $map_file ) ) {
@@ -224,6 +234,7 @@ function eta_run_cloudflare_video_db_sync() {
 	}
 
 	return array( 'success' => true, 'updated_lessons' => $updated );
+}
 }
 
 /**
