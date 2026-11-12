@@ -23,7 +23,7 @@ if ( ! defined( 'ETA_MEDIA_GATEWAY_URL' ) ) {
 }
 
 if ( ! defined( 'ETA_MEDIA_SIGNING_SECRET' ) ) {
-	define( 'ETA_MEDIA_SIGNING_SECRET', '2ce930fd6580d25d465b8dda13d55903c97db4d275354033862617994ef2fbc1' );
+	define( 'ETA_MEDIA_SIGNING_SECRET', '' ); // The real key lives on the server (mu-plugins/eta-media-secret.php or wp-config.php), never in code.
 }
 
 if ( ! defined( 'ETA_MEDIA_DEFAULT_EXPIRY' ) ) {
@@ -40,7 +40,7 @@ if ( ! defined( 'ETA_MEDIA_DEFAULT_EXPIRY' ) ) {
  */
 if ( ! function_exists( 'eta_generate_secure_video_url' ) ) {
 function eta_generate_secure_video_url( $r2_key, $user_id = null, $ttl = ETA_MEDIA_DEFAULT_EXPIRY ) {
-	if ( empty( $r2_key ) ) {
+	if ( empty( $r2_key ) || '' === ETA_MEDIA_SIGNING_SECRET ) {
 		return '';
 	}
 
