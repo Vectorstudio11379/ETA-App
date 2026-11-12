@@ -3,6 +3,8 @@
 > **Base Production URL:** `https://expressteck.tech`  
 > **API Namespace:** `/wp-json/eta/v1`  
 > **Live Server Status:** All endpoints tested, active, and fully verified on the production server.
+>
+> **Reviews, Q&A and Bundles:** see [docs/ETA_Mobile_API_Endpoints.md](docs/ETA_Mobile_API_Endpoints.md) for the current rules and error codes (Q&A posting now needs a signed-in user), and [docs/eta-app-reviews-qa-bundles-api.html](docs/eta-app-reviews-qa-bundles-api.html) for the full developer guide with request and response examples.
 
 ---
 
