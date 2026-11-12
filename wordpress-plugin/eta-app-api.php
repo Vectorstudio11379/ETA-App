@@ -38,6 +38,9 @@ class ETA_Mobile_API_Bridge {
 
 	const NAMESPACE = 'eta/v1';
 
+	// App login tokens expire after 30 days without a fresh login.
+	const TOKEN_TTL = 30 * DAY_IN_SECONDS;
+
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this, 'add_cors_support' ) );
@@ -264,12 +267,8 @@ class ETA_Mobile_API_Bridge {
 			'permission_callback' => '__return_true',
 		) );
 
-		// 17. Remote Synchronizer for Cloudflare Media
-		register_rest_route( self::NAMESPACE, '/fix-cloudflare-media', array(
-			'methods'             => array( 'GET', 'POST' ),
-			'callback'            => array( $this, 'fix_cloudflare_media_file' ),
-			'permission_callback' => '__return_true',
-		) );
+		// 17. (Removed) /fix-cloudflare-media wrote uploaded code into the theme.
+		//     Deploy theme files through Hostinger / FTP instead.
 
 		// 18. Forgotten Password Flow (OTP Generation, Verification, & Reset)
 		register_rest_route( self::NAMESPACE, '/auth/forgot-password', array(
@@ -297,6 +296,63 @@ class ETA_Mobile_API_Bridge {
 		register_rest_route( self::NAMESPACE, '/database-repair', array(
 			'methods'             => array( 'GET', 'POST' ),
 			'callback'            => array( $this, 'handle_database_repair_endpoint' ),
+			'permission_callback' => array( $this, 'require_admin' ),
+		) );
+
+		// 20. Course Reviews & Ratings (GET /reviews, POST /reviews)
+		register_rest_route( self::NAMESPACE, '/reviews', array(
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_course_reviews' ),
+				'permission_callback' => '__return_true',
+			),
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'submit_course_review' ),
+				'permission_callback' => '__return_true',
+			),
+		) );
+
+		// 21. Course Q&A (GET /course-qa, POST /course-qa, aliases /qa)
+		register_rest_route( self::NAMESPACE, '/course-qa', array(
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_course_qa' ),
+				'permission_callback' => '__return_true',
+			),
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'submit_course_qa' ),
+				'permission_callback' => '__return_true',
+			),
+		) );
+		register_rest_route( self::NAMESPACE, '/qa', array(
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_course_qa' ),
+				'permission_callback' => '__return_true',
+			),
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'submit_course_qa' ),
+				'permission_callback' => '__return_true',
+			),
+		) );
+
+		// 22. Student Certificates & Verification (GET /certificates, GET /my-certificates)
+		register_rest_route( self::NAMESPACE, '/certificates', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_student_certificates' ),
+			'permission_callback' => '__return_true',
+		) );
+		register_rest_route( self::NAMESPACE, '/my-certificates', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'get_student_certificates' ),
+			'permission_callback' => '__return_true',
+		) );
+		register_rest_route( self::NAMESPACE, '/certificates/verify', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'verify_certificate_endpoint' ),
 			'permission_callback' => '__return_true',
 		) );
 	}
@@ -304,8 +360,7 @@ class ETA_Mobile_API_Bridge {
 	public function handle_maintenance_actions() {
 		if ( isset( $_GET['eta_action'] ) && 'database_repair' === $_GET['eta_action'] ) {
 			$authorized = current_user_can( 'manage_options' );
-			$key = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '';
-			if ( ! $authorized && 'eta_cf_secure_sync_2026' !== $key ) {
+			if ( ! $authorized ) {
 				wp_die( 'Unauthorized maintenance request.', 'Unauthorized', array( 'response' => 403 ) );
 			}
 			$lock = get_transient( 'eta_db_repair_cooldown' );
@@ -328,8 +383,7 @@ class ETA_Mobile_API_Bridge {
 
 	public function handle_database_repair_endpoint( $request ) {
 		$authorized = current_user_can( 'manage_options' );
-		$key = $request->get_param( 'key' );
-		if ( ! $authorized && 'eta_cf_secure_sync_2026' !== $key ) {
+		if ( ! $authorized ) {
 			return new WP_REST_Response( array( 'error' => 'Unauthorized' ), 403 );
 		}
 		$lock = get_transient( 'eta_db_repair_cooldown' );
@@ -564,45 +618,12 @@ class ETA_Mobile_API_Bridge {
 		return $report;
 	}
 
-	public function fix_cloudflare_media_file( $request ) {
-		$key = $request->get_param( 'key' );
-		if ( $key !== 'eta_cf_secure_sync_2026' ) {
-			return new WP_REST_Response( array( 'error' => 'Unauthorized' ), 403 );
-		}
-
-		$theme_inc = get_template_directory() . '/inc';
-		if ( ! file_exists( $theme_inc ) ) {
-			wp_mkdir_p( $theme_inc );
-		}
-
-		$b64 = $request->get_param( 'code_b64' );
-		$clean_code = $b64 ? base64_decode( $b64 ) : '';
-		if ( empty( $clean_code ) ) {
-			return new WP_REST_Response( array( 'error' => 'Empty code' ), 400 );
-		}
-
-		$target_file = $theme_inc . '/cloudflare-media.php';
-		$bytes = @file_put_contents( $target_file, $clean_code );
-
-		$map_b64 = $request->get_param( 'map_b64' );
-		if ( ! empty( $map_b64 ) ) {
-			$map_code = base64_decode( $map_b64 );
-			@file_put_contents( $theme_inc . '/cloudflare_video_map.json', $map_code );
-		}
-
-		if ( class_exists( '\LiteSpeed\Purge' ) ) {
-			\LiteSpeed\Purge::purge_all();
-		}
-		if ( function_exists( 'wp_cache_flush' ) ) {
-			wp_cache_flush();
-		}
-
-		return new WP_REST_Response( array(
-			'success'       => ( false !== $bytes ),
-			'written_bytes' => $bytes,
-			'target'        => $target_file,
-			'template_dir'  => get_template_directory(),
-		), 200 );
+	/**
+	 * Permission callback: logged-in administrators only (cookie + nonce, or
+	 * a WordPress Application Password over HTTPS).
+	 */
+	public function require_admin() {
+		return current_user_can( 'manage_options' );
 	}
 
 	/**
@@ -614,32 +635,54 @@ class ETA_Mobile_API_Bridge {
 			return $user_id;
 		}
 
+		// Tokens are accepted from headers only (never the URL, where they end up in logs).
+		$token       = '';
 		$auth_header = isset( $_SERVER['HTTP_AUTHORIZATION'] ) ? $_SERVER['HTTP_AUTHORIZATION'] : ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] : '' );
 		if ( preg_match( '/Bearer\s(\S+)/i', $auth_header, $matches ) ) {
 			$token = sanitize_text_field( $matches[1] );
-			global $wpdb;
-			$found_id = $wpdb->get_var( $wpdb->prepare(
-				"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = '_eta_app_auth_token' AND meta_value = %s",
-				$token
-			) );
-			if ( $found_id ) {
-				return (int) $found_id;
-			}
+		} elseif ( isset( $_SERVER['HTTP_X_ETA_AUTH_TOKEN'] ) ) {
+			$token = sanitize_text_field( $_SERVER['HTTP_X_ETA_AUTH_TOKEN'] );
 		}
 
-		$fallback_token = isset( $_REQUEST['auth_token'] ) ? sanitize_text_field( $_REQUEST['auth_token'] ) : ( isset( $_SERVER['HTTP_X_ETA_AUTH_TOKEN'] ) ? sanitize_text_field( $_SERVER['HTTP_X_ETA_AUTH_TOKEN'] ) : '' );
-		if ( ! empty( $fallback_token ) ) {
-			global $wpdb;
-			$found_id = $wpdb->get_var( $wpdb->prepare(
-				"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = '_eta_app_auth_token' AND meta_value = %s",
-				$fallback_token
-			) );
-			if ( $found_id ) {
-				return (int) $found_id;
-			}
+		if ( empty( $token ) ) {
+			return 0;
 		}
 
-		return 0;
+		global $wpdb;
+		$found_id = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = '_eta_app_auth_token' AND meta_value = %s LIMIT 1",
+			$token
+		) );
+		if ( ! $found_id ) {
+			return 0;
+		}
+
+		$expires = (int) get_user_meta( $found_id, '_eta_app_auth_token_expires', true );
+		if ( ! $expires ) {
+			// Token issued before expiry existed: give it a fresh 30-day window.
+			update_user_meta( $found_id, '_eta_app_auth_token_expires', time() + self::TOKEN_TTL );
+		} elseif ( time() > $expires ) {
+			delete_user_meta( $found_id, '_eta_app_auth_token' );
+			delete_user_meta( $found_id, '_eta_app_auth_token_expires' );
+			return 0;
+		}
+
+		return $found_id;
+	}
+
+	/**
+	 * Helper: issue (or reuse) the user's app token and extend its expiry.
+	 * $rotate = true always creates a new token, signing out other devices.
+	 */
+	private function issue_auth_token( $user_id, $rotate = false ) {
+		$token   = get_user_meta( $user_id, '_eta_app_auth_token', true );
+		$expires = (int) get_user_meta( $user_id, '_eta_app_auth_token_expires', true );
+		if ( $rotate || empty( $token ) || ( $expires && time() > $expires ) ) {
+			$token = wp_generate_password( 40, false );
+			update_user_meta( $user_id, '_eta_app_auth_token', $token );
+		}
+		update_user_meta( $user_id, '_eta_app_auth_token_expires', time() + self::TOKEN_TTL );
+		return $token;
 	}
 
 	/**
@@ -789,16 +832,8 @@ class ETA_Mobile_API_Bridge {
 			);
 		};
 
+		// Enrollment flags come only from the login token, never from an email param.
 		$user_id = $this->get_current_user_id();
-		if ( ! $user_id ) {
-			$email = isset( $_REQUEST['email'] ) ? sanitize_email( $_REQUEST['email'] ) : ( is_object( $request ) && method_exists( $request, 'get_param' ) ? sanitize_email( $request->get_param( 'email' ) ?: $request->get_param( 'user_email' ) ) : '' );
-			if ( $email ) {
-				$u = get_user_by( 'email', $email );
-				if ( $u ) {
-					$user_id = $u->ID;
-				}
-			}
-		}
 
 		$enrolled_ids = array();
 		if ( $user_id > 0 ) {
@@ -816,8 +851,17 @@ class ETA_Mobile_API_Bridge {
 				$post_id = $post->ID;
 				$author  = get_the_author_meta( 'display_name', $post->post_author );
 
-				$regular_price = get_post_meta( $post_id, '_regular_price', true ) ?: get_post_meta( $post_id, 'regular_price', true ) ?: 25000;
-				$sale_price    = get_post_meta( $post_id, '_price', true ) ?: get_post_meta( $post_id, 'price', true ) ?: 15000;
+				$is_course_free = ( 'yes' === get_post_meta( $post_id, '_is_free', true ) || 'free' === get_post_meta( $post_id, '_access_mode', true ) );
+				$raw_price      = get_post_meta( $post_id, '_price', true );
+				$raw_reg_price  = get_post_meta( $post_id, '_regular_price', true );
+
+				if ( $is_course_free || '0' === (string) $raw_price || 0 === $raw_price ) {
+					$sale_price    = 0;
+					$regular_price = ( '' !== $raw_reg_price && false !== $raw_reg_price && is_numeric( $raw_reg_price ) ) ? (int) $raw_reg_price : 0;
+				} else {
+					$sale_price    = ( '' !== $raw_price && false !== $raw_price && is_numeric( $raw_price ) ) ? (int) $raw_price : 15000;
+					$regular_price = ( '' !== $raw_reg_price && false !== $raw_reg_price && is_numeric( $raw_reg_price ) ) ? (int) $raw_reg_price : max( $sale_price, 20000 );
+				}
 
 				$thumbnail = get_the_post_thumbnail_url( $post_id, 'large' );
 				if ( ! $thumbnail && function_exists( 'eta_react_course_clean_thumbnail_url' ) ) {
@@ -872,10 +916,11 @@ class ETA_Mobile_API_Bridge {
 					'category'      => $cat_name,
 					'originalPrice' => (int) $regular_price,
 					'price'         => (int) $sale_price,
-					'discount'      => $regular_price > $sale_price ? (int) round( ( ( $regular_price - $sale_price ) / $regular_price ) * 100 ) : 40,
+					'discount'      => $regular_price > $sale_price ? (int) round( ( ( $regular_price - $sale_price ) / $regular_price ) * 100 ) : 0,
 					'studentsCount' => 120,
-					'rating'        => 4.8,
-					'reviewsCount'  => 35,
+					'rating'        => round( (float) get_post_meta( $post_id, '_masteriyo_average_rating', true ) ?: 4.9, 1 ),
+					'reviewsCount'  => (int) get_post_meta( $post_id, '_masteriyo_review_count', true ) ?: 42,
+					'hasCertificate'=> true,
 					'daysLeft'      => 5,
 					'thumbnail'     => $thumbnail,
 					'description'   => wp_strip_all_tags( $post->post_excerpt ?: wp_trim_words( $post->post_content, 30 ) ),
@@ -900,98 +945,135 @@ class ETA_Mobile_API_Bridge {
 	public function get_bundles( $request ) {
 		$theme_uri = get_template_directory_uri();
 
-		$bundles = array(
-			array(
-				'id'            => 'bundle_1',
-				'slug'          => 'ai-automation-power-suite',
-				'title'         => 'AI & Automation Power Suite',
+		// Find active course IDs for the 6 paid courses
+		$dm_post = get_page_by_path( 'digital-marketing-masterclass', OBJECT, 'mto-course' );
+		if ( ! $dm_post ) {
+			$dm_posts = get_posts( array( 'post_type' => 'mto-course', 'title' => 'THE COMPLETE DIGITAL MARKETING MASTERCLASS', 'posts_per_page' => 1 ) );
+			$dm_id = ! empty( $dm_posts ) ? (int) $dm_posts[0]->ID : 0;
+		} else {
+			$dm_id = (int) $dm_post->ID;
+		}
+
+		// Core paid course IDs:
+		// Digital Marketing: $dm_id, Graphic Design: 979, Content Writing: 955, Copywriting: 954, Survey: 680, PayPal: 470
+		$paid_course_ids = array_values( array_filter( array( $dm_id, 979, 955, 954, 680, 470 ) ) );
+
+		$build_course_summary = function( $cid ) {
+			$p = get_post( $cid );
+			if ( ! $p ) return null;
+			$thumb = get_the_post_thumbnail_url( $cid, 'medium' ) ?: 'https://expressteck.tech/wp-content/uploads/2026/10/3.jpeg';
+			$price = (int) get_post_meta( $cid, '_price', true );
+			$reg_price = (int) get_post_meta( $cid, '_regular_price', true );
+			return array(
+				'id'            => (int) $cid,
+				'title'         => $p->post_title,
+				'slug'          => $p->post_name,
+				'price'         => $price ?: $reg_price,
+				'regular_price' => $reg_price ?: $price,
+				'thumbnail'     => $thumb,
 				'instructor'    => 'Express Tech Academy / Coach Denis',
-				'category'      => 'AI & Emerging Tech',
-				'originalPrice' => 40000,
-				'price'         => 20000,
-				'discount'      => 50,
-				'studentsCount' => 245,
-				'rating'        => 4.9,
-				'reviewsCount'  => 58,
-				'daysLeft'      => 4,
-				'isBundle'      => true,
-				'bundleBadge'   => '2-in-1 Suite',
-				'packages'      => array(
-					'Complete Prompt Engineering Masterclass (Text, Image & Video)',
-					'30-Day AI Automation Masterclass (With n8n & Agents)',
-				),
-				'thumbnail'     => 'https://expressteck.tech/wp-content/uploads/2026/10/3.jpeg',
-				'description'   => 'The ultimate artificial intelligence mastery bundle. Master prompting for text, photorealistic imagery & cinematic video, plus n8n workflow automation and autonomous AI agents.',
-			),
-			array(
-				'id'            => 'bundle_2',
-				'slug'          => 'digital-creator-social-media-launchpad',
-				'title'         => 'Digital Creator & Social Media Launchpad',
-				'instructor'    => 'Express Tech Academy / Coach Denis',
-				'category'      => 'Digital Media & Growth',
-				'originalPrice' => 35000,
-				'price'         => 15000,
-				'discount'      => 57,
-				'studentsCount' => 310,
-				'rating'        => 4.9,
-				'reviewsCount'  => 64,
-				'daysLeft'      => 5,
-				'isBundle'      => true,
-				'bundleBadge'   => 'Creator Pack',
-				'packages'      => array(
-					'YouTube Creator Masterclass: Channel Growth & Monetization',
-					'Complete Social Media Management Course',
-				),
-				'thumbnail'     => 'https://expressteck.tech/wp-content/uploads/2026/10/2.jpeg',
-				'description'   => 'Everything required to launch, scale, and monetize as a top-tier digital creator. Covers channel growth, high-CPM global targeting, CapCut video editing, and viral social strategies.',
-			),
-			array(
-				'id'            => 'bundle_3',
-				'slug'          => 'global-remote-career-virtual-assistant-bundle',
-				'title'         => 'Global Remote Career & Virtual Assistant Bundle',
-				'instructor'    => 'Express Tech Academy / Coach Denis',
-				'category'      => 'Remote Work & Global Finance',
-				'originalPrice' => 38000,
-				'price'         => 18000,
-				'discount'      => 53,
-				'studentsCount' => 280,
-				'rating'        => 4.8,
-				'reviewsCount'  => 49,
-				'daysLeft'      => 6,
-				'isBundle'      => true,
-				'bundleBadge'   => 'Career Blueprint',
-				'packages'      => array(
-					'Virtual Assistant Master Course',
-					'PayPal Mastery Course',
-				),
-				'thumbnail'     => 'https://expressteck.tech/wp-content/uploads/2026/10/6.jpeg',
-				'description'   => 'Step-by-step blueprint to secure high-paying foreign remote clients and receive international payments securely with verified cross-border PayPal and virtual bank accounts.',
-			),
-			array(
-				'id'            => 'bundle_4',
-				'slug'          => 'financial-freedom-global-trading-mastery',
-				'title'         => 'Financial Freedom & Global Trading Mastery',
-				'instructor'    => 'Express Tech Academy / Coach Denis',
-				'category'      => 'Remote Work & Global Finance',
-				'originalPrice' => 50000,
-				'price'         => 20000,
-				'discount'      => 60,
-				'studentsCount' => 195,
-				'rating'        => 4.9,
-				'reviewsCount'  => 42,
-				'daysLeft'      => 5,
-				'isBundle'      => true,
-				'bundleBadge'   => 'Trading Suite',
-				'packages'      => array(
-					'Complete Forex Trading Course',
-					'PayPal Mastery Course',
-				),
-				'thumbnail'     => 'https://expressteck.tech/wp-content/uploads/2026/10/forex-trading-masterclass.jpg',
-				'description'   => 'Master high-probability currency market structure, institutional price action, risk management, and seamlessly withdraw global earnings through cross-border payment pipelines.',
-			),
+			);
+		};
+
+		// 1. Complete Digital Career Suite
+		$b1_courses = array();
+		$b1_packages = array();
+		foreach ( $paid_course_ids as $cid ) {
+			$c_obj = $build_course_summary( $cid );
+			if ( $c_obj ) {
+				$b1_courses[] = $c_obj;
+				$b1_packages[] = $c_obj['title'];
+			}
+		}
+
+		$bundle_1 = array(
+			'id'               => 101,
+			'bundle_id'        => 101,
+			'slug'             => 'complete-digital-career-suite',
+			'title'            => 'Complete Digital Career Suite',
+			'subtitle'         => 'Master the 6 highest-paying digital skills in one all-inclusive bundle',
+			'instructor'       => 'Express Tech Academy / Coach Denis',
+			'category'         => 'Digital Career & Freelance',
+			'original_price'   => 31500,
+			'originalPrice'    => 31500,
+			'price'            => 18000,
+			'sale_price'       => 18000,
+			'savings_amount'   => 13500,
+			'savings_percent'  => 43,
+			'discount'         => 43,
+			'currency'         => 'NGN',
+			'currency_symbol'  => '₦',
+			'studentsCount'    => 340,
+			'rating'           => 4.9,
+			'reviewsCount'     => 78,
+			'daysLeft'         => 7,
+			'isBundle'         => true,
+			'is_bundle'        => true,
+			'bundleBadge'      => 'Best Value (Save 43%)',
+			'badge'            => 'Best Value (Save 43%)',
+			'thumbnail'        => 'https://expressteck.tech/wp-content/uploads/2026/10/3.jpeg',
+			'description'      => 'The ultimate career bundle covering all 6 premier skills: Digital Marketing, Graphic Design, Content Writing, Copywriting, International Surveys, and PayPal Creation.',
+			'course_ids'       => $paid_course_ids,
+			'courses_count'    => count( $b1_courses ),
+			'packages'         => $b1_packages,
+			'courses'          => $b1_courses,
+			'checkout_url'     => 'https://expressteck.tech/checkout?bundle_id=101',
+			'enrollment_url'   => 'https://expressteck.tech/checkout?bundle_id=101',
 		);
 
-		return new WP_REST_Response( $bundles, 200 );
+		// 2. Creative Freelancer Pack
+		$b2_ids = array( 954, 955, 979 );
+		$b2_courses = array();
+		$b2_packages = array();
+		foreach ( $b2_ids as $cid ) {
+			$c_obj = $build_course_summary( $cid );
+			if ( $c_obj ) {
+				$b2_courses[] = $c_obj;
+				$b2_packages[] = $c_obj['title'];
+			}
+		}
+
+		$bundle_2 = array(
+			'id'               => 102,
+			'bundle_id'        => 102,
+			'slug'             => 'creative-freelancer-pack',
+			'title'            => 'Creative Freelancer Pack',
+			'subtitle'         => 'High-converting copywriting, content writing, and graphic design for freelance success',
+			'instructor'       => 'Express Tech Academy / Coach Denis',
+			'category'         => 'Creative & Freelance',
+			'original_price'   => 12500,
+			'originalPrice'    => 12500,
+			'price'            => 8500,
+			'sale_price'       => 8500,
+			'savings_amount'   => 4000,
+			'savings_percent'  => 32,
+			'discount'         => 32,
+			'currency'         => 'NGN',
+			'currency_symbol'  => '₦',
+			'studentsCount'    => 290,
+			'rating'           => 4.9,
+			'reviewsCount'     => 62,
+			'daysLeft'         => 5,
+			'isBundle'         => true,
+			'is_bundle'        => true,
+			'bundleBadge'      => 'Top Choice (Save 32%)',
+			'badge'            => 'Top Choice (Save 32%)',
+			'thumbnail'        => 'https://expressteck.tech/wp-content/uploads/2026/10/2.jpeg',
+			'description'      => 'Everything needed to launch and scale a freelance writing and design agency: persuasive sales copy, SEO content writing, and professional graphics.',
+			'course_ids'       => $b2_ids,
+			'courses_count'    => count( $b2_courses ),
+			'packages'         => $b2_packages,
+			'courses'          => $b2_courses,
+			'checkout_url'     => 'https://expressteck.tech/checkout?bundle_id=102',
+			'enrollment_url'   => 'https://expressteck.tech/checkout?bundle_id=102',
+		);
+
+		$bundles = array( $bundle_1, $bundle_2 );
+
+		return new WP_REST_Response( array(
+			'success' => true,
+			'data'    => $bundles,
+		), 200 );
 	}
 
 
@@ -1058,16 +1140,10 @@ class ETA_Mobile_API_Bridge {
 	public function get_my_courses( $request ) {
 		$user_id = $this->get_current_user_id();
 		if ( ! $user_id ) {
-			$email = sanitize_email( $request->get_param( 'email' ) ?: $request->get_param( 'user_email' ) );
-			if ( $email ) {
-				$u = get_user_by( 'email', $email );
-				if ( $u ) {
-					$user_id = $u->ID;
-				}
-			}
-		}
-		if ( ! $user_id ) {
-			return new WP_REST_Response( array(), 200 );
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => 'Authentication required. Please provide a valid Bearer token.',
+			), 401 );
 		}
 
 		$enrolled_courses = array();
@@ -1177,14 +1253,38 @@ class ETA_Mobile_API_Bridge {
 						'studentsCount' => 120,
 						'daysLeft'      => 0,
 						'modules'       => $this->resolve_course_modules( $real_mto_cid ),
+						'certificate'   => array(
+							'is_issued'         => ( $course_prog >= 99 ),
+							'verification_code' => "{$real_mto_cid}-1070-{$user_id}",
+							'verification_url'  => home_url( "/certificate-verification/?code={$real_mto_cid}-1070-{$user_id}" ),
+							'download_url'      => home_url( "/wp-admin/admin-ajax.php?action=eta_download_certificate&course_id={$real_mto_cid}&user_id={$user_id}" ),
+						),
 					);
 				}
 			}
 		}
 
+		// Collect earned certificates
+		$student_certificates = array();
+		foreach ( $enrolled_courses as $ec ) {
+			if ( ! empty( $ec['certificate']['is_issued'] ) ) {
+				$student_certificates[] = array(
+					'id'                => 1070,
+					'course_id'         => $ec['id'],
+					'course_title'      => $ec['title'],
+					'verification_code' => $ec['certificate']['verification_code'],
+					'verification_url'  => $ec['certificate']['verification_url'],
+					'download_url'      => $ec['certificate']['download_url'],
+					'status'            => 'issued',
+					'grade'             => '100%',
+				);
+			}
+		}
+
 		return new WP_REST_Response( array(
-			'enrolled' => $enrolled_courses,
-			'debug'    => array(
+			'enrolled'     => $enrolled_courses,
+			'certificates' => $student_certificates,
+			'debug'        => array(
 				'user_id'          => $user_id,
 				'all_enrolled_ids' => $all_enrolled_ids,
 				'manual_ids'       => $manual_ids,
@@ -1323,12 +1423,39 @@ class ETA_Mobile_API_Bridge {
 		$modules = $this->resolve_course_modules( $real_course_id );
 		$post = get_post( $real_course_id );
 
+		// Reviews & ratings
+		$reviews_data = array();
+		if ( function_exists( 'eta_get_course_display_reviews' ) ) {
+			$reviews_data = eta_get_course_display_reviews( $real_course_id );
+		}
+		$avg_rating = (float) get_post_meta( $real_course_id, '_masteriyo_average_rating', true ) ?: 4.9;
+		$rev_count  = (int) get_post_meta( $real_course_id, '_masteriyo_review_count', true ) ?: count( $reviews_data );
+		$breakdown  = get_post_meta( $real_course_id, '_masteriyo_rating_counts', true ) ?: array(
+			'5' => max( 1, $rev_count ),
+			'4' => 0,
+			'3' => 0,
+			'2' => 0,
+			'1' => 0,
+		);
+
+		// Q&A
+		$qa_data = array();
+		if ( function_exists( 'eta_get_course_curated_qa' ) ) {
+			$qa_data = eta_get_course_curated_qa( $real_course_id );
+		}
+
 		return new WP_REST_Response( array(
-			'success'    => true,
-			'course_id'  => $real_course_id,
-			'product_id' => get_post_meta( $real_course_id, '_wc_product_id', true ) ?: ( get_post_type( $cid ) === 'product' ? $cid : null ),
-			'title'      => $post ? html_entity_decode( $post->post_title, ENT_QUOTES, 'UTF-8' ) : '',
-			'modules'    => $modules,
+			'success'          => true,
+			'course_id'        => $real_course_id,
+			'product_id'       => get_post_meta( $real_course_id, '_wc_product_id', true ) ?: ( get_post_type( $cid ) === 'product' ? $cid : null ),
+			'title'            => $post ? html_entity_decode( $post->post_title, ENT_QUOTES, 'UTF-8' ) : '',
+			'modules'          => $modules,
+			'average_rating'   => round( $avg_rating, 1 ),
+			'reviews_count'    => max( $rev_count, count( $reviews_data ) ),
+			'rating_breakdown' => $breakdown,
+			'reviews'          => $reviews_data,
+			'qa_items'         => $qa_data,
+			'has_certificate'  => true,
 		), 200 );
 	}
 
@@ -1401,11 +1528,27 @@ class ETA_Mobile_API_Bridge {
 	public function initialize_paystack_checkout( $request ) {
 		$params = array_merge( (array) $request->get_params(), (array) $request->get_json_params() );
 
+		$bundle_id = isset( $params['bundle_id'] ) ? (int) $params['bundle_id'] : ( isset( $params['bundle'] ) ? (int) $params['bundle'] : 0 );
 		$raw_items = isset( $params['items'] ) ? $params['items'] : ( isset( $params['course_ids'] ) ? $params['course_ids'] : ( isset( $params['course_id'] ) ? array( $params['course_id'] ) : array() ) );
 		if ( ! is_array( $raw_items ) ) {
 			$raw_items = ! empty( $raw_items ) ? explode( ',', (string) $raw_items ) : array();
 		}
-		$items = array_values( array_filter( array_map( 'intval', $raw_items ) ) );
+
+		$is_bundle = false;
+		$bundle_price = 0;
+		if ( 101 === $bundle_id || in_array( '101', $raw_items, true ) || in_array( 'bundle_1', $raw_items, true ) || in_array( 'complete-digital-career-suite', $raw_items, true ) ) {
+			$dm_post = get_page_by_path( 'digital-marketing-masterclass', OBJECT, 'mto-course' );
+			$dm_id = $dm_post ? (int) $dm_post->ID : 0;
+			$items = array_values( array_filter( array( $dm_id, 979, 955, 954, 680, 470 ) ) );
+			$is_bundle = true;
+			$bundle_price = 18000;
+		} elseif ( 102 === $bundle_id || in_array( '102', $raw_items, true ) || in_array( 'bundle_2', $raw_items, true ) || in_array( 'creative-freelancer-pack', $raw_items, true ) ) {
+			$items = array( 954, 955, 979 );
+			$is_bundle = true;
+			$bundle_price = 8500;
+		} else {
+			$items = array_values( array_filter( array_map( 'intval', $raw_items ) ) );
+		}
 
 		$email    = isset( $params['email'] ) ? sanitize_email( $params['email'] ) : '';
 		$name     = isset( $params['name'] ) ? sanitize_text_field( $params['name'] ) : 'Student';
@@ -1413,11 +1556,11 @@ class ETA_Mobile_API_Bridge {
 		$currency = isset( $params['currency'] ) ? sanitize_text_field( $params['currency'] ) : 'NGN';
 
 		if ( empty( $items ) ) {
-			$items = array( 704 ); // Default to Paid Online Survey course
+			return new WP_Error( 'missing_course', 'At least one course_id is required for checkout.', array( 'status' => 400 ) );
 		}
 
+		$user_id = $this->get_current_user_id();
 		if ( empty( $email ) ) {
-			$user_id = $this->get_current_user_id();
 			if ( $user_id > 0 ) {
 				$u = get_user_by( 'id', $user_id );
 				if ( $u ) {
@@ -1437,25 +1580,58 @@ class ETA_Mobile_API_Bridge {
 		$total_amount_kobo = 0;
 		$order_items = array();
 
-		foreach ( $items as $item_id ) {
-			$post = get_post( $item_id );
-			if ( ! $post ) {
-				continue;
+		if ( $is_bundle && $bundle_price > 0 ) {
+			$total_amount_kobo = $bundle_price * 100;
+			foreach ( $items as $item_id ) {
+				$post = get_post( $item_id );
+				$order_items[] = array(
+					'id'    => $item_id,
+					'title' => $post ? $post->post_title : ( 'Course #' . $item_id ),
+					'price' => $bundle_price,
+				);
 			}
-			$price = (int) ( get_post_meta( $item_id, '_price', true ) ?: get_post_meta( $item_id, 'price', true ) ?: 15000 );
-			$total_amount_kobo += ( $price * 100 );
-			$order_items[] = array(
-				'id'    => $item_id,
-				'title' => $post->post_title,
-				'price' => $price,
-			);
+		} else {
+			foreach ( $items as $item_id ) {
+				$post = get_post( $item_id );
+				if ( ! $post ) {
+					continue;
+				}
+				$price = (int) ( get_post_meta( $item_id, '_price', true ) ?: 0 );
+				$total_amount_kobo += ( $price * 100 );
+				$order_items[] = array(
+					'id'    => $item_id,
+					'title' => $post->post_title,
+					'price' => $price,
+				);
+			}
 		}
 
+		if ( empty( $order_items ) ) {
+			return new WP_Error( 'invalid_course', 'None of the requested courses exist.', array( 'status' => 400 ) );
+		}
+		// Only charge for courses that actually exist.
+		$items = array_values( array_map( function( $oi ) { return (int) $oi['id']; }, $order_items ) );
+
+		// Instant free enrollment for 0 NGN courses (bypasses Paystack)
 		if ( $total_amount_kobo <= 0 ) {
-			$total_amount_kobo = 15000 * 100; // safety fallback: 15,000 NGN
+			$free_ref = 'free_enroll_' . ( $user_id ?: 'guest' ) . '_' . time();
+			$this->verify_and_enroll_internal( $free_ref, 0, $user_id, $email, $items );
+			return new WP_REST_Response( array(
+				'status'            => 'success',
+				'free_enrollment'   => true,
+				'enrolled'          => true,
+				'authorization_url' => '',
+				'access_code'       => '',
+				'reference'         => $free_ref,
+				'message'           => 'Successfully enrolled in free course.',
+				'redirect_url'      => 'https://expressteck.tech/my-courses/',
+			), 200 );
 		}
 
 		$secret_key = $this->get_paystack_secret_key();
+		if ( empty( $secret_key ) ) {
+			return new WP_Error( 'paystack_not_configured', 'Payments are not configured on the server.', array( 'status' => 503 ) );
+		}
 
 		// Create WooCommerce order if active
 		$order_id = 0;
@@ -1489,7 +1665,7 @@ class ETA_Mobile_API_Bridge {
 			}
 		}
 
-		$reference = 'ETA_MOB_' . time() . '_' . rand( 1000, 9999 );
+		$reference = 'ETA_MOB_' . time() . '_' . wp_generate_password( 10, false );
 		$callback_url = home_url( '/payment-complete/?order_id=' . $order_id . '&ref=' . $reference );
 
 		// Call Paystack API
@@ -1529,6 +1705,17 @@ class ETA_Mobile_API_Bridge {
 				update_post_meta( $order_id, '_eta_course_ids', $items );
 			}
 
+			// Server-side record of what this reference pays for. Verification
+			// trusts only this record and Paystack, never values sent by the client.
+			$this->save_txn_record( $reference, array(
+				'amount_kobo' => (int) $total_amount_kobo,
+				'currency'    => 'NGN',
+				'course_ids'  => $items,
+				'email'       => $email,
+				'user_id'     => (int) $user_id,
+				'order_id'    => (int) $order_id,
+			) );
+
 			return new WP_REST_Response( array(
 				'success'           => true,
 				'authorization_url' => $res_data['data']['authorization_url'],
@@ -1540,15 +1727,24 @@ class ETA_Mobile_API_Bridge {
 			), 200 );
 		}
 
-		// Fallback direct checkout url
-		$fallback_checkout_url = 'https://checkout.paystack.com/' . $reference;
-		return new WP_REST_Response( array(
-			'success'           => true,
-			'authorization_url' => $fallback_checkout_url,
-			'reference'         => $reference,
-			'order_id'          => $order_id,
-			'mock_mode'         => true,
-		), 200 );
+		$paystack_msg = isset( $res_data['message'] ) ? sanitize_text_field( $res_data['message'] ) : 'Unknown error';
+		return new WP_Error( 'paystack_init_failed', 'Could not start the Paystack payment: ' . $paystack_msg, array( 'status' => 502 ) );
+	}
+
+	/**
+	 * Helpers: server-side transaction records keyed by Paystack reference.
+	 */
+	private function txn_record_key( $reference ) {
+		return '_eta_txn_' . md5( (string) $reference );
+	}
+
+	private function save_txn_record( $reference, $record ) {
+		update_option( $this->txn_record_key( $reference ), $record, false );
+	}
+
+	private function get_txn_record( $reference ) {
+		$record = get_option( $this->txn_record_key( $reference ), null );
+		return is_array( $record ) ? $record : null;
 	}
 
 	/**
@@ -1559,91 +1755,113 @@ class ETA_Mobile_API_Bridge {
 	 * 3. Webhook: /wp-json/eta/v1/payment/webhook
 	 */
 	public function verify_and_enroll_internal( $reference, $order_id = 0, $user_id = 0, $email = '', $course_ids = array() ) {
+		// SECURITY: $order_id, $user_id, $email and $course_ids from callers are
+		// ignored. What gets unlocked, and for whom, comes only from Paystack's
+		// verify API plus the server-side record saved at checkout.
+		unset( $order_id, $user_id, $email, $course_ids );
+
 		$reference  = sanitize_text_field( $reference );
-		$order_id   = (int) $order_id;
-		$user_id    = (int) $user_id;
 		$secret_key = $this->get_paystack_secret_key();
 
-		$is_verified = false;
-		$verified_course_ids = ! empty( $course_ids ) ? (array) $course_ids : array();
-
-		if ( ! empty( $secret_key ) && ! empty( $reference ) ) {
-			$verify_res = wp_remote_get( 'https://api.paystack.co/transaction/verify/' . rawurlencode( $reference ), array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $secret_key,
-				),
-				'timeout' => 20,
-			) );
-
-			if ( ! is_wp_error( $verify_res ) ) {
-				$v_body = json_decode( wp_remote_retrieve_body( $verify_res ), true );
-				if ( isset( $v_body['status'] ) && true === $v_body['status'] && isset( $v_body['data']['status'] ) && 'success' === $v_body['data']['status'] ) {
-					$is_verified = true;
-					if ( isset( $v_body['data']['metadata']['course_ids'] ) && is_array( $v_body['data']['metadata']['course_ids'] ) ) {
-						$verified_course_ids = array_merge( $verified_course_ids, $v_body['data']['metadata']['course_ids'] );
-					}
-					if ( empty( $order_id ) && isset( $v_body['data']['metadata']['order_id'] ) ) {
-						$order_id = (int) $v_body['data']['metadata']['order_id'];
-					}
-					if ( empty( $email ) && isset( $v_body['data']['customer']['email'] ) ) {
-						$email = sanitize_email( $v_body['data']['customer']['email'] );
-					}
-				}
-			}
-		}
-
-		// Fallback verification if secret key is unconfigured or in test mode
-		if ( ! $is_verified && ! empty( $reference ) ) {
-			$is_verified = true;
-		}
-
-		if ( ! $is_verified ) {
+		$fail = function( $message ) {
 			return array(
 				'success'  => false,
 				'verified' => false,
 				'enrolled' => false,
-				'message'  => 'Transaction verification failed with Paystack.',
+				'message'  => $message,
 			);
+		};
+
+		if ( empty( $reference ) ) {
+			return $fail( 'Payment reference is required.' );
+		}
+		if ( empty( $secret_key ) ) {
+			return $fail( 'Payments are not configured on the server.' );
 		}
 
-		// 1. Mark WooCommerce Order Complete if present
+		// 1. Ask Paystack whether this reference was really paid.
+		$verify_res = wp_remote_get( 'https://api.paystack.co/transaction/verify/' . rawurlencode( $reference ), array(
+			'headers' => array(
+				'Authorization' => 'Bearer ' . $secret_key,
+			),
+			'timeout' => 20,
+		) );
+		if ( is_wp_error( $verify_res ) ) {
+			return $fail( 'Could not reach Paystack to verify the payment. Please try again.' );
+		}
+		$v_body = json_decode( wp_remote_retrieve_body( $verify_res ), true );
+		if ( empty( $v_body['status'] ) || true !== $v_body['status'] || ( $v_body['data']['status'] ?? '' ) !== 'success' ) {
+			return $fail( 'Transaction verification failed with Paystack.' );
+		}
+		$paid_kobo     = (int) ( $v_body['data']['amount'] ?? 0 );
+		$paid_currency = strtoupper( (string) ( $v_body['data']['currency'] ?? '' ) );
+		$payer_email   = sanitize_email( $v_body['data']['customer']['email'] ?? '' );
+
+		// 2. Load what this reference was created for (server-side only).
+		$record   = $this->get_txn_record( $reference );
+		$order_id = 0;
+		$order    = null;
+		if ( $record ) {
+			$order_id = (int) $record['order_id'];
+		} else {
+			// Payments started before records existed: fall back to the order that holds this exact reference.
+			$meta_oid = (int) ( $v_body['data']['metadata']['order_id'] ?? 0 );
+			if ( $meta_oid > 0 && get_post_meta( $meta_oid, '_paystack_txn_ref', true ) === $reference ) {
+				$order_id = $meta_oid;
+			}
+		}
 		if ( $order_id > 0 && function_exists( 'wc_get_order' ) ) {
 			$order = wc_get_order( $order_id );
-			if ( $order ) {
-				$order->payment_complete( $reference );
-				$order->add_order_note( sprintf( 'Paystack payment verified successfully via mobile/web bridge (Ref: %s).', $reference ) );
-				$order->save();
-
-				$item_ids = array();
-				foreach ( $order->get_items() as $item ) {
-					$pid = (int) $item->get_product_id();
-					if ( $pid > 0 ) {
-						$item_ids[] = $pid;
-					}
-				}
-				if ( ! empty( $item_ids ) ) {
-					$verified_course_ids = array_merge( $verified_course_ids, $item_ids );
-				}
-
-				$meta_cids = get_post_meta( $order_id, '_eta_course_ids', true );
-				if ( ! empty( $meta_cids ) && is_array( $meta_cids ) ) {
-					$verified_course_ids = array_merge( $verified_course_ids, $meta_cids );
-				}
-
-				if ( $user_id <= 0 ) {
-					$user_id = (int) $order->get_user_id();
-				}
-				if ( empty( $email ) ) {
-					$email = $order->get_billing_email();
-				}
+			if ( $order && get_post_meta( $order_id, '_paystack_txn_ref', true ) !== $reference ) {
+				$order = null; // Reference does not belong to this order.
 			}
 		}
 
-		// Resolve courses if still empty
-		if ( empty( $verified_course_ids ) ) {
-			$verified_course_ids = array( 704 ); // Default course: Paid Online Survey
+		if ( $record ) {
+			$expected_kobo       = (int) $record['amount_kobo'];
+			$expected_currency   = strtoupper( (string) ( $record['currency'] ?? 'NGN' ) );
+			$verified_course_ids = (array) $record['course_ids'];
+			$user_id             = (int) ( $record['user_id'] ?? 0 );
+			$email               = sanitize_email( $record['email'] ?? '' );
+		} elseif ( $order ) {
+			$expected_kobo       = (int) round( (float) $order->get_total() * 100 );
+			$expected_currency   = strtoupper( (string) $order->get_currency() );
+			$meta_cids           = get_post_meta( $order_id, '_eta_course_ids', true );
+			$verified_course_ids = is_array( $meta_cids ) ? $meta_cids : array();
+			$user_id             = (int) $order->get_user_id();
+			$email               = $order->get_billing_email();
+		} else {
+			return $fail( 'This payment reference was not created by Express Tech Academy checkout.' );
 		}
+
+		// 3. The amount actually paid must cover what was charged.
+		if ( $expected_kobo <= 0 || $paid_kobo < $expected_kobo ) {
+			return $fail( 'The amount paid does not match the course price.' );
+		}
+		if ( ! empty( $expected_currency ) && ! empty( $paid_currency ) && $expected_currency !== $paid_currency ) {
+			return $fail( 'The payment currency does not match.' );
+		}
+
+		if ( empty( $email ) ) {
+			$email = $payer_email;
+		}
+
+		// 4. Mark the WooCommerce order paid.
+		if ( $order ) {
+			if ( $order->needs_payment() ) {
+				$order->payment_complete( $reference );
+				$order->add_order_note( sprintf( 'Paystack payment verified via mobile/web bridge (Ref: %s, amount: %d kobo).', $reference, $paid_kobo ) );
+				$order->save();
+			}
+			if ( $user_id <= 0 ) {
+				$user_id = (int) $order->get_user_id();
+			}
+		}
+
 		$verified_course_ids = array_values( array_unique( array_filter( array_map( 'intval', $verified_course_ids ) ) ) );
+		if ( empty( $verified_course_ids ) ) {
+			return $fail( 'No courses are linked to this payment. Please contact support with your reference.' );
+		}
 
 		// Resolve user by email if user_id <= 0
 		if ( $user_id <= 0 && ! empty( $email ) ) {
@@ -1777,11 +1995,13 @@ class ETA_Mobile_API_Bridge {
 		$raw_body   = file_get_contents( 'php://input' );
 		$signature  = isset( $_SERVER['HTTP_X_PAYSTACK_SIGNATURE'] ) ? sanitize_text_field( $_SERVER['HTTP_X_PAYSTACK_SIGNATURE'] ) : '';
 
-		if ( ! empty( $secret_key ) && ! empty( $signature ) ) {
-			$computed_sig = hash_hmac( 'sha512', $raw_body, $secret_key );
-			if ( ! hash_equals( $computed_sig, $signature ) ) {
-				return new WP_Error( 'invalid_signature', 'Paystack signature verification failed.', array( 'status' => 400 ) );
-			}
+		// Every webhook must carry a valid Paystack signature.
+		if ( empty( $secret_key ) || empty( $signature ) ) {
+			return new WP_Error( 'invalid_signature', 'Missing Paystack signature.', array( 'status' => 401 ) );
+		}
+		$computed_sig = hash_hmac( 'sha512', $raw_body, $secret_key );
+		if ( ! hash_equals( $computed_sig, $signature ) ) {
+			return new WP_Error( 'invalid_signature', 'Paystack signature verification failed.', array( 'status' => 401 ) );
 		}
 
 		$event_data = json_decode( $raw_body, true );
@@ -1860,6 +2080,11 @@ class ETA_Mobile_API_Bridge {
 				$verification = $this->verify_and_enroll_internal( $reference, $order_id );
 			}
 
+			if ( empty( $verification['verified'] ) ) {
+				$this->render_payment_error_page( $verification['message'] ?? 'Payment could not be verified.' );
+				exit;
+			}
+
 			$this->render_payment_complete_page( $reference, $order_id, $verification );
 			exit;
 		}
@@ -1874,13 +2099,19 @@ class ETA_Mobile_API_Bridge {
 			$phone     = sanitize_text_field( $_REQUEST['phone'] ?? '' );
 			$format    = sanitize_text_field( $_REQUEST['format'] ?? 'html' );
 
-			if ( $course_id <= 0 ) {
-				$course_id = 704; // Default survey course
-			}
-
 			if ( empty( $email ) ) {
 				$current_user = wp_get_current_user();
-				$email = ( $current_user && $current_user->ID > 0 ) ? $current_user->user_email : 'student@expressteck.tech';
+				$email = ( $current_user && $current_user->ID > 0 ) ? $current_user->user_email : '';
+			}
+
+			if ( $course_id <= 0 || empty( $email ) ) {
+				$missing = $course_id <= 0 ? 'course_id' : 'email';
+				if ( 'json' === $format ) {
+					wp_send_json_error( array( 'message' => 'Missing required parameter: ' . $missing ), 400 );
+				}
+				status_header( 400 );
+				$this->render_payment_error_page( 'Missing required parameter: ' . $missing . '. Please start checkout again from the app.' );
+				exit;
 			}
 
 			$init_request = new WP_REST_Request( 'POST', '/eta/v1/checkout/initialize-paystack' );
@@ -2231,8 +2462,7 @@ class ETA_Mobile_API_Bridge {
 			update_user_meta( $user_id, 'billing_country', sanitize_text_field( $meta['country'] ) );
 		}
 
-		$token = wp_generate_password( 32, false );
-		update_user_meta( $user_id, '_eta_app_auth_token', $token );
+		$token = $this->issue_auth_token( $user_id, true );
 
 		$user_data = $this->format_user_profile_data( $user_id );
 
@@ -2273,11 +2503,7 @@ class ETA_Mobile_API_Bridge {
 			$user->add_role( 'masteriyo_student' );
 		}
 
-		$token = get_user_meta( $user->ID, '_eta_app_auth_token', true );
-		if ( empty( $token ) ) {
-			$token = wp_generate_password( 32, false );
-			update_user_meta( $user->ID, '_eta_app_auth_token', $token );
-		}
+		$token = $this->issue_auth_token( $user->ID );
 
 		$user_data = $this->format_user_profile_data( $user->ID );
 
@@ -2352,11 +2578,7 @@ class ETA_Mobile_API_Bridge {
 			$user->add_role( 'masteriyo_student' );
 		}
 
-		$token = get_user_meta( $user->ID, '_eta_app_auth_token', true );
-		if ( empty( $token ) ) {
-			$token = wp_generate_password( 32, false );
-			update_user_meta( $user->ID, '_eta_app_auth_token', $token );
-		}
+		$token = $this->issue_auth_token( $user->ID );
 
 		$user_data = $this->format_user_profile_data( $user->ID );
 
@@ -2648,11 +2870,7 @@ class ETA_Mobile_API_Bridge {
 				), 400 );
 			}
 			wp_set_password( $password, $user_id );
-			$current_token = get_user_meta( $user_id, '_eta_app_auth_token', true );
-			if ( empty( $current_token ) ) {
-				$current_token = wp_generate_password( 32, false );
-				update_user_meta( $user_id, '_eta_app_auth_token', $current_token );
-			}
+			$this->issue_auth_token( $user_id );
 		}
 
 		// 6. Update Avatar (Multipart Upload, Base64 payload, or direct URL)
@@ -3225,8 +3443,7 @@ class ETA_Mobile_API_Bridge {
 		delete_user_meta( $user->ID, '_eta_pwd_reset_attempts' );
 
 		// Generate fresh auth token for instant auto-login
-		$token = wp_generate_password( 32, false );
-		update_user_meta( $user->ID, '_eta_app_auth_token', $token );
+		$token = $this->issue_auth_token( $user->ID, true );
 
 		// Format updated user profile
 		$user_profile = $this->format_user_profile_data( $user->ID );
@@ -3239,7 +3456,609 @@ class ETA_Mobile_API_Bridge {
 		), 200 );
 	}
 
+
+	/**
+	 * Helper: Resolve a course ID or slug to canonical Masteriyo course post
+	 */
+	private function resolve_canonical_course_id( $raw_id ) {
+		if ( empty( $raw_id ) ) {
+			return 0;
+		}
+		$cid = is_numeric( $raw_id ) ? (int) $raw_id : 0;
+		if ( ! $cid ) {
+			$found = get_page_by_path( sanitize_title( $raw_id ), OBJECT, array( 'mto-course', 'product', 'course' ) );
+			if ( $found ) {
+				$cid = $found->ID;
+			}
+		}
+		if ( $cid ) {
+			$linked_mto = get_post_meta( $cid, '_masteriyo_course_id', true ) ?: get_post_meta( $cid, '_course_id', true );
+			if ( ! $linked_mto && get_post_type( $cid ) === 'product' ) {
+				global $wpdb;
+				$linked_mto = $wpdb->get_var( $wpdb->prepare(
+					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key IN ('_wc_product_id', '_product_id') AND meta_value = %s LIMIT 1",
+					$cid
+				) );
+			}
+			if ( $linked_mto ) {
+				return (int) $linked_mto;
+			}
+			return $cid;
+		}
+		return 0;
+	}
+
+	/**
+	 * GET /wp-json/eta/v1/reviews
+	 * Retrieve course reviews, overall score, and star breakdown
+	 */
+	public function get_course_reviews( $request ) {
+		$raw_id    = $request->get_param( 'course_id' ) ?: $request->get_param( 'id' );
+		$course_id = $this->resolve_canonical_course_id( $raw_id );
+
+		if ( $course_id ) {
+			if ( function_exists( 'eta_get_course_display_reviews' ) ) {
+				$reviews = eta_get_course_display_reviews( $course_id );
+			} else {
+				$reviews  = array();
+				$comments = get_comments( array(
+					'post_id' => $course_id,
+					'type'    => 'mto_course_review',
+					'status'  => 'approve',
+					'number'  => 30,
+				) );
+				foreach ( $comments as $c ) {
+					$reviews[] = array(
+						'id'          => $c->comment_ID,
+						'name'        => $c->comment_author,
+						'title'       => (string) get_comment_meta( $c->comment_ID, 'title', true ),
+						'content'     => $c->comment_content,
+						'rating'      => (int) get_comment_meta( $c->comment_ID, 'rating', true ) ?: 5,
+						'date'        => human_time_diff( strtotime( $c->comment_date ) ) . ' ago',
+						'avatar'      => '',
+						'is_verified' => true,
+					);
+				}
+			}
+
+			$avg_rating = (float) get_post_meta( $course_id, '_masteriyo_average_rating', true ) ?: 4.9;
+			$rev_count  = (int) get_post_meta( $course_id, '_masteriyo_review_count', true ) ?: count( $reviews );
+			$breakdown  = get_post_meta( $course_id, '_masteriyo_rating_counts', true );
+			if ( empty( $breakdown ) || ! is_array( $breakdown ) ) {
+				$breakdown = array(
+					'5' => max( 1, $rev_count ),
+					'4' => 0,
+					'3' => 0,
+					'2' => 0,
+					'1' => 0,
+				);
+			}
+
+			return new WP_REST_Response( array(
+				'success'          => true,
+				'course_id'        => $course_id,
+				'course_title'     => get_the_title( $course_id ),
+				'average_rating'   => round( $avg_rating, 1 ),
+				'reviews_count'    => max( $rev_count, count( $reviews ) ),
+				'satisfaction_pct' => 99,
+				'rating_breakdown' => $breakdown,
+				'reviews'          => $reviews,
+				// Lets the app show the review form only to buyers/watchers of this course.
+				'can_review'       => $this->user_can_review_course( $course_id, $this->get_current_user_id() ),
+			), 200 );
+		}
+
+		// If no course_id provided, return all latest verified student reviews
+		$all_comments = get_comments( array(
+			'type'    => 'mto_course_review',
+			'status'  => 'approve',
+			'number'  => 50,
+			'orderby' => 'comment_date',
+			'order'   => 'DESC',
+		) );
+		$all_reviews = array();
+		foreach ( $all_comments as $c ) {
+			$all_reviews[] = array(
+				'id'          => $c->comment_ID,
+				'course_id'   => $c->comment_post_ID,
+				'course_title'=> get_the_title( $c->comment_post_ID ),
+				'name'        => $c->comment_author,
+				'title'       => (string) get_comment_meta( $c->comment_ID, 'title', true ),
+				'content'     => $c->comment_content,
+				'rating'      => (int) get_comment_meta( $c->comment_ID, 'rating', true ) ?: 5,
+				'date'        => human_time_diff( strtotime( $c->comment_date ) ) . ' ago',
+				'avatar'      => '',
+				'is_verified' => true,
+			);
+		}
+
+		return new WP_REST_Response( array(
+			'success' => true,
+			'reviews' => $all_reviews,
+		), 200 );
+	}
+
+	/**
+	 * Helper: may this user review this course? Uses the theme's shared
+	 * bought-or-watched check (inc/review-eligibility.php) so the website and
+	 * the app apply the same rule. Without the theme helper, falls back to a
+	 * real Masteriyo enrollment in this course; otherwise denies.
+	 */
+	private function user_can_review_course( $course_id, $user_id ) {
+		if ( ! $course_id || ! $user_id ) {
+			return false;
+		}
+		if ( function_exists( 'eta_user_can_review_course' ) ) {
+			return eta_user_can_review_course( $course_id, $user_id );
+		}
+		if ( function_exists( 'masteriyo_is_user_enrolled_in_course' ) ) {
+			return (bool) masteriyo_is_user_enrolled_in_course( $course_id, $user_id );
+		}
+		return false;
+	}
+
+	/**
+	 * POST /wp-json/eta/v1/reviews
+	 * Submit a student review from mobile (buyers/watchers of this course only)
+	 */
+	public function submit_course_review( $request ) {
+		$params    = $request->get_json_params() ?: $request->get_params();
+		$raw_id    = $params['course_id'] ?? $params['id'] ?? 0;
+		$course_id = $this->resolve_canonical_course_id( $raw_id );
+		if ( ! $course_id ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Valid course_id is required.' ), 400 );
+		}
+
+		// Only learners who bought or watched THIS course (website or app) may review it.
+		$user_id = $this->get_current_user_id();
+		if ( ! $user_id ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Please sign in to review this course.' ), 401 );
+		}
+		if ( ! $this->user_can_review_course( $course_id, $user_id ) ) {
+			return new WP_REST_Response( array(
+				'success' => false,
+				'error'   => function_exists( 'eta_review_ineligible_message' )
+					? eta_review_ineligible_message()
+					: 'Only learners who have bought or started watching this course can review it.',
+			), 403 );
+		}
+
+		$already = get_comments( array(
+			'post_id' => $course_id,
+			'user_id' => $user_id,
+			'type'    => 'mto_course_review',
+			'parent'  => 0,
+			'status'  => array( 'approve', 'hold' ),
+			'count'   => true,
+		) );
+		if ( $already ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'You have already reviewed this course.' ), 409 );
+		}
+
+		$rating  = isset( $params['rating'] ) ? min( 5, max( 1, (int) $params['rating'] ) ) : 5;
+		$title   = sanitize_text_field( $params['title'] ?? '' );
+		$content = sanitize_textarea_field( $params['content'] ?? $params['review'] ?? '' );
+
+		if ( empty( $content ) ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Review content cannot be empty.' ), 400 );
+		}
+
+		// Reviews are attributed to the signed-in account, never to client-supplied names.
+		$u            = get_userdata( $user_id );
+		$author_name  = $u ? ( $u->display_name ?: $u->user_login ) : 'Verified Student';
+		$author_email = $u ? $u->user_email : '';
+
+		$comment_id = wp_insert_comment( array(
+			'comment_post_ID'      => $course_id,
+			'comment_author'       => $author_name,
+			'comment_author_email' => $author_email,
+			'comment_content'      => $content,
+			'comment_type'         => 'mto_course_review',
+			'user_id'              => $user_id,
+			'comment_approved'     => 1,
+			'comment_date'         => current_time( 'mysql' ),
+		) );
+
+		if ( ! $comment_id ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Could not save review.' ), 500 );
+		}
+
+		update_comment_meta( $comment_id, 'rating', $rating );
+		if ( ! empty( $title ) ) {
+			update_comment_meta( $comment_id, 'title', $title );
+		}
+		update_comment_meta( $comment_id, 'is_verified', 1 );
+
+		// Update post rating aggregates
+		$existing_cnt = (int) get_post_meta( $course_id, '_masteriyo_review_count', true ) ?: 1;
+		update_post_meta( $course_id, '_masteriyo_review_count', $existing_cnt + 1 );
+
+		return new WP_REST_Response( array(
+			'success' => true,
+			'message' => 'Thank you! Your review has been published.',
+			'review'  => array(
+				'id'          => $comment_id,
+				'name'        => $author_name,
+				'title'       => $title,
+				'content'     => $content,
+				'rating'      => $rating,
+				'date'        => 'Just now',
+				'is_verified' => true,
+			),
+		), 201 );
+	}
+
+	/**
+	 * GET /wp-json/eta/v1/course-qa
+	 * Retrieve course Q&A items (curated + submitted)
+	 */
+	public function get_course_qa( $request ) {
+		$raw_id    = $request->get_param( 'course_id' ) ?: $request->get_param( 'id' );
+		$course_id = $this->resolve_canonical_course_id( $raw_id );
+
+		$qa_items = array();
+
+		// 1. Curated Q&As from theme helper if available
+		if ( $course_id && function_exists( 'eta_get_course_curated_qa' ) ) {
+			$curated = eta_get_course_curated_qa( $course_id );
+			if ( is_array( $curated ) ) {
+				$qa_items = array_merge( $qa_items, $curated );
+			}
+		}
+
+		// 2. Fetch approved questions submitted by users
+		if ( $course_id ) {
+			$submitted = get_comments( array(
+				'post_id' => $course_id,
+				'type'    => 'eta_course_question',
+				'status'  => 'approve',
+				'number'  => 20,
+				'orderby' => 'comment_date',
+				'order'   => 'DESC',
+			) );
+
+			foreach ( $submitted as $c ) {
+				$qa_items[] = array(
+					'question' => $c->comment_content,
+					'answer'   => 'Thank you for asking! Our instructors have received your question and will answer it shortly.',
+					'badge'    => 'Student Q&A',
+					'author'   => $c->comment_author,
+					'date'     => human_time_diff( strtotime( $c->comment_date ) ) . ' ago',
+				);
+			}
+		}
+
+		return new WP_REST_Response( array(
+			'success'   => true,
+			'course_id' => $course_id,
+			'count'     => count( $qa_items ),
+			'qa_items'  => $qa_items,
+		), 200 );
+	}
+
+	/**
+	 * POST /wp-json/eta/v1/course-qa
+	 * Submit a question from the mobile app
+	 */
+	public function submit_course_qa( $request ) {
+		$params    = $request->get_json_params() ?: $request->get_params();
+		$raw_id    = $params['course_id'] ?? $params['id'] ?? 0;
+		$course_id = $this->resolve_canonical_course_id( $raw_id );
+		if ( ! $course_id ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Valid course_id is required.' ), 400 );
+		}
+
+		// Only signed-in accounts may ask. Guests used to be able to post (and trigger an email) anonymously.
+		$user_id = $this->get_current_user_id();
+		if ( ! $user_id ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Please sign in to ask a question.' ), 401 );
+		}
+		$u = get_userdata( $user_id );
+		if ( ! $u ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Please sign in to ask a question.' ), 401 );
+		}
+
+		$question_text = trim( sanitize_textarea_field( $params['question'] ?? $params['question_text'] ?? '' ) );
+		if ( '' === $question_text ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Question cannot be empty.' ), 400 );
+		}
+		if ( mb_strlen( $question_text ) < 5 ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Please write a little more so the instructor can help.' ), 400 );
+		}
+		if ( mb_strlen( $question_text ) > 1000 ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Questions can be at most 1000 characters.' ), 400 );
+		}
+
+		// Rate limit: at most 5 questions per user per hour, across all courses.
+		$recent = get_comments( array(
+			'user_id'    => $user_id,
+			'type'       => 'eta_course_question',
+			'status'     => 'all',
+			'count'      => true,
+			'date_query' => array( array( 'column' => 'comment_date_gmt', 'after' => '1 hour ago', 'inclusive' => true ) ),
+		) );
+		if ( (int) $recent >= 5 ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'You have asked several questions recently. Please wait a while before asking another.' ), 429 );
+		}
+
+		// Reject an exact repeat of a question this user already asked on this course.
+		$existing = get_comments( array(
+			'post_id' => $course_id,
+			'user_id' => $user_id,
+			'type'    => 'eta_course_question',
+			'status'  => 'all',
+			'number'  => 50,
+		) );
+		foreach ( $existing as $c ) {
+			if ( 0 === strcasecmp( trim( $c->comment_content ), $question_text ) ) {
+				return new WP_REST_Response( array( 'success' => false, 'error' => 'You have already asked this question.' ), 409 );
+			}
+		}
+
+		// Questions are credited to the signed-in account. author_name / author_email in the body are ignored.
+		$author_name  = $u->display_name ?: $u->user_login;
+		$author_email = $u->user_email;
+
+		$comment_id = wp_insert_comment( array(
+			'comment_post_ID'      => $course_id,
+			'comment_author'       => $author_name,
+			'comment_author_email' => $author_email,
+			'comment_content'      => $question_text,
+			'comment_type'         => 'eta_course_question',
+			'user_id'              => $user_id,
+			'comment_approved'     => 1,
+			'comment_date'         => current_time( 'mysql' ),
+		) );
+
+		if ( ! $comment_id ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Could not save your question. Please try again.' ), 500 );
+		}
+
+		// Notify instructor team via email
+		$course_title = get_the_title( $course_id );
+		$to           = 'Expresstechacademy@gmail.com';
+		$subject      = sprintf( '❓ New Mobile Course Question: %s [%s]', $course_title, $author_name );
+		$headers      = array( 'Content-Type: text/html; charset=UTF-8' );
+		$email_body   = sprintf(
+			'<p><strong>Student (Mobile App):</strong> %s &lt;%s&gt;</p><p><strong>Course:</strong> %s</p><p><strong>Question:</strong></p><blockquote>%s</blockquote>',
+			esc_html( $author_name ),
+			esc_html( $author_email ),
+			esc_html( $course_title ),
+			nl2br( esc_html( $question_text ) )
+		);
+		wp_mail( $to, $subject, $email_body, $headers );
+
+		return new WP_REST_Response( array(
+			'success' => true,
+			'message' => 'Thank you! Your question has been submitted successfully. Our instructor team will review and respond promptly.',
+			'qa_item' => array(
+				'question' => $question_text,
+				'answer'   => 'Thank you for asking! Our instructors have received your question and will answer it shortly.',
+				'badge'    => 'Just Asked',
+				'author'   => $author_name,
+				'date'     => 'Just now',
+			),
+		), 201 );
+	}
+
+	/**
+	 * GET /wp-json/eta/v1/certificates
+	 * Retrieve all earned certificates for a student
+	 */
+	public function get_student_certificates( $request ) {
+		$user_id = $this->get_current_user_id();
+
+		if ( ! $user_id ) {
+			return new WP_REST_Response( array(
+				'success'      => false,
+				'error'        => 'Authentication required. Please provide a valid Bearer token.',
+				'certificates' => array(),
+			), 401 );
+		}
+
+		$u = get_userdata( $user_id );
+		$student_name = $u ? ( trim( $u->first_name . ' ' . $u->last_name ) ?: $u->display_name ) : 'Student';
+
+		global $wpdb;
+		$certificates = array();
+
+		// Check all completed courses for user in masteriyo_course_progress
+		$table_progress = $wpdb->prefix . 'masteriyo_course_progress';
+		$completed_course_ids = array();
+		if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_progress ) ) === $table_progress ) {
+			$progress_rows = $wpdb->get_results( $wpdb->prepare(
+				"SELECT course_id, status FROM {$table_progress} WHERE user_id = %d AND status = 'completed'",
+				$user_id
+			) );
+			foreach ( $progress_rows as $pr ) {
+				$completed_course_ids[] = (int) $pr->course_id;
+			}
+		}
+
+		// Also check user meta stored certificates
+		$meta_certs = get_user_meta( $user_id, '_eta_certificates', true );
+		if ( is_array( $meta_certs ) ) {
+			foreach ( $meta_certs as $mc ) {
+				if ( isset( $mc['course_id'] ) ) {
+					$completed_course_ids[] = (int) $mc['course_id'];
+				}
+			}
+		}
+
+		$completed_course_ids = array_values( array_unique( array_filter( $completed_course_ids ) ) );
+
+		foreach ( $completed_course_ids as $cid ) {
+			$verification_code = "{$cid}-1070-{$user_id}";
+			$certificates[] = array(
+				'id'                => 1070,
+				'course_id'         => $cid,
+				'course_title'      => html_entity_decode( get_the_title( $cid ), ENT_QUOTES, 'UTF-8' ),
+				'student_name'      => $student_name,
+				'verification_code' => $verification_code,
+				'verification_url'  => home_url( "/certificate-verification/?code={$verification_code}" ),
+				'download_url'      => home_url( "/wp-admin/admin-ajax.php?action=eta_download_certificate&course_id={$cid}&user_id={$user_id}" ),
+				'status'            => 'issued',
+				'issued_date'       => get_user_meta( $user_id, "_course_{$cid}_cert_email_sent", true ) ?: current_time( 'Y-m-d' ),
+				'grade'             => '100%',
+			);
+		}
+
+		return new WP_REST_Response( array(
+			'success'      => true,
+			'student_name' => $student_name,
+			'count'        => count( $certificates ),
+			'certificates' => $certificates,
+		), 200 );
+	}
+
+	/**
+	 * GET /wp-json/eta/v1/certificates/verify
+	 * Verify an official certificate code from mobile
+	 */
+	public function verify_certificate_endpoint( $request ) {
+		$code = sanitize_text_field( $request->get_param( 'code' ) );
+		if ( empty( $code ) ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Verification code is required.' ), 400 );
+		}
+
+		$parts = explode( '-', $code );
+		if ( count( $parts ) < 3 ) {
+			return new WP_REST_Response( array(
+				'success' => true,
+				'valid'   => false,
+				'error'   => 'Invalid certificate verification code format.',
+			), 200 );
+		}
+
+		$course_id  = (int) $parts[0];
+		$cert_id    = (int) $parts[1];
+		$student_id = (int) $parts[2];
+
+		$course  = get_post( $course_id );
+		$student = get_userdata( $student_id );
+
+		if ( ! $course || ! $student ) {
+			return new WP_REST_Response( array(
+				'success' => true,
+				'valid'   => false,
+				'error'   => 'Certificate record could not be found.',
+			), 200 );
+		}
+
+		$student_name = trim( $student->first_name . ' ' . $student->last_name ) ?: $student->display_name;
+
+		return new WP_REST_Response( array(
+			'success'           => true,
+			'valid'             => true,
+			'verification_code' => $code,
+			'student_name'      => $student_name,
+			'course_title'      => html_entity_decode( $course->post_title, ENT_QUOTES, 'UTF-8' ),
+			'issuer'            => 'Express Tech Academy',
+			'status'            => 'Officially Issued & Verified',
+			'verification_url'  => home_url( "/certificate-verification/?code={$code}" ),
+		), 200 );
+	}
+
 }
+
+/**
+ * Course price list, applied once per ETA_COURSE_PRICES_VERSION.
+ *
+ * Each entry is course ID => array( regular price, sale price ). A sale price of '' means no
+ * slash price. Every other published course is set to free.
+ * Saving through Masteriyo also updates the linked WooCommerce product (its
+ * masteriyo_update_course hook), which is what the website checkout charges.
+ *
+ * To change prices later: edit this list, bump the version, deploy.
+ */
+define( 'ETA_COURSE_PRICES_VERSION', '2026-11-12' );
+
+function eta_course_price_list() {
+	return array(
+		1079 => array( '20000', '6000' ), // Digital Marketing: launch promo, remove the sale price one month after launch.
+		680  => array( '10000', '' ),     // Paid Online Survey
+		955  => array( '5000', '' ),      // Content Writing
+		954  => array( '5000', '' ),      // Copywriting
+		979  => array( '2500', '' ),      // Graphic Design
+		470  => array( '3000', '' ),      // PayPal Mastery
+	);
+}
+
+function eta_apply_course_prices() {
+	if ( ETA_COURSE_PRICES_VERSION === get_option( 'eta_course_prices_version' ) ) {
+		return;
+	}
+	if ( ! function_exists( 'masteriyo_get_course' ) ) {
+		return;
+	}
+
+	// Free courses copy the access setup of a course that is already free and working (CPA Marketing).
+	$free_reference = masteriyo_get_course( 978 );
+	$free_access    = $free_reference ? $free_reference->get_access_mode() : '';
+	// Masteriyo only treats "open" and "need_registration" as free.
+	if ( ! in_array( $free_access, array( 'open', 'need_registration' ), true ) ) {
+		$free_access = 'need_registration';
+	}
+
+	$paid   = eta_course_price_list();
+	$report = array();
+	$ids    = get_posts( array(
+		'post_type'      => 'mto-course',
+		'post_status'    => 'publish',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+	) );
+
+	foreach ( $ids as $id ) {
+		$course = masteriyo_get_course( $id );
+		if ( ! $course ) {
+			continue;
+		}
+		$before = array( $course->get_access_mode(), $course->get_regular_price(), $course->get_sale_price() );
+
+		if ( isset( $paid[ $id ] ) ) {
+			list( $regular, $sale ) = $paid[ $id ];
+			if ( ! in_array( $course->get_access_mode(), array( 'one_time', 'recurring' ), true ) ) {
+				$course->set_access_mode( 'one_time' );
+			}
+		} else {
+			$regular = '0';
+			$sale    = '';
+			if ( $free_access ) {
+				$course->set_access_mode( $free_access );
+			}
+		}
+		$course->set_regular_price( $regular );
+		$course->set_sale_price( $sale );
+		$course->save();
+
+		// Belt and braces: set the linked WooCommerce product directly as well.
+		$product_id = (int) get_post_meta( $id, '_wc_product_id', true );
+		if ( $product_id && function_exists( 'wc_get_product' ) ) {
+			$product = wc_get_product( $product_id );
+			if ( $product ) {
+				$product->set_regular_price( $regular );
+				$product->set_sale_price( $sale );
+				$product->save();
+			}
+		}
+
+		$report[ $id ] = array(
+			'before'  => $before,
+			'after'   => array( $course->get_access_mode(), $regular, $sale ),
+			'product' => $product_id,
+		);
+	}
+
+	update_option( 'eta_course_prices_report', $report, false );
+	update_option( 'eta_course_prices_version', ETA_COURSE_PRICES_VERSION );
+
+	if ( function_exists( 'wc_delete_product_transients' ) ) {
+		wc_delete_product_transients();
+	}
+	do_action( 'litespeed_purge_all' );
+}
+add_action( 'init', 'eta_apply_course_prices', 99 );
 
 // Bootstrap mobile bridge
 new ETA_Mobile_API_Bridge();

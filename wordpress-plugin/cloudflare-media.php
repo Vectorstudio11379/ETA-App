@@ -92,6 +92,13 @@ function eta_get_lesson_secure_video_url( $lesson_id, $user_id = null ) {
 	}
 	$in_lookup[ $lesson_id ] = true;
 
+	// Check if this lesson already has an embedded video in post_content
+	$post = get_post( $lesson_id );
+	if ( $post && ( false !== strpos( $post->post_content, '<iframe' ) || false !== strpos( $post->post_content, '&lt;iframe' ) || false !== strpos( $post->post_content, '<video' ) || false !== strpos( $post->post_content, 'eta-lesson-content' ) ) ) {
+		unset( $in_lookup[ $lesson_id ] );
+		return '';
+	}
+
 	// 1. Check direct R2 key meta in database
 	$r2_key = get_post_meta( $lesson_id, '_r2_video_key', true );
 
@@ -152,6 +159,12 @@ add_filter( 'get_post_metadata', function( $value, $object_id, $meta_key, $singl
 		return $value;
 	}
 
+	// If this lesson already has an embedded video in post_content, suppress external player
+	$post = get_post( $object_id );
+	if ( $post && ( false !== strpos( $post->post_content, '<iframe' ) || false !== strpos( $post->post_content, '&lt;iframe' ) || false !== strpos( $post->post_content, '<video' ) || false !== strpos( $post->post_content, 'eta-lesson-content' ) ) ) {
+		return '';
+	}
+
 	static $guard = false;
 	if ( $guard ) {
 		return $value;
@@ -177,6 +190,12 @@ add_filter( 'get_post_metadata', function( $value, $object_id, $meta_key, $singl
 		return $value;
 	}
 
+	// If this lesson already has an embedded video in post_content, suppress external player
+	$post = get_post( $object_id );
+	if ( $post && ( false !== strpos( $post->post_content, '<iframe' ) || false !== strpos( $post->post_content, '&lt;iframe' ) || false !== strpos( $post->post_content, '<video' ) || false !== strpos( $post->post_content, 'eta-lesson-content' ) ) ) {
+		return '';
+	}
+
 	static $guard_src = false;
 	if ( $guard_src ) {
 		return $value;
@@ -187,11 +206,64 @@ add_filter( 'get_post_metadata', function( $value, $object_id, $meta_key, $singl
 	$guard_src = false;
 
 	if ( ! empty( $sec_url ) && false !== strpos( $sec_url, 'media.expressteck.workers.dev' ) ) {
-		return 'external';
+		return 'self-hosted';
 	}
 
 	return $value;
 }, 10, 4 );
+
+/**
+ * Suppress redundant video_source and video_source_url in Masteriyo REST responses
+ * when the lesson description already contains an embedded course video player (e.g. YouTube iframe).
+ * This ensures the video displays cleanly as the primary course player without empty white boxes
+ * or trapped inside an "Overview" tab.
+ */
+add_filter( 'masteriyo_rest_prepare_lesson_object', function( $response, $object, $request ) {
+	if ( is_a( $response, 'WP_REST_Response' ) ) {
+		$data = $response->get_data();
+		$desc = ! empty( $data['description'] ) ? (string) $data['description'] : '';
+		if ( false !== strpos( $desc, '<iframe' ) || false !== strpos( $desc, '<video' ) || false !== strpos( $desc, '&lt;iframe' ) || false !== strpos( $desc, 'eta-lesson-content' ) ) {
+			$data['video_source_url'] = '';
+			$data['video_source']     = '';
+			$response->set_data( $data );
+		} else {
+			if ( ! empty( $data['video_source_url'] ) && ( 0 === strpos( $data['video_source_url'], 'courses/' ) || false !== strpos( $data['video_source_url'], 'media.expressteck.workers.dev' ) ) ) {
+				$data['video_source_url'] = eta_generate_secure_video_url( $data['video_source_url'] );
+				$data['video_source']     = 'self-hosted';
+				$response->set_data( $data );
+			}
+		}
+	}
+	return $response;
+}, 99, 3 );
+
+add_filter( 'masteriyo_rest_response_lesson_data', function( $data, $lesson = null, $context = 'view', $controller = null ) {
+	$desc = ! empty( $data['description'] ) ? (string) $data['description'] : '';
+	if ( false !== strpos( $desc, '<iframe' ) || false !== strpos( $desc, '<video' ) || false !== strpos( $desc, '&lt;iframe' ) || false !== strpos( $desc, 'eta-lesson-content' ) ) {
+		$data['video_source_url'] = '';
+		$data['video_source']     = '';
+	} else {
+		if ( ! empty( $data['video_source_url'] ) && ( 0 === strpos( $data['video_source_url'], 'courses/' ) || false !== strpos( $data['video_source_url'], 'media.expressteck.workers.dev' ) ) ) {
+			$data['video_source_url'] = eta_generate_secure_video_url( $data['video_source_url'] );
+			$data['video_source']     = 'self-hosted';
+		}
+	}
+	return $data;
+}, 99, 4 );
+
+add_filter( 'masteriyo_lesson_resource_array', function( $data, $lesson = null, $context = 'view' ) {
+	$desc = ! empty( $data['description'] ) ? (string) $data['description'] : '';
+	if ( false !== strpos( $desc, '<iframe' ) || false !== strpos( $desc, '<video' ) || false !== strpos( $desc, '&lt;iframe' ) || false !== strpos( $desc, 'eta-lesson-content' ) ) {
+		$data['video_source_url'] = '';
+		$data['video_source']     = '';
+	} else {
+		if ( ! empty( $data['video_source_url'] ) && ( 0 === strpos( $data['video_source_url'], 'courses/' ) || false !== strpos( $data['video_source_url'], 'media.expressteck.workers.dev' ) ) ) {
+			$data['video_source_url'] = eta_generate_secure_video_url( $data['video_source_url'] );
+			$data['video_source']     = 'self-hosted';
+		}
+	}
+	return $data;
+}, 99, 3 );
 
 /**
  * Synchronize all course lessons in Masteriyo database to persist Cloudflare R2 keys
@@ -215,10 +287,9 @@ function eta_run_cloudflare_video_db_sync() {
 				$les_id = (int) $v['lesson_id'];
 				$r2_key = $v['r2_key'];
 				if ( $les_id && get_post( $les_id ) ) {
-					$preview_url = eta_generate_secure_video_url( $r2_key, 0, 31536000 ); // Long-lived URL for admin previews
 					update_post_meta( $les_id, '_r2_video_key', $r2_key );
-					update_post_meta( $les_id, '_video_source', 'external' );
-					update_post_meta( $les_id, '_video_source_url', $preview_url );
+					update_post_meta( $les_id, '_video_source', 'self-hosted' );
+					update_post_meta( $les_id, '_video_source_url', $r2_key );
 					clean_post_cache( $les_id );
 					$updated++;
 				}
@@ -239,73 +310,15 @@ function eta_run_cloudflare_video_db_sync() {
 
 /**
  * REST Endpoint for triggering Cloudflare database sync:
- * POST/GET /wp-json/eta/v1/sync-cloudflare-videos?key=eta_cf_secure_sync_2026
+ * POST/GET /wp-json/eta/v1/sync-cloudflare-videos (administrators only)
  */
 add_action( 'rest_api_init', function() {
 	register_rest_route( 'eta/v1', '/sync-cloudflare-videos', array(
 		'methods'             => array( 'GET', 'POST' ),
 		'callback'            => function( $request ) {
-			$key = $request->get_param( 'key' );
-			if ( $key !== 'eta_cf_secure_sync_2026' ) {
-				return new WP_REST_Response( array( 'error' => 'Unauthorized' ), 403 );
-			}
 			$res = eta_run_cloudflare_video_db_sync();
 			return new WP_REST_Response( $res, 200 );
 		},
-		'permission_callback' => '__return_true',
-	) );
-
-	register_rest_route( 'eta/v1', '/audit-cloudflare-videos', array(
-		'methods'             => array( 'GET' ),
-		'callback'            => function( $request ) {
-			$key = $request->get_param( 'key' );
-			if ( $key !== 'eta_cf_secure_sync_2026' ) {
-				return new WP_REST_Response( array( 'error' => 'Unauthorized' ), 403 );
-			}
-			$map_file = dirname( __FILE__ ) . '/cloudflare_video_map.json';
-			if ( ! file_exists( $map_file ) ) {
-				return new WP_REST_Response( array( 'error' => 'Map file not found' ), 404 );
-			}
-			$raw = json_decode( file_get_contents( $map_file ), true );
-			$report = array();
-			$non_external_count = 0;
-			$total = 0;
-			foreach ( $raw as $c ) {
-				$course_title = isset( $c['title'] ) ? $c['title'] : ( isset( $c['course_title'] ) ? $c['course_title'] : '' );
-				$course_id = isset( $c['course_id'] ) ? $c['course_id'] : 0;
-				if ( isset( $c['videos'] ) && is_array( $c['videos'] ) ) {
-					foreach ( $c['videos'] as $v ) {
-						$les_id = (int) $v['lesson_id'];
-						$total++;
-						$src = get_post_meta( $les_id, '_video_source', true );
-						$url = get_post_meta( $les_id, '_video_source_url', true );
-						$r2_key = get_post_meta( $les_id, '_r2_video_key', true );
-						$is_external = ( 'external' === $src );
-						$is_cf = ( false !== strpos( $url, 'media.expressteck.workers.dev' ) );
-						if ( ! $is_external || ! $is_cf ) {
-							$non_external_count++;
-						}
-						$report[] = array(
-							'course_id'    => $course_id,
-							'course_title' => $course_title,
-							'lesson_id'    => $les_id,
-							'lesson_title' => $v['lesson_title'],
-							'video_source' => $src,
-							'is_external'  => $is_external,
-							'is_cf_url'    => $is_cf,
-							'r2_key'       => $r2_key,
-						);
-					}
-				}
-			}
-			return new WP_REST_Response( array(
-				'total_video_lessons' => $total,
-				'all_external'        => ( 0 === $non_external_count ),
-				'non_external_count'  => $non_external_count,
-				'lessons'             => $report,
-			), 200 );
-		},
-		'permission_callback' => '__return_true',
+		'permission_callback' => function() { return current_user_can( 'manage_options' ); },
 	) );
 } );
-
