@@ -8,7 +8,14 @@ export interface ApiResponse<T = any> {
   statusCode?: number;
 }
 
+// Called when the server rejects a saved login token (expired or revoked).
+let unauthorizedHandler: (() => void) | null = null;
+
 export const apiClient = {
+  setUnauthorizedHandler(handler: (() => void) | null) {
+    unauthorizedHandler = handler;
+  },
+
   async request<T = any>(
     endpoint: string,
     options: RequestInit = {}
@@ -59,6 +66,14 @@ export const apiClient = {
       }
 
       if (!response.ok) {
+        const isAuthCall =
+          endpoint.startsWith(API_CONFIG.ENDPOINTS.LOGIN) ||
+          endpoint.startsWith(API_CONFIG.ENDPOINTS.REGISTER) ||
+          endpoint.includes('/auth/');
+        if (response.status === 401 && token && !isAuthCall && unauthorizedHandler) {
+          unauthorizedHandler();
+        }
+
         // WordPress REST API standard error responses: { code, message, data }
         const errorMessage =
           data?.message ||

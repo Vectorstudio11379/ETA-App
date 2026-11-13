@@ -22,27 +22,18 @@ export const authService = {
    */
   async login(usernameOrEmail: string, password: string): Promise<ApiResponse<LoginResult>> {
     // 1. Try ETA API Bridge Endpoint (/wp-json/eta/v1/login)
-    let res = await apiClient.post(API_CONFIG.ENDPOINTS.LOGIN, {
+    const res = await apiClient.post(API_CONFIG.ENDPOINTS.LOGIN, {
       username: usernameOrEmail,
       password,
     });
 
-    // 2. Fallback to JWT Plugin Endpoint (/wp-json/jwt-auth/v1/token) if ETA plugin not activated yet
-    if (!res.success && res.statusCode === 404) {
-      res = await apiClient.post(API_CONFIG.ENDPOINTS.JWT_LOGIN_FALLBACK, {
-        username: usernameOrEmail,
-        password,
-      });
-    }
-
-    if (!res.success || (!res.data?.token && !res.data?.user)) {
+    const token: string | undefined = res.data?.token || res.data?.data?.token;
+    if (!res.success || !token) {
       return {
         success: false,
         error: res.error || 'Invalid credentials or failed to log in.',
       };
     }
-
-    const token = res.data.token || res.data.data?.token || `token_${Date.now()}`;
     await storageService.setUserToken(token);
 
     const userObj = res.data.user || {};

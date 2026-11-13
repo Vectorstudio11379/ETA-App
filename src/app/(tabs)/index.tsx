@@ -18,6 +18,7 @@ import { SearchBar } from '../../components/SearchBar';
 import { CourseCard } from '../../components/CourseCard';
 import { HERO_BANNERS, HeroBanner, Instructor } from '../../data/mockData';
 import { useApp } from '../../context/AppContext';
+import { Animated, useScreenMotion } from '../../hooks/use-screen-motion';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HERO_CARD_WIDTH = SCREEN_WIDTH - 32;
@@ -26,6 +27,7 @@ const CARD_ITEM_STEP = 284;
 export default function HomeScreen() {
   const router = useRouter();
   const { courses, newCourses, bundles, instructors, colors, isRefreshing, refreshLiveData } = useApp();
+  const screenMotionStyle = useScreenMotion();
 
   const [activeHeroIndex, setActiveHeroIndex] = useState<number>(0);
   const [activeFeaturedIndex, setActiveFeaturedIndex] = useState<number>(0);
@@ -55,7 +57,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <Animated.View style={[styles.container, { backgroundColor: colors.background }, screenMotionStyle]}>
       <Header showCurrency={true} />
 
       <ScrollView
@@ -257,7 +259,7 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 

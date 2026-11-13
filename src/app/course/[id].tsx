@@ -24,23 +24,32 @@ import {
   FileText,
 } from 'lucide-react-native';
 import { CertificatePreview } from '../../components/CertificatePreview';
+import { CourseReviews } from '../../components/CourseReviews';
+import { CourseQA } from '../../components/CourseQA';
 import { useApp } from '../../context/AppContext';
 
 import { INITIAL_COURSES } from '../../data/initialCourses';
+import { INITIAL_BUNDLES } from '../../data/initialBundles';
 
 export default function CourseDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { courses, wishlistIds, toggleWishlist, addToCart, formatPrice, colors } = useApp();
+  const { id, tab } = useLocalSearchParams<{ id: string; tab?: string }>();
+  const { courses, bundles, wishlistIds, toggleWishlist, addToCart, formatPrice, colors } = useApp();
 
+  const matches = (c: { id: string; product_id?: string; slug?: string }) =>
+    String(c.id) === String(id) || (!!c.product_id && String(c.product_id) === String(id)) || c.slug === id;
   const course =
-    courses.find((c) => String(c.id) === String(id) || String(c.product_id) === String(id) || c.slug === id) ||
-    INITIAL_COURSES.find((c) => String(c.id) === String(id) || String(c.product_id) === String(id) || c.slug === id);
+    courses.find(matches) ||
+    (bundles || []).find(matches) ||
+    INITIAL_COURSES.find(matches) ||
+    INITIAL_BUNDLES.find(matches);
 
   const courseModules = course?.modules || [];
 
-  const [activeTab, setActiveTab] = useState<'info' | 'content' | 'review'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'content' | 'review'>(
+    tab === 'review' || tab === 'content' ? tab : 'info'
+  );
   const [expandedModules, setExpandedModules] = useState<string[]>(courseModules[0]?.id ? [courseModules[0].id] : []);
   const isWishlisted = wishlistIds.includes(course?.id || '');
 
@@ -253,6 +262,24 @@ export default function CourseDetailScreen() {
               <Text style={[styles.cardHeaderTitle, { color: colors.text }]}>Certifications</Text>
               <CertificatePreview courseTitle={course.title} />
             </View>
+          </View>
+        )}
+
+        {activeTab === 'review' && (
+          <View style={styles.tabContent}>
+            {course.isBundle ? (
+              <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
+                Reviews and questions are shown on each course inside this bundle.
+              </Text>
+            ) : (
+              <>
+                <CourseReviews courseId={String(course.id)} />
+                <Text style={[styles.cardHeaderTitle, { color: colors.text, marginTop: 8, marginBottom: 10 }]}>
+                  Questions & Answers
+                </Text>
+                <CourseQA courseId={String(course.id)} />
+              </>
+            )}
           </View>
         )}
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,25 +9,141 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Play, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { Play, MessageSquare, ChevronDown, ChevronUp, HelpCircle, FileText, CheckCircle } from 'lucide-react-native';
 import { CertificatePreview } from '../../components/CertificatePreview';
 import { useApp } from '../../context/AppContext';
-
+import { Course } from '../../data/mockData';
 import { INITIAL_COURSES } from '../../data/initialCourses';
+import { INITIAL_BUNDLES } from '../../data/initialBundles';
+import { courseService } from '../../services/courseService';
+
+const BUNDLE_ALIASES: Record<string, string[]> = {
+  'bundle_1': ['bundle_1', '668', 'ai-automation-power-suite'],
+  '668': ['bundle_1', '668', 'ai-automation-power-suite'],
+  'ai-automation-power-suite': ['bundle_1', '668', 'ai-automation-power-suite'],
+
+  'bundle_2': ['bundle_2', '669', 'digital-creator-social-media-launchpad'],
+  '669': ['bundle_2', '669', 'digital-creator-social-media-launchpad'],
+  'digital-creator-social-media-launchpad': ['bundle_2', '669', 'digital-creator-social-media-launchpad'],
+
+  'bundle_3': ['bundle_3', '670', 'global-remote-career-virtual-assistant-bundle'],
+  '670': ['bundle_3', '670', 'global-remote-career-virtual-assistant-bundle'],
+  'global-remote-career-virtual-assistant-bundle': ['bundle_3', '670', 'global-remote-career-virtual-assistant-bundle'],
+
+  'bundle_4': ['bundle_4', '671', 'financial-freedom-global-trading-mastery'],
+  '671': ['bundle_4', '671', 'financial-freedom-global-trading-mastery'],
+  'financial-freedom-global-trading-mastery': ['bundle_4', '671', 'financial-freedom-global-trading-mastery'],
+};
+
+const COURSE_ALIASES: Record<string, string[]> = {
+  '680': ['680', '704', 'paid-online-survey-masterclass'],
+  '704': ['680', '704', 'paid-online-survey-masterclass'],
+  'paid-online-survey-masterclass': ['680', '704', 'paid-online-survey-masterclass'],
+
+  '660': ['660', '666', 'prompt-engineering-masterclass'],
+  '666': ['660', '666', 'prompt-engineering-masterclass'],
+  'prompt-engineering-masterclass': ['660', '666', 'prompt-engineering-masterclass'],
+
+  '628': ['628', '659', 'youtube-masterclass'],
+  '659': ['628', '659', 'youtube-masterclass'],
+  'youtube-masterclass': ['628', '659', 'youtube-masterclass'],
+
+  '585': ['585', '627', '30-day-ai-automation-course'],
+  '627': ['585', '627', '30-day-ai-automation-course'],
+  '30-day-ai-automation-course': ['585', '627', '30-day-ai-automation-course'],
+
+  '572': ['572', '584', 'complete-social-media-management-course'],
+  '584': ['572', '584', 'complete-social-media-management-course'],
+  'complete-social-media-management-course': ['572', '584', 'complete-social-media-management-course'],
+
+  '470': ['470', '496', 'paypal-mastery-course'],
+  '496': ['470', '496', 'paypal-mastery-course'],
+  'paypal-mastery-course': ['470', '496', 'paypal-mastery-course'],
+
+  '373': ['373', '467', 'complete-forex-trading-course'],
+  '467': ['373', '467', 'complete-forex-trading-course'],
+  'complete-forex-trading-course': ['373', '467', 'complete-forex-trading-course'],
+
+  '343': ['343', '466', 'virtual-assistant'],
+  '466': ['343', '466', 'virtual-assistant'],
+  'virtual-assistant': ['343', '466', 'virtual-assistant'],
+
+  '979': ['979', '1007', 'graphic-design-masterclass'],
+  '1007': ['979', '1007', 'graphic-design-masterclass'],
+  'graphic-design-masterclass': ['979', '1007', 'graphic-design-masterclass'],
+
+  '955': ['955', '977', 'content-writing-masterclass'],
+  '977': ['955', '977', 'content-writing-masterclass'],
+  'content-writing-masterclass': ['955', '977', 'content-writing-masterclass'],
+
+  '954': ['954', '976', 'copywriting-masterclass'],
+  '976': ['954', '976', 'copywriting-masterclass'],
+  'copywriting-masterclass': ['954', '976', 'copywriting-masterclass'],
+};
+
+const matchCourse = (item: Course, targetId: string): boolean => {
+  if (!targetId) return false;
+  const clean = String(targetId).trim().toLowerCase();
+  const itemId = String(item.id || '').trim().toLowerCase();
+  const itemProdId = String(item.product_id || '').trim().toLowerCase();
+  const itemSlug = String(item.slug || '').trim().toLowerCase();
+
+  const aliases = BUNDLE_ALIASES[clean] || COURSE_ALIASES[clean] || [clean];
+
+  return aliases.some(
+    (a) => a === itemId || (itemProdId && a === itemProdId) || (itemSlug && a === itemSlug)
+  );
+};
 
 export default function CourseViewerScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { courses, colors } = useApp();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const rawId = Array.isArray(params.id) ? params.id[0] : (params.id || '');
+  const { courses, bundles, colors, refreshLiveData } = useApp();
 
-  const course =
-    courses.find((c) => String(c.id) === String(id) || String(c.product_id) === String(id) || c.slug === id) ||
-    INITIAL_COURSES.find((c) => String(c.id) === String(id) || String(c.product_id) === String(id) || c.slug === id);
+  const allCourses = useMemo(() => {
+    return [...courses, ...(bundles || []), ...INITIAL_BUNDLES, ...INITIAL_COURSES];
+  }, [courses, bundles]);
+
+  const [fetchedCourse, setFetchedCourse] = useState<Course | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const resolvedCourse = useMemo(() => {
+    return allCourses.find((c) => matchCourse(c, rawId));
+  }, [allCourses, rawId]);
+
+  useEffect(() => {
+    if (!resolvedCourse && rawId) {
+      let isMounted = true;
+      setIsLoading(true);
+      courseService
+        .fetchCourseDetails(rawId)
+        .then((res) => {
+          if (isMounted && res.success && res.data) {
+            setFetchedCourse(res.data);
+          }
+        })
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [resolvedCourse, rawId]);
+
+  const course = resolvedCourse || fetchedCourse;
 
   const courseModules = course?.modules || [];
   const [activeTab, setActiveTab] = useState<'content' | 'certificate'>('content');
-  const [expandedModules, setExpandedModules] = useState<string[]>(courseModules[0]?.id ? [courseModules[0].id] : []);
+  const [expandedModules, setExpandedModules] = useState<string[]>([]);
   const progressPercent = course?.progress || 0;
+
+  useEffect(() => {
+    if (courseModules.length > 0 && expandedModules.length === 0) {
+      setExpandedModules([courseModules[0].id]);
+    }
+  }, [courseModules, expandedModules]);
 
   const toggleModule = (moduleId: string) => {
     setExpandedModules((prev) =>
@@ -69,7 +185,10 @@ export default function CourseViewerScreen() {
                 <Text style={[styles.courseTitle, { color: colors.text }]} numberOfLines={2}>
                   {course.title}
                 </Text>
-                <TouchableOpacity style={[styles.reviewBtn, { backgroundColor: colors.surfaceLight }]}>
+                <TouchableOpacity
+                  style={[styles.reviewBtn, { backgroundColor: colors.surfaceLight }]}
+                  onPress={() => router.push({ pathname: '/course/[id]', params: { id: String(course.id), tab: 'review' } })}
+                >
                   <MessageSquare size={12} color={colors.text} />
                   <Text style={[styles.reviewBtnText, { color: colors.text }]}>Drop Review</Text>
                 </TouchableOpacity>
@@ -134,7 +253,8 @@ export default function CourseViewerScreen() {
                     <View style={styles.moduleHeaderLeft}>
                       <Text style={[styles.moduleTitle, { color: colors.text }]}>{module.title}</Text>
                       <Text style={[styles.moduleSub, { color: colors.textSecondary }]}>
-                        {module.lecturesCount} Lectures | {module.durationMinutes} Minutes
+                        {module.lessons?.length ?? module.lecturesCount ?? 0} items
+                        {module.durationMinutes ? ` | ${module.durationMinutes} minutes` : ''}
                       </Text>
                     </View>
 
@@ -158,8 +278,25 @@ export default function CourseViewerScreen() {
                             })
                           }
                         >
-                          <Play size={14} color={colors.primary} />
+                          {lesson.isCompleted ? (
+                            <CheckCircle size={14} color={colors.success || '#10B981'} />
+                          ) : lesson.type === 'quiz' ? (
+                            <HelpCircle size={14} color={colors.secondary} />
+                          ) : lesson.type === 'assignment' ? (
+                            <FileText size={14} color={colors.secondary} />
+                          ) : (
+                            <Play size={14} color={colors.primary} />
+                          )}
                           <Text style={[styles.lessonTitle, { color: colors.text }]}>{lesson.title}</Text>
+                          {lesson.isCompleted ? (
+                            <Text style={[styles.lessonType, { color: colors.success || '#10B981', fontWeight: 'bold' }]}>
+                              Done
+                            </Text>
+                          ) : lesson.type && lesson.type !== 'video' ? (
+                            <Text style={[styles.lessonType, { color: colors.secondary }]}>
+                              {lesson.type === 'quiz' ? 'Quiz' : 'Assignment'}
+                            </Text>
+                          ) : null}
                           <Text style={[styles.lessonDuration, { color: colors.textMuted }]}>{lesson.duration}</Text>
                         </TouchableOpacity>
                       ))}
@@ -332,5 +469,10 @@ const styles = StyleSheet.create({
   },
   lessonDuration: {
     fontSize: 11,
+  },
+  lessonType: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'capitalize',
   },
 });

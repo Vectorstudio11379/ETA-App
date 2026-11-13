@@ -1,7 +1,7 @@
 import { API_CONFIG } from '../config/apiConfig';
 import { apiClient, ApiResponse } from './apiClient';
 import { storageService } from './storage';
-import { Course, Instructor, ModuleItem } from '../data/mockData';
+import { Course, Instructor, LessonItem, ModuleItem, CourseReviewItem, CourseQAItem, CourseQAReply, CertificateItem } from '../data/mockData';
 
 // Helper to determine the authentic Expressteck category based on course title or slug
 const resolveCategory = (title: string, slug?: string): string => {
@@ -36,6 +36,70 @@ const resolveCategory = (title: string, slug?: string): string => {
 };
 
 import { INITIAL_COURSES } from '../data/initialCourses';
+import { INITIAL_BUNDLES } from '../data/initialBundles';
+
+const bundledLessonsById = new Map<string, LessonItem>();
+for (const course of INITIAL_COURSES) {
+  for (const module of course.modules || []) {
+    for (const lesson of module.lessons || []) {
+      bundledLessonsById.set(String(lesson.id), lesson);
+    }
+  }
+}
+
+const normalizeCourseTitle = (title: string): string =>
+  title
+    .replace(/&amp;/gi, '&')
+    .replace(/&#038;/gi, '&')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const getCourseIdentity = (course: Course): string[] => {
+  const identifiers = [course.id, course.product_id]
+    .map((value) => value?.trim().toLowerCase())
+    .filter((value): value is string => Boolean(value && value !== 'undefined' && value !== 'null'))
+    .map((value) => `id:${value}`);
+  const slug = course.slug?.trim().toLowerCase();
+  if (slug) identifiers.push(`slug:${slug}`);
+  return identifiers;
+};
+
+const isSameCourse = (first: Course, second: Course): boolean => {
+  const firstIdentity = getCourseIdentity(first);
+  const secondIdentity = getCourseIdentity(second);
+  if (firstIdentity.some((identity) => secondIdentity.includes(identity))) return true;
+
+  return (
+    (!firstIdentity.length || !secondIdentity.length) &&
+    normalizeCourseTitle(first.title) === normalizeCourseTitle(second.title)
+  );
+};
+
+export const deduplicateCourses = (courses: Course[]): Course[] => {
+  const uniqueCourses: Course[] = [];
+
+  for (const course of courses) {
+    const duplicateIndex = uniqueCourses.findIndex((existing) => isSameCourse(existing, course));
+    if (duplicateIndex === -1) {
+      uniqueCourses.push(course);
+      continue;
+    }
+
+    const existing = uniqueCourses[duplicateIndex];
+    uniqueCourses[duplicateIndex] = {
+      ...existing,
+      product_id: existing.product_id || course.product_id,
+      slug: existing.slug || course.slug,
+      thumbnail: existing.thumbnail || course.thumbnail,
+      modules: existing.modules?.length ? existing.modules : course.modules,
+      isEnrolled: Boolean(existing.isEnrolled || course.isEnrolled),
+      progress: Math.max(existing.progress || 0, course.progress || 0),
+    };
+  }
+
+  return uniqueCourses;
+};
 
 // Helper to return curriculum modules for a course
 const resolveModules = (courseId: string, title: string, slug?: string): ModuleItem[] => {
@@ -43,9 +107,38 @@ const resolveModules = (courseId: string, title: string, slug?: string): ModuleI
     (c) =>
       String(c.id) === String(courseId) ||
       (slug && c.slug && c.slug === slug) ||
-      (c.title && title && c.title.toLowerCase().trim() === title.toLowerCase().trim())
+      (c.title && title && normalizeCourseTitle(c.title) === normalizeCourseTitle(title))
   );
   return match?.modules || [];
+};
+
+const mergeCourseModules = (
+  modules: ModuleItem[] | undefined,
+  fallbackModules: ModuleItem[]
+): ModuleItem[] => {
+  const sourceModules = modules?.length ? modules : fallbackModules;
+
+  return sourceModules.map((module) => ({
+    ...module,
+    lessons: module.lessons?.map((lesson) => {
+      const bundledLesson = bundledLessonsById.get(String(lesson.id));
+      const summary = lesson.summary?.trim() ? lesson.summary : bundledLesson?.summary;
+      const assignmentData = lesson.assignmentData ?? bundledLesson?.assignmentData ?? (
+        lesson.type === 'assignment' && summary
+          ? { title: lesson.title, description: summary }
+          : undefined
+      );
+
+      return {
+        ...bundledLesson,
+        ...lesson,
+        videoUrl: lesson.videoUrl?.trim() ? lesson.videoUrl : bundledLesson?.videoUrl,
+        summary,
+        quizData: lesson.quizData ?? bundledLesson?.quizData,
+        assignmentData,
+      };
+    }),
+  }));
 };
 
 export const courseService = {
@@ -61,10 +154,15 @@ export const courseService = {
       res = await apiClient.get(API_CONFIG.ENDPOINTS.MTO_COURSES);
     }
 
-    // 3. Fall back to embedded production catalog if network request is unreachable
+    // 3. No silent fallback to the course list bundled in the app: it goes stale
+    //    (old courses and prices). Report the failure so the UI can show offline/retry.
     if (!res.success || !Array.isArray(res.data) || res.data.length === 0) {
-      console.warn('[CourseService] Live API unreachable or empty. Serving embedded production courses.');
-      return { success: true, data: INITIAL_COURSES };
+      console.log(`[CourseService] Live API unavailable (${res.error || 'empty response'}).`);
+      return {
+        success: false,
+        error: res.error || 'Could not load courses. Check your connection and try again.',
+        statusCode: res.statusCode,
+      };
     }
 
     // Map live JSON items to app's Course model
@@ -94,9 +192,11 @@ export const courseService = {
       const discountPct = regularPrice > salePrice ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 40;
 
       // Extract real modules / curriculum
-      const modules = item.modules && Array.isArray(item.modules) && item.modules.length > 0
-        ? item.modules
-        : resolveModules(item.id, cleanTitle, slug);
+      const fallbackModules = resolveModules(item.id, cleanTitle, slug);
+      const modules = mergeCourseModules(
+        Array.isArray(item.modules) ? item.modules : undefined,
+        fallbackModules
+      );
 
       const instructor = item.instructor || item._embedded?.author?.[0]?.name || 'Express Tech Academy';
 
@@ -128,7 +228,7 @@ export const courseService = {
     });
 
     console.log(`[CourseService] Dynamically loaded ${courses.length} courses from Expressteck.tech`);
-    return { success: true, data: courses };
+    return { success: true, data: deduplicateCourses(courses) };
   },
 
   /**
@@ -147,8 +247,10 @@ export const courseService = {
     try {
       const curRes = await apiClient.get<any>(`${API_CONFIG.ENDPOINTS.COURSE_CURRICULUM(courseId)}`);
       if (curRes.success && curRes.data?.modules && Array.isArray(curRes.data.modules)) {
+        const fallbackModules = found?.modules || resolveModules(courseId, curRes.data.title || '', found?.slug);
+        const modules = mergeCourseModules(curRes.data.modules, fallbackModules);
         if (found) {
-          found.modules = curRes.data.modules;
+          found.modules = modules;
         } else {
           found = {
             id: courseId,
@@ -163,7 +265,7 @@ export const courseService = {
             rating: 5.0,
             reviewsCount: 14,
             daysLeft: 0,
-            modules: curRes.data.modules,
+            modules,
           };
         }
       }
@@ -231,34 +333,22 @@ export const courseService = {
    * Fetch user's enrolled courses from Expressteck.tech
    */
   async fetchEnrolledCourses(): Promise<ApiResponse<Course[]>> {
+    // The server identifies the student from the Bearer token that apiClient sends.
     const token = await storageService.getUserToken();
-    let email = '';
-    try {
-      const profileStr = await storageService.getItem(storageService.STORAGE_KEYS.USER_PROFILE);
-      if (profileStr) {
-        const parsed = JSON.parse(profileStr);
-        email = parsed?.email || '';
-      }
-    } catch (e) {}
-
-    if (!token && !email) {
+    if (!token) {
       return { success: true, data: [] };
     }
 
-    const queryParts: string[] = [];
-    if (email) queryParts.push(`email=${encodeURIComponent(email)}`);
-    if (token) queryParts.push(`auth_token=${encodeURIComponent(token)}`);
-    const query = queryParts.length ? `?${queryParts.join('&')}` : '';
-
-    const res = await apiClient.get(`${API_CONFIG.ENDPOINTS.USER_ENROLLMENTS}${query}`);
+    const res = await apiClient.get(API_CONFIG.ENDPOINTS.USER_ENROLLMENTS);
+    if (!res.success) {
+      return { success: false, error: res.error, statusCode: res.statusCode, data: [] };
+    }
     const list = Array.isArray(res.data)
       ? res.data
       : (Array.isArray((res.data as any)?.enrolled) ? (res.data as any).enrolled : []);
 
     if (list.length > 0) {
-      return {
-        success: true,
-        data: list.map((item: any) => ({
+      const courses: Course[] = list.map((item: any) => ({
           id: String(item.id),
           product_id: item.product_id ? String(item.product_id) : undefined,
           slug: item.slug || '',
@@ -275,16 +365,17 @@ export const courseService = {
           daysLeft: 0,
           isEnrolled: true,
           progress: Number(item.progress || 15),
-          modules: item.modules && Array.isArray(item.modules) && item.modules.length > 0
-            ? item.modules
-            : resolveModules(String(item.id), item.title || '', item.slug),
+          modules: mergeCourseModules(
+            Array.isArray(item.modules) ? item.modules : undefined,
+            resolveModules(String(item.id), item.title || '', item.slug)
+          ),
           requirements: [
             'Access to a computer, laptop, or smartphone.',
             'Internet connection for video lessons and materials.'
           ],
           certificateIssued: true,
-        })),
-      };
+        }));
+      return { success: true, data: deduplicateCourses(courses) };
     }
     return {
       success: true,
@@ -297,23 +388,34 @@ export const courseService = {
    */
   async fetchBundles(): Promise<Course[]> {
     const res = await apiClient.get(API_CONFIG.ENDPOINTS.BUNDLES);
-    if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-      return res.data.map((item: any) => ({
+    // The server wraps the list: { success: true, data: [...] }. Accept a bare array too.
+    const list: any[] = Array.isArray(res.data)
+      ? res.data
+      : Array.isArray(res.data?.data)
+        ? res.data.data
+        : [];
+    if (res.success && list.length > 0) {
+      return list.map((item: any) => ({
         id: String(item.id),
+        product_id: item.product_id ? String(item.product_id) : undefined,
         slug: item.slug || '',
         title: item.title,
         instructor: item.instructor || 'Express Tech Academy',
-        category: item.category || 'AI & Emerging Tech',
-        originalPrice: Number(item.originalPrice || 40000),
-        price: Number(item.price || 20000),
-        discount: Number(item.discount || 50),
+        category: item.category || 'Customize & Automate Your Platform',
+        originalPrice: Number(item.originalPrice ?? item.original_price ?? 0),
+        price: Number(item.price ?? item.sale_price ?? 0),
+        discount: Number(item.discount ?? item.savings_percent ?? 0),
         studentsCount: Number(item.studentsCount || 200),
         rating: Number(item.rating || 4.9),
         reviewsCount: Number(item.reviewsCount || 45),
         daysLeft: Number(item.daysLeft || 5),
         isBundle: true,
         bundleBadge: item.bundleBadge || 'Special Bundle',
-        packages: Array.isArray(item.packages) ? item.packages : [],
+        // `packages` must hold course IDs. The server's `packages` field holds course
+        // titles, so prefer `course_ids`.
+        packages: Array.isArray(item.course_ids)
+          ? item.course_ids.map(String)
+          : (Array.isArray(item.packages) ? item.packages.map(String) : []),
         thumbnail: item.thumbnail || 'https://expressteck.tech/wp-content/themes/express-tech-react/assets/images/ai-automation-course-thumbnail.jpg',
         description: item.description || '',
         modules: item.modules || [],
@@ -334,11 +436,9 @@ export const courseService = {
   /**
    * Fetch student's real enrolled courses from Expressteck database
    */
-  async fetchMyCourses(email?: string): Promise<ApiResponse<Course[]>> {
-    const endpoint = email
-      ? `${API_CONFIG.ENDPOINTS.MY_COURSES}?email=${encodeURIComponent(email)}`
-      : API_CONFIG.ENDPOINTS.MY_COURSES;
-    const res = await apiClient.get(endpoint);
+  // `_email` is unused and kept only so existing callers compile; the server uses the Bearer token.
+  async fetchMyCourses(_email?: string): Promise<ApiResponse<Course[]>> {
+    const res = await apiClient.get(API_CONFIG.ENDPOINTS.MY_COURSES);
     if (!res.success || !Array.isArray(res.data)) {
       return {
         success: true,
@@ -392,5 +492,97 @@ export const courseService = {
       completed,
     });
   },
-};
 
+  /**
+   * Fetch Course Reviews & Rating Breakdown
+   */
+  async fetchCourseReviews(courseId?: string): Promise<ApiResponse<{
+    success: boolean;
+    course_id?: number | string;
+    course_title?: string;
+    average_rating?: number;
+    reviews_count?: number;
+    satisfaction_pct?: number;
+    rating_breakdown?: { [key: string]: number };
+    reviews: CourseReviewItem[];
+  }>> {
+    return apiClient.get(API_CONFIG.ENDPOINTS.COURSE_REVIEWS(courseId));
+  },
+
+  /**
+   * Submit Course Review
+   */
+  async submitCourseReview(payload: {
+    course_id: string | number;
+    rating: number;
+    title?: string;
+    content: string;
+    author_name?: string;
+    author_email?: string;
+  }): Promise<ApiResponse<{ success: boolean; message: string; review?: CourseReviewItem }>> {
+    return apiClient.post(API_CONFIG.ENDPOINTS.SUBMIT_REVIEW, payload);
+  },
+
+  /**
+   * Fetch Course Q&A items
+   */
+  async fetchCourseQA(courseId: string): Promise<ApiResponse<{
+    success: boolean;
+    course_id: number | string;
+    count: number;
+    qa_items: CourseQAItem[];
+  }>> {
+    return apiClient.get(API_CONFIG.ENDPOINTS.COURSE_QA(courseId));
+  },
+
+  /**
+   * Submit Course Question
+   */
+  async submitCourseQuestion(payload: {
+    course_id: string | number;
+    question: string;
+  }): Promise<ApiResponse<{ success: boolean; message: string; qa_item?: CourseQAItem }>> {
+    // Requires the Bearer token (401 for guests). The server credits the question to the signed-in account.
+    return apiClient.post(API_CONFIG.ENDPOINTS.SUBMIT_QUESTION, payload);
+  },
+
+  /**
+   * Reply to a student question. Requires the Bearer token (401 for guests).
+   */
+  async replyToCourseQuestion(payload: {
+    question_id: number;
+    reply: string;
+  }): Promise<ApiResponse<{ success: boolean; message: string; answered: boolean; reply?: CourseQAReply }>> {
+    return apiClient.post(API_CONFIG.ENDPOINTS.SUBMIT_QA_REPLY, payload);
+  },
+
+  /**
+   * Fetch Student Earned Certificates
+   */
+  // `_params` is unused and kept only so existing callers compile; the server uses the Bearer token.
+  async fetchMyCertificates(_params?: { user_id?: number | string; email?: string }): Promise<ApiResponse<{
+    success: boolean;
+    student_name: string;
+    count: number;
+    certificates: CertificateItem[];
+  }>> {
+    return apiClient.get(API_CONFIG.ENDPOINTS.MY_CERTIFICATES);
+  },
+
+  /**
+   * Verify an official certificate code
+   */
+  async verifyCertificate(code: string): Promise<ApiResponse<{
+    success: boolean;
+    valid: boolean;
+    verification_code?: string;
+    student_name?: string;
+    course_title?: string;
+    issuer?: string;
+    status?: string;
+    verification_url?: string;
+    error?: string;
+  }>> {
+    return apiClient.get(API_CONFIG.ENDPOINTS.VERIFY_CERTIFICATE(code));
+  },
+};

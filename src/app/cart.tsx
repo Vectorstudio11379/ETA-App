@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -22,15 +22,42 @@ import {
   SecurityCheckIcon,
 } from '@hugeicons/core-free-icons';
 import { useApp } from '../context/AppContext';
+import { INITIAL_COURSES } from '../data/initialCourses';
+import { Course } from '../data/types';
 
 export default function CartScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { courses, cartIds, removeFromCart, formatPrice, colors, startPaystackPayment, userProfile } = useApp();
+  const { courses, bundles, cartIds, removeFromCart, formatPrice, colors, startPaystackPayment, userProfile } = useApp();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const cartCourses = courses.filter((c) => cartIds.includes(c.id));
-  const totalAmount = cartCourses.reduce((sum, item) => sum + item.price, 0);
+  const allCatalogItems = useMemo(() => {
+    const map = new Map<string, Course>();
+    for (const b of (bundles || [])) {
+      if (b && b.id) {
+        map.set(String(b.id), b);
+        if (b.product_id) map.set(String(b.product_id), b);
+      }
+    }
+    for (const c of (courses || [])) {
+      if (c && c.id && !map.has(String(c.id))) {
+        map.set(String(c.id), c);
+        if (c.product_id) map.set(String(c.product_id), c);
+      }
+    }
+    for (const c of INITIAL_COURSES) {
+      if (c && c.id && !map.has(String(c.id))) {
+        map.set(String(c.id), c);
+        if (c.product_id) map.set(String(c.product_id), c);
+      }
+    }
+    return Array.from(new Set(map.values()));
+  }, [courses, bundles]);
+
+  const cartCourses = allCatalogItems.filter((c) =>
+    cartIds.includes(String(c.id)) || (c.product_id && cartIds.includes(String(c.product_id)))
+  );
+  const totalAmount = cartCourses.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
 
   const statusBarPadding = Platform.OS === 'android'
     ? Math.max(insets.top, StatusBar.currentHeight || 24) + 6
@@ -84,7 +111,10 @@ export default function CartScreen() {
                   </Text>
                   <TouchableOpacity
                     style={[styles.removeBtn, { backgroundColor: colors.error }]}
-                    onPress={() => removeFromCart(course.id)}
+                    onPress={() => {
+                      removeFromCart(course.id);
+                      if (course.product_id) removeFromCart(course.product_id);
+                    }}
                   >
                     <HugeiconsIcon icon={Cancel01Icon} size={14} color="#FFF" />
                   </TouchableOpacity>

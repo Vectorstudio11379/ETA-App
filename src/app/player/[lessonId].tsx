@@ -23,16 +23,17 @@ import {
   AlertCircle,
 } from 'lucide-react-native';
 import { useApp } from '../../context/AppContext';
+import { CourseQA } from '../../components/CourseQA';
 import { storageService } from '../../services/storage';
 import { INITIAL_COURSES } from '../../data/initialCourses';
+import { Course, LessonItem } from '../../data/types';
 
 export default function VideoPlayerScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { lessonId, courseId } = useLocalSearchParams<{ lessonId: string; courseId?: string }>();
-  const { courses, colors } = useApp();
+  const { courses, colors, updateLessonProgress } = useApp();
 
-  const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [isDownloaded, setIsDownloaded] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'content' | 'comment'>('content');
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
@@ -40,14 +41,14 @@ export default function VideoPlayerScreen() {
   const [quizScore, setQuizScore] = useState<number>(0);
 
   // Dynamically resolve current lesson and course from live data or bundled catalog
-  let currentLesson: any = {
-    id: lessonId || '683',
+  let currentLesson: LessonItem = {
+    id: String(lessonId || '683'),
     title: 'Loading lesson...',
     duration: '15m',
     videoUrl: '',
     type: 'video',
   };
-  let currentCourse = courses[0] || INITIAL_COURSES[0];
+  let currentCourse: Course = courses[0] || INITIAL_COURSES[0];
 
   const searchPool = [...courses, ...INITIAL_COURSES];
   for (const c of searchPool) {
@@ -63,6 +64,20 @@ export default function VideoPlayerScreen() {
       if (currentLesson.title !== 'Loading lesson...') break;
     }
   }
+
+  const [isCompleted, setIsCompleted] = useState<boolean>(Boolean(currentLesson.isCompleted));
+
+  useEffect(() => {
+    setIsCompleted(Boolean(currentLesson.isCompleted));
+  }, [currentLesson.id, currentLesson.isCompleted]);
+
+  const handleToggleComplete = async () => {
+    const nextCompleted = !isCompleted;
+    setIsCompleted(nextCompleted);
+    if (updateLessonProgress) {
+      await updateLessonProgress(String(currentCourse.id), String(currentLesson.id), nextCompleted);
+    }
+  };
 
   // Check if saved offline
   useEffect(() => {
@@ -81,6 +96,14 @@ export default function VideoPlayerScreen() {
   const isAssignment = currentLesson.type === 'assignment';
   const isPdf = typeof currentLesson.videoUrl === 'string' && currentLesson.videoUrl.endsWith('.pdf');
   const isApk = typeof currentLesson.videoUrl === 'string' && currentLesson.videoUrl.endsWith('.apk');
+  const quizQuestions = currentLesson.quizData?.questions || [];
+  const quizPassingScore = currentLesson.quizData?.passingScore ?? 70;
+  const assignmentData = currentLesson.assignmentData;
+  const assignmentEvaluation = [
+    assignmentData?.rubric,
+    assignmentData?.totalPoints !== undefined ? `Total points: ${assignmentData.totalPoints}` : undefined,
+    assignmentData?.passPoints !== undefined ? `Passing score: ${assignmentData.passPoints} points` : undefined,
+  ].filter(Boolean).join('\n');
 
   const handleToggleDownload = async () => {
     if (isDownloaded) {
@@ -108,18 +131,17 @@ export default function VideoPlayerScreen() {
   };
 
   const handleSubmitQuiz = () => {
-    const questions = currentLesson.quizData?.questions || [];
-    if (questions.length === 0) return;
+    if (quizQuestions.length === 0 || quizQuestions.some((_, idx) => selectedAnswers[idx] === undefined)) return;
     let correct = 0;
-    questions.forEach((q: any, idx: number) => {
+    quizQuestions.forEach((q, idx) => {
       if (selectedAnswers[idx] === q.answer) {
         correct += 1;
       }
     });
-    const percentage = Math.round((correct / questions.length) * 100);
+    const percentage = Math.round((correct / quizQuestions.length) * 100);
     setQuizScore(percentage);
     setQuizSubmitted(true);
-    if (percentage >= (currentLesson.quizData?.passingScore || 70)) {
+    if (percentage >= quizPassingScore) {
       setIsCompleted(true);
     }
   };
@@ -173,16 +195,20 @@ export default function VideoPlayerScreen() {
                 <Text style={styles.badgePillText}>Knowledge Check Quiz</Text>
               </View>
               <Text style={[styles.passingText, { color: colors.textSecondary }]}>
-                Passing score: {currentLesson.quizData?.passingScore || 70}%
+                Passing score: {quizPassingScore}%
               </Text>
             </View>
 
-            {(currentLesson.quizData?.questions || []).map((qItem: any, qIdx: number) => (
+            {quizQuestions.length === 0 ? (
+              <Text style={[styles.assignmentDesc, { color: colors.textSecondary }]}>
+                {currentLesson.summary || 'Quiz questions are not available yet. Please try again later.'}
+              </Text>
+            ) : quizQuestions.map((qItem, qIdx) => (
               <View key={qIdx} style={styles.questionBlock}>
                 <Text style={[styles.questionText, { color: colors.text }]}>
                   {qIdx + 1}. {qItem.q}
                 </Text>
-                {qItem.options.map((opt: string, optIdx: number) => {
+                {qItem.options.map((opt, optIdx) => {
                   const isSelected = selectedAnswers[qIdx] === optIdx;
                   const isCorrect = qItem.answer === optIdx;
                   let optBg = colors.surfaceLight;
@@ -213,28 +239,40 @@ export default function VideoPlayerScreen() {
                     </TouchableOpacity>
                   );
                 })}
+                {quizSubmitted && qItem.explanation && (
+                  <Text style={[styles.assignmentDesc, { color: colors.textSecondary }]}>
+                    {qItem.explanation}
+                  </Text>
+                )}
               </View>
             ))}
 
-            {!quizSubmitted ? (
+            {!quizSubmitted && quizQuestions.length > 0 ? (
               <TouchableOpacity
-                style={[styles.submitQuizBtn, { backgroundColor: colors.primary }]}
+                style={[
+                  styles.submitQuizBtn,
+                  {
+                    backgroundColor: colors.primary,
+                    opacity: quizQuestions.some((_, idx) => selectedAnswers[idx] === undefined) ? 0.5 : 1,
+                  },
+                ]}
                 onPress={handleSubmitQuiz}
+                disabled={quizQuestions.some((_, idx) => selectedAnswers[idx] === undefined)}
               >
                 <Text style={styles.submitQuizText}>Submit Answers</Text>
               </TouchableOpacity>
-            ) : (
+            ) : quizSubmitted ? (
               <View style={[styles.resultCard, { backgroundColor: colors.surfaceLight }]}>
-                <Text style={[styles.resultScore, { color: quizScore >= 70 ? colors.success : colors.error }]}>
+                <Text style={[styles.resultScore, { color: quizScore >= quizPassingScore ? colors.success : colors.error }]}>
                   Your Score: {quizScore}%
                 </Text>
                 <Text style={[styles.resultMessage, { color: colors.textSecondary }]}>
-                  {quizScore >= 70
+                  {quizScore >= quizPassingScore
                     ? '🎉 Passed! Lesson marked completed.'
                     : 'Review the module materials and try again to pass.'}
                 </Text>
               </View>
-            )}
+            ) : null}
           </View>
         ) : isAssignment ? (
           <View style={[styles.quizContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -244,17 +282,17 @@ export default function VideoPlayerScreen() {
               </View>
             </View>
             <Text style={[styles.assignmentTitle, { color: colors.text }]}>
-              {currentLesson.assignmentData?.title || currentLesson.title}
+              {assignmentData?.title || currentLesson.title}
             </Text>
             <Text style={[styles.assignmentDesc, { color: colors.textSecondary }]}>
-              {currentLesson.assignmentData?.description || 'Implement the project following best practices.'}
+              {assignmentData?.description || currentLesson.summary || 'Assignment instructions are not available yet.'}
             </Text>
-            <View style={[styles.rubricBox, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
-              <Text style={[styles.rubricHeading, { color: colors.text }]}>Evaluation Rubric</Text>
-              <Text style={[styles.rubricText, { color: colors.textSecondary }]}>
-                {currentLesson.assignmentData?.rubric || 'Clean implementation, zero runtime warnings, and verified functionality.'}
-              </Text>
-            </View>
+            {assignmentEvaluation && (
+              <View style={[styles.rubricBox, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
+                <Text style={[styles.rubricHeading, { color: colors.text }]}>Evaluation</Text>
+                <Text style={[styles.rubricText, { color: colors.textSecondary }]}>{assignmentEvaluation}</Text>
+              </View>
+            )}
           </View>
         ) : isPdf ? (
           <View style={[styles.resourceContainer, { backgroundColor: '#0B0F19', borderColor: '#1E293B' }]}>
@@ -363,7 +401,7 @@ export default function VideoPlayerScreen() {
                   borderWidth: 1,
                 },
               ]}
-              onPress={() => setIsCompleted(!isCompleted)}
+              onPress={handleToggleComplete}
             >
               <CheckCircle
                 size={16}
@@ -397,12 +435,19 @@ export default function VideoPlayerScreen() {
             onPress={() => setActiveTab('comment')}
           >
             <Text style={[styles.segmentText, { color: activeTab === 'comment' ? '#FFF' : colors.textSecondary }]}>
-              Comment
+              Q&A
             </Text>
           </TouchableOpacity>
         </View>
 
+        {activeTab === 'comment' && (
+          <View style={{ marginHorizontal: 16 }}>
+            <CourseQA courseId={String(currentCourse.id)} />
+          </View>
+        )}
+
         {/* Protected In-App Resource Information */}
+        {activeTab === 'content' && (
         <View style={[styles.descriptionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.descHeading, { color: colors.text }]}>Lesson Overview & Materials</Text>
           <Text style={[styles.descBody, { color: colors.textSecondary }]}>
@@ -417,6 +462,7 @@ export default function VideoPlayerScreen() {
             </Text>
           </View>
         </View>
+        )}
       </ScrollView>
     </View>
   );

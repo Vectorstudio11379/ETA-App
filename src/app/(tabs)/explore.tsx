@@ -11,9 +11,11 @@ import { Header } from '../../components/Header';
 import { SearchBar } from '../../components/SearchBar';
 import { CourseCard } from '../../components/CourseCard';
 import { useApp } from '../../context/AppContext';
+import { Animated, useScreenMotion } from '../../hooks/use-screen-motion';
 
 export default function ExploreScreen() {
   const { courses, bundles, categories, colors, isRefreshing, refreshLiveData } = useApp();
+  const screenMotionStyle = useScreenMotion();
   const [activeTab, setActiveTab] = useState<'courses' | 'bundles'>('courses');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -35,7 +37,7 @@ export default function ExploreScreen() {
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <Animated.View style={[styles.container, { backgroundColor: colors.background }, screenMotionStyle]}>
       <Header showCurrency={false} title="Explore" />
 
       {/* Top Segment Switcher */}
@@ -135,7 +137,7 @@ export default function ExploreScreen() {
           </View>
         )}
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 

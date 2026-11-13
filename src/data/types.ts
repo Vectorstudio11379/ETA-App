@@ -23,11 +23,71 @@ export interface Course {
   description?: string;
   requirements?: string[];
   certificateIssued?: boolean;
+  certificate?: {
+    is_issued?: boolean;
+    verification_code?: string;
+    verification_url?: string;
+    download_url?: string;
+  };
+  reviews?: CourseReviewItem[];
+  qaItems?: CourseQAItem[];
   slug?: string;
   sectionsCount?: number;
   lessonsCount?: number;
   duration?: string;
   modules?: ModuleItem[];
+}
+
+export interface CourseReviewItem {
+  id: string | number;
+  name: string;
+  title?: string;
+  content: string;
+  rating: number;
+  date: string;
+  avatar?: string;
+  is_verified?: boolean;
+}
+
+export interface CourseQAReply {
+  id: number;
+  question_id: number;
+  author: string;
+  content: string;
+  is_instructor: boolean;
+  badge?: string;
+  date?: string;
+  date_iso?: string;
+}
+
+export interface CourseQAItem {
+  /** Null for the built-in FAQ entries, which cannot be replied to. */
+  id?: number | null;
+  type?: 'faq' | 'question';
+  question: string;
+  answer: string;
+  /** True when `answer` is a real instructor reply, not the "we'll answer soon" placeholder. */
+  answered?: boolean;
+  badge?: string;
+  author?: string;
+  date?: string;
+  date_iso?: string;
+  can_reply?: boolean;
+  reply_count?: number;
+  replies?: CourseQAReply[];
+}
+
+export interface CertificateItem {
+  id: number;
+  course_id: number | string;
+  course_title: string;
+  student_name: string;
+  verification_code: string;
+  verification_url: string;
+  download_url: string;
+  status: string;
+  issued_date?: string;
+  grade?: string;
 }
 
 export interface HeroBanner {
@@ -63,12 +123,15 @@ export interface LessonItem {
       q: string;
       options: string[];
       answer: number;
+      explanation?: string;
     }[];
   };
   assignmentData?: {
     title: string;
     description: string;
-    rubric: string;
+    rubric?: string;
+    totalPoints?: number;
+    passPoints?: number;
   };
 }
 
@@ -117,6 +180,17 @@ export const SUPPORTED_COUNTRIES: CountryItem[] = [
   { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', dialCode: '+44' },
   { code: 'US', name: 'United States', flag: '🇺🇸', dialCode: '+1' },
 ];
+
+export const getCountryFlag = (country?: string): string => {
+  const normalizedCountry = country?.trim().toLowerCase();
+  if (!normalizedCountry) return '🇳🇬';
+
+  return SUPPORTED_COUNTRIES.find(
+    (item) =>
+      item.code.toLowerCase() === normalizedCountry ||
+      item.name.toLowerCase() === normalizedCountry
+  )?.flag ?? '🇳🇬';
+};
 
 export const HERO_BANNERS: HeroBanner[] = [
   {

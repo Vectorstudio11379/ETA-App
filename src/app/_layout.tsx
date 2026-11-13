@@ -5,10 +5,13 @@ import { AppProvider } from '../context/AppContext';
 import { Toast } from '../components/Toast';
 import { LogBox } from 'react-native';
 import { Colors } from '../constants/theme';
+import { useReducedMotion } from 'react-native-reanimated';
 
 LogBox.ignoreAllLogs(true);
 
 export default function RootLayout() {
+  const reducedMotion = useReducedMotion();
+
   return (
     <AppProvider>
       <StatusBar style="light" />
@@ -18,7 +21,7 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: Colors.background },
-          animation: 'slide_from_right',
+          animation: reducedMotion ? 'none' : 'fade',
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />

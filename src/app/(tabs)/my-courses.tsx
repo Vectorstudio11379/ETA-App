@@ -7,6 +7,7 @@ import {
   Image,
   StyleSheet,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { HugeiconsIcon } from '@hugeicons/react-native';
@@ -22,10 +23,15 @@ import { SearchBar } from '../../components/SearchBar';
 import { useApp } from '../../context/AppContext';
 import { courseService } from '../../services/courseService';
 import { Course } from '../../data/mockData';
+import { Animated, useScreenMotion } from '../../hooks/use-screen-motion';
+import { deduplicateCourses } from '../../services/courseService';
+import { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 
 export default function MyCoursesScreen() {
   const router = useRouter();
-  const { courses, wishlistIds, colors, isRefreshing, refreshLiveData } = useApp();
+  const { courses, wishlistIds, colors, isRefreshing, refreshLiveData, userProfile: user } = useApp();
+  const screenMotionStyle = useScreenMotion();
+  const reducedMotion = useReducedMotion();
   const [activeTab, setActiveTab] = useState<'all' | 'favourite' | 'certificate'>('all');
   const [liveEnrolled, setLiveEnrolled] = useState<Course[]>([]);
 
@@ -35,7 +41,7 @@ export default function MyCoursesScreen() {
       const res = await courseService.fetchEnrolledCourses();
       console.log('[MyCourses] fetchEnrolledCourses result:', JSON.stringify(res));
       if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-        setLiveEnrolled(res.data);
+        setLiveEnrolled(deduplicateCourses(res.data));
       }
     } catch (e) {
       console.warn('[MyCourses] Error fetching enrolled:', e);
@@ -47,13 +53,15 @@ export default function MyCoursesScreen() {
     refreshLiveData();
   }, [loadEnrolled, refreshLiveData]);
 
-  const enrolledFromCourses = courses.filter((c) => c.isEnrolled || (c.progress !== undefined && c.progress > 0));
-  const enrolledCourses = liveEnrolled.length > 0 ? liveEnrolled : enrolledFromCourses;
+  const enrolledFromCourses = deduplicateCourses(
+    courses.filter((c) => c.isEnrolled || (c.progress !== undefined && c.progress > 0))
+  );
+  const enrolledCourses = deduplicateCourses(liveEnrolled.length > 0 ? liveEnrolled : enrolledFromCourses);
   console.log('[MyCourses] RENDER enrolledCourses count:', enrolledCourses.length, 'liveEnrolled:', liveEnrolled.length);
-  const favouriteCourses = courses.filter((c) => wishlistIds.includes(c.id));
+  const favouriteCourses = deduplicateCourses(courses.filter((c) => wishlistIds.includes(c.id)));
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <Animated.View style={[styles.container, { backgroundColor: colors.background }, screenMotionStyle]}>
       <Header showCurrency={false} title="My Courses" />
 
       {/* Segment Tabs */}
@@ -135,20 +143,25 @@ export default function MyCoursesScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-          enrolledCourses.map((course) => {
+          enrolledCourses.map((course, index) => {
             const progressPercent = course.progress || 0;
             return (
-              <TouchableOpacity
+              <Animated.View
                 key={course.id}
-                activeOpacity={0.9}
-                onPress={() =>
-                  router.push({
-                    pathname: '/course-viewer/[id]',
-                    params: { id: course.id },
-                  })
-                }
-                style={[styles.courseCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                entering={FadeInDown.duration(reducedMotion ? 0 : 280).delay(
+                  reducedMotion ? 0 : Math.min(index, 5) * 50
+                )}
               >
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/course-viewer/[id]',
+                      params: { id: course.id },
+                    })
+                  }
+                  style={[styles.courseCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                >
                 <View style={styles.topRow}>
                   <Image source={{ uri: course.thumbnail }} style={styles.thumbnail} />
 
@@ -207,7 +220,8 @@ export default function MyCoursesScreen() {
 
                   <Text style={[styles.progressPercentText, { color: colors.text }]}>{progressPercent}%</Text>
                 </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </Animated.View>
             );
           })
         ))}
@@ -216,8 +230,9 @@ export default function MyCoursesScreen() {
         {activeTab === 'favourite' && (
           favouriteCourses.length > 0 ? (
             favouriteCourses.map((course) => (
-              <View
+              <Animated.View
                 key={course.id}
+                entering={FadeInDown.duration(reducedMotion ? 0 : 280)}
                 style={[styles.courseCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
               >
                 <View style={styles.topRow}>
@@ -231,7 +246,7 @@ export default function MyCoursesScreen() {
                     </Text>
                   </View>
                 </View>
-              </View>
+              </Animated.View>
             ))
           ) : (
             <View style={styles.emptyContainer}>
@@ -254,19 +269,92 @@ export default function MyCoursesScreen() {
         )}
 
         {/* Tab 3: Certificate */}
-        {activeTab === 'certificate' && (
-          <View style={styles.emptyContainer}>
-            <View style={[styles.certCircleBox, { backgroundColor: colors.surfaceLight }]}>
-              <HugeiconsIcon icon={Award01Icon} size={64} color={colors.primary} />
+        {activeTab === 'certificate' && (() => {
+          const certCourses = enrolledCourses.filter(
+            (c) => (c.progress || 0) >= 100 || c.certificate?.is_issued || c.certificateIssued
+          );
+          if (certCourses.length === 0) {
+            return (
+              <View style={styles.emptyContainer}>
+                <View style={[styles.certCircleBox, { backgroundColor: colors.surfaceLight }]}>
+                  <HugeiconsIcon icon={Award01Icon} size={64} color={colors.primary} />
+                </View>
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>No Certificate Available Yet</Text>
+                <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
+                  Once you've completed 100% of a course, your official verified certificate will be issued here instantly.
+                </Text>
+              </View>
+            );
+          }
+          return (
+            <View style={{ paddingHorizontal: 16 }}>
+              {certCourses.map((c) => {
+                const code = c.certificate?.verification_code || `${c.id}-1070-${user?.id || 1}`;
+                const downloadUrl = c.certificate?.download_url || `https://expressteck.tech/wp-admin/admin-ajax.php?action=eta_download_certificate&course_id=${c.id}&user_id=${user?.id || 1}`;
+                const verifyUrl = c.certificate?.verification_url || `https://expressteck.tech/certificate-verification/?code=${code}`;
+                return (
+                  <View
+                    key={c.id}
+                    style={[
+                      styles.courseCard,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.border,
+                        borderLeftWidth: 4,
+                        borderLeftColor: '#D97706',
+                      },
+                    ]}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                      <HugeiconsIcon icon={Award01Icon} size={28} color="#D97706" />
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#D97706', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                          Official Certificate • Issued
+                        </Text>
+                        <Text style={[styles.courseTitle, { color: colors.text }]} numberOfLines={2}>
+                          {c.title}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginBottom: 12 }}>
+                      Credential ID: <Text style={{ fontFamily: 'monospace', fontWeight: 'bold', color: colors.text }}>{code}</Text>
+                    </Text>
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                      <TouchableOpacity
+                        style={{
+                          flex: 1,
+                          backgroundColor: colors.primary,
+                          paddingVertical: 10,
+                          borderRadius: 10,
+                          alignItems: 'center',
+                        }}
+                        onPress={() => Linking.openURL(downloadUrl)}
+                      >
+                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 13 }}>Download PDF</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={{
+                          flex: 1,
+                          backgroundColor: colors.surfaceLight,
+                          borderWidth: 1,
+                          borderColor: colors.border,
+                          paddingVertical: 10,
+                          borderRadius: 10,
+                          alignItems: 'center',
+                        }}
+                        onPress={() => Linking.openURL(verifyUrl)}
+                      >
+                        <Text style={{ color: colors.text, fontWeight: '600', fontSize: 13 }}>Verify Online</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No Certificate Available Yet</Text>
-            <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
-              Once you've completed 100% of the course, you'll be able to get your certificate
-            </Text>
-          </View>
-        )}
+          );
+        })()}
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 

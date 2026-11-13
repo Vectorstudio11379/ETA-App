@@ -9,6 +9,7 @@ import {
   ArrowDown01Icon,
 } from '@hugeicons/core-free-icons';
 import { useApp } from '../context/AppContext';
+import { getCountryFlag } from '../data/types';
 
 interface HeaderProps {
   title?: string;
@@ -19,7 +20,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ title, showCurrency = true, showBack = false }) => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { cartIds, currency, setCurrency, notifications, colors } = useApp();
+  const { cartIds, currency, setCurrency, notifications, colors, userProfile } = useApp();
 
   const statusBarPadding = Platform.OS === 'android' 
     ? Math.max(insets.top, StatusBar.currentHeight || 24) + 6 
@@ -32,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({ title, showCurrency = true, show
           style={[styles.currencyBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
           onPress={() => setCurrency(currency === 'NGN' ? 'USD' : 'NGN')}
         >
-          <Text style={styles.flagText}>🇳🇬</Text>
+          <Text style={styles.flagText}>{getCountryFlag(userProfile.country)}</Text>
           <Text style={[styles.currencyText, { color: colors.text }]}>{currency}</Text>
           <HugeiconsIcon icon={ArrowDown01Icon} size={16} color={colors.textSecondary} />
         </TouchableOpacity>

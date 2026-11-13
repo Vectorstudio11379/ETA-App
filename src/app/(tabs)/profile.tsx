@@ -28,10 +28,12 @@ import {
 } from '@hugeicons/core-free-icons';
 import { Header } from '../../components/Header';
 import { useApp } from '../../context/AppContext';
+import { Animated, useScreenMotion } from '../../hooks/use-screen-motion';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { userProfile, themeMode, toggleThemeMode, colors, isAuthenticated, logout } = useApp();
+  const screenMotionStyle = useScreenMotion();
 
   const handleLogoutPress = () => {
     Alert.alert(
@@ -66,7 +68,7 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <Animated.View style={[styles.container, { backgroundColor: colors.background }, screenMotionStyle]}>
       <View style={styles.topGreetingHeader}>
         <View style={styles.greetingCol}>
           <Text style={[styles.greetingTitle, { color: colors.text }]}>{userProfile.name}</Text>
@@ -164,7 +166,7 @@ export default function ProfileScreen() {
           })}
         </View>
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 

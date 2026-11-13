@@ -13,7 +13,7 @@ import { WebView, WebViewNavigation } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { Cancel01Icon, SecurityCheckIcon } from '@hugeicons/core-free-icons';
-import { useApp } from '../context/AppContext';
+import { ThemeColors, DarkColors } from '../constants/theme';
 
 interface PaystackCheckoutModalProps {
   visible: boolean;
@@ -22,6 +22,7 @@ interface PaystackCheckoutModalProps {
   orderId: number | null;
   onClose: () => void;
   onSuccess: (reference: string, orderId: number) => void;
+  colors?: ThemeColors;
 }
 
 export const PaystackCheckoutModal: React.FC<PaystackCheckoutModalProps> = ({
@@ -31,9 +32,9 @@ export const PaystackCheckoutModal: React.FC<PaystackCheckoutModalProps> = ({
   orderId,
   onClose,
   onSuccess,
+  colors = DarkColors,
 }) => {
   const insets = useSafeAreaInsets();
-  const { colors } = useApp();
   const [isVerifying, setIsVerifying] = useState(false);
 
   if (!visible || !authorizationUrl) {

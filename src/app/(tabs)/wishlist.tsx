@@ -17,15 +17,17 @@ import {
 import { Header } from '../../components/Header';
 import { SearchBar } from '../../components/SearchBar';
 import { useApp } from '../../context/AppContext';
+import { Animated, useScreenMotion } from '../../hooks/use-screen-motion';
 
 export default function WishlistScreen() {
   const router = useRouter();
   const { courses, wishlistIds, toggleWishlist, formatPrice, colors } = useApp();
+  const screenMotionStyle = useScreenMotion();
 
   const wishlistedCourses = courses.filter((c) => wishlistIds.includes(c.id) || c.isWishlisted);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <Animated.View style={[styles.container, { backgroundColor: colors.background }, screenMotionStyle]}>
       <Header showCurrency={false} title="My WishList" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -99,7 +101,7 @@ export default function WishlistScreen() {
           ))
         )}
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 

@@ -6,11 +6,11 @@ import {
   Course,
   Instructor,
   NotificationItem,
-  INITIAL_COURSES,
 } from '../data/mockData';
 import { DarkColors, LightColors, ThemeColors } from '../constants/theme';
+import { apiClient } from '../services/apiClient';
 import { authService, RegisterPayload } from '../services/authService';
-import { courseService } from '../services/courseService';
+import { courseService, deduplicateCourses } from '../services/courseService';
 import { userDataService } from '../services/userDataService';
 import { storageService } from '../services/storage';
 import { PaystackCheckoutModal } from '../components/PaystackCheckoutModal';
@@ -84,6 +84,7 @@ export interface AppContextType {
   }) => Promise<{ success: boolean; error?: string }>;
   refreshLiveData: () => Promise<void>;
   isRefreshing: boolean;
+  updateLessonProgress: (courseId: string, lessonId: string, completed: boolean) => Promise<void>;
 
   // Paystack Native Payment Bridge
   startPaystackPayment: (
@@ -127,8 +128,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>('dark');
   const [currency, setCurrency] = useState<'NGN' | 'USD'>('NGN');
   
-  // Live States seeded with embedded catalog and refreshed from Expressteck.tech
-  const [courses, setCourses] = useState<Course[]>(INITIAL_COURSES);
+  // Live states loaded from Expressteck.tech (no stale embedded catalog)
+  const [courses, setCourses] = useState<Course[]>([]);
   const [bundles, setBundles] = useState<Course[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
@@ -218,7 +219,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
 
-        setCourses(mergedCourses);
+        setCourses(deduplicateCourses(mergedCourses));
 
         // Dynamically extract real unique categories from live courses if not already provided
         const uniqueCatNames = Array.from(new Set(mergedCourses.map((c) => c.category).filter(Boolean)));
@@ -230,6 +231,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }));
           setCategories(dynamicCats);
         }
+      } else if (!courseRes.success) {
+        showToast(courseRes.error || 'Could not load courses. Pull down to retry.');
       }
 
       // 2. Fetch live bundles, instructors, categories & site info in parallel
@@ -269,7 +272,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } finally {
       setIsRefreshing(false);
     }
-  }, []);
+  }, [showToast]);
+
+  // Saved login token rejected by the server (expired after 30 days, or replaced
+  // by a password reset): clear the session and ask the student to sign in again.
+  useEffect(() => {
+    let handling = false;
+    apiClient.setUnauthorizedHandler(async () => {
+      if (handling) return;
+      handling = true;
+      try {
+        await authService.logout();
+        setUserToken(null);
+        setIsAuthenticated(false);
+        setUserProfile(DEFAULT_USER_PROFILE);
+        setCartIds([]);
+        setWishlistIds([]);
+        showToast('Your session has expired. Please log in again.');
+      } finally {
+        handling = false;
+      }
+    });
+    return () => apiClient.setUnauthorizedHandler(null);
+  }, [showToast]);
 
   // Continuous Auto-Sync: Listen for AppState change (foreground) & poll every 90 seconds
   useEffect(() => {
@@ -341,7 +366,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const res = await authService.register(payload);
     if (res.success && res.data) {
       setUserToken(res.data.token);
-      setUserProfile(res.data.user);
+      setUserProfile({
+        ...res.data.user,
+        country: res.data.user.country || payload.country || DEFAULT_USER_PROFILE.country,
+      });
       setIsAuthenticated(true);
       showToast(`Account created successfully! Welcome ${res.data.user.name}`);
       await refreshLiveData();
@@ -387,7 +415,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
 
       if (res.success && res.data) {
-        setUserProfile(res.data);
+        const updatedProfile = res.data;
+        setUserProfile((currentProfile) => ({
+          ...currentProfile,
+          ...updatedProfile,
+          country: updatedProfile.country || payload.country || currentProfile.country,
+        }));
         showToast('Profile updated successfully!');
         return { success: true };
       } else {
@@ -426,15 +459,77 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const clearCart = () => {
+    const bundleMap: Record<string, string[]> = {
+      bundle_1: ['666', '627'],
+      '668': ['666', '627'],
+      bundle_2: ['659', '584'],
+      '669': ['659', '584'],
+      bundle_3: ['466', '496'],
+      '670': ['466', '496'],
+      bundle_4: ['467', '496'],
+      '671': ['467', '496'],
+    };
+    const childIds: string[] = [];
+    for (const cid of cartIds) {
+      if (bundleMap[cid]) {
+        childIds.push(...bundleMap[cid]);
+      }
+    }
+    const allEnrolledIds = [...cartIds, ...childIds];
+
     setCourses((prevCourses) =>
       prevCourses.map((c) =>
-        cartIds.includes(c.id) ? { ...c, isEnrolled: true, progress: 0 } : c
+        allEnrolledIds.includes(String(c.id)) || (c.product_id && allEnrolledIds.includes(String(c.product_id)))
+          ? { ...c, isEnrolled: true, progress: 0 }
+          : c
       )
     );
     setCartIds([]);
     userDataService.syncCart([]);
     showToast('Payment successful! Courses added to My Courses');
   };
+
+  // Lesson Progress Synchronization & Tracking
+  const updateLessonProgress = useCallback(async (courseId: string, lessonId: string, completed: boolean) => {
+    setCourses((prevCourses) =>
+      prevCourses.map((course) => {
+        const matchesCourse =
+          String(course.id) === String(courseId) ||
+          (course.product_id && String(course.product_id) === String(courseId)) ||
+          course.slug === courseId;
+
+        if (!matchesCourse) return course;
+
+        let totalLessons = 0;
+        let completedLessons = 0;
+
+        const updatedModules = (course.modules || []).map((module) => {
+          const updatedLessons = (module.lessons || []).map((lesson) => {
+            totalLessons++;
+            const isTarget = String(lesson.id) === String(lessonId);
+            const isDone = isTarget ? completed : Boolean(lesson.isCompleted);
+            if (isDone) completedLessons++;
+            return isTarget ? { ...lesson, isCompleted: completed } : lesson;
+          });
+          return { ...module, lessons: updatedLessons };
+        });
+
+        const newProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : (completed ? 100 : 0);
+
+        return {
+          ...course,
+          progress: newProgress,
+          modules: updatedModules,
+        };
+      })
+    );
+
+    try {
+      await courseService.updateLessonProgress(courseId, lessonId, completed);
+    } catch (e) {
+      console.warn('[AppContext] Could not sync lesson progress with server:', e);
+    }
+  }, []);
 
   // Wishlist Management with DB Sync
   const toggleWishlist = (courseId: string) => {
@@ -480,11 +575,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const targetName = name || userProfile.name || 'Student';
 
       const initRes = await courseService.initializePaystackCheckout({
-        items: items.map((i) => i.id),
+        items: items.map((i) => i.product_id || i.id),
         email: targetEmail,
         name: targetName,
         phone: phone || '',
       });
+
+      // A cart that costs nothing is enrolled straight away by the server (no Paystack page).
+      if (initRes.success && (initRes.data as any)?.free_enrollment) {
+        clearCart();
+        await refreshLiveData();
+        showToast('You are now enrolled!');
+        router.push('/(tabs)/my-courses');
+        return { success: true };
+      }
 
       if (!initRes.success || !initRes.data || !initRes.data.authorization_url) {
         const errorMsg = initRes.error || 'Failed to initialize Paystack transaction';
@@ -586,6 +690,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateUserProfile,
         refreshLiveData,
         isRefreshing,
+        updateLessonProgress,
 
         // Paystack Native Payment Bridge
         startPaystackPayment,
@@ -599,6 +704,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         orderId={paystackSession.orderId}
         onClose={closePaystackModal}
         onSuccess={handlePaystackModalSuccess}
+        colors={colors}
       />
     </AppContext.Provider>
   );

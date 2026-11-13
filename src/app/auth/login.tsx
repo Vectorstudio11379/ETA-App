@@ -185,7 +185,7 @@ export default function LoginScreen() {
         </View>
 
         {/* STEP 1: Screen 2 ("Sign in to ETA") */}
-        {step === 1 && (
+        {step === 1 ? (
           <View style={styles.contentBox}>
             {/* 3D Glowing Card Badge with Neon Orange Halo */}
             <View style={styles.badgeWrapper}>
@@ -243,10 +243,10 @@ export default function LoginScreen() {
               <Text style={styles.disclaimerLink}>Terms & Conditions</Text>.
             </Text>
           </View>
-        )}
+        ) : null}
 
         {/* STEP 2: Screen 3 ("Check your inbox" - 6-Digit PIN + Hybrid Password) */}
-        {step === 2 && (
+        {step === 2 ? (
           <View style={styles.contentBox}>
             {/* 3D Glowing Mail Envelope Badge */}
             <View style={styles.badgeWrapper}>
@@ -368,7 +368,7 @@ export default function LoginScreen() {
               </View>
             )}
           </View>
-        )}
+        ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
