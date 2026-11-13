@@ -188,30 +188,62 @@ Authorization: Bearer &lt;token&gt;
 
     <section id="qa">
       <h2>Course Q&amp;A</h2>
-      <p>Anyone can read the questions. Only signed-in users can ask, whether or not they bought the course, so people can ask before buying. <code>/qa</code> is an alias for <code>/course-qa</code>.</p>
+      <p>Anyone can read the questions. Only signed-in users can ask or reply, whether or not they bought the course, so people can ask before buying. <code>/qa</code> is an alias for <code>/course-qa</code>, and <code>/qa/reply</code> for <code>/course-qa/reply</code>.</p>
 
       <div class="endpoint">
         <div class="sig"><span class="method m-get">GET</span><span class="path">/course-qa?course_id={courseId}</span><span class="auth opt">No token needed</span></div>
-        <p><code>qa_items</code> lists the academy's own answered questions first, then up to 20 recent student questions (newest first). Student items also carry <code>author</code> and <code>date</code>. Items have no <code>id</code>, so use the list index as the key.</p>
+        <p><code>qa_items</code> lists the academy's built-in FAQs first (<code>type: "faq"</code>), then up to 50 student questions, newest first (<code>type: "question"</code>). Each question appears once and has an <code>id</code>; use it as the list key and to reply. FAQ items have <code>id: null</code> and can't be replied to.</p>
         <div class="code"><button type="button" data-copy>Copy</button><pre>{
   "success": true,
   "course_id": 979,
-  "count": 19,
+  "count": 17,
   "qa_items": [
     {
+      "id": null,
+      "type": "faq",
       "question": "What tools or devices do I need for this course?",
       "answer": "You can take this course using either a smartphone (iOS or Android) or a laptop/desktop computer with a stable internet connection.",
-      "badge": "Requirements"
+      "answered": true,
+      "badge": "Requirements",
+      "can_reply": false,
+      "reply_count": 0,
+      "replies": []
     },
     {
+      "id": 222,
+      "type": "question",
       "question": "Can I export my designs as PDF?",
-      "answer": "Thank you for asking! Our instructors have received your question and will answer it shortly.",
-      "badge": "Student Q&amp;A",
+      "answer": "Yes. Use File &gt; Download &gt; PDF Print in Canva.",
+      "answered": true,
+      "badge": "Student Question",
       "author": "Samson Emmanuel",
-      "date": "2 hours ago"
+      "date": "2 hours ago",
+      "date_iso": "2026-11-13T09:12:44+00:00",
+      "can_reply": true,
+      "reply_count": 1,
+      "replies": [
+        {
+          "id": 231,
+          "question_id": 222,
+          "author": "Coach Denis",
+          "content": "Yes. Use File &gt; Download &gt; PDF Print in Canva.",
+          "is_instructor": true,
+          "badge": "Instructor",
+          "date": "1 hour ago",
+          "date_iso": "2026-11-13T10:05:10+00:00"
+        }
+      ]
     }
   ]
 }</pre></div>
+        <div class="tbl"><table>
+          <thead><tr><th>Field</th><th>Use it for</th></tr></thead>
+          <tbody>
+            <tr><td><code>answer</code> / <code>answered</code></td><td><code>answer</code> is always text. When <code>answered</code> is <code>true</code> it is the first instructor reply; when <code>false</code> it is a "we'll answer soon" message.</td></tr>
+            <tr><td><code>replies</code></td><td>All replies, oldest first. Show them under the question; mark ones with <code>is_instructor: true</code> as the instructor.</td></tr>
+            <tr><td><code>can_reply</code></td><td>Show a reply box only when this is <code>true</code> and the user is signed in.</td></tr>
+          </tbody>
+        </table></div>
       </div>
 
       <div class="endpoint">
@@ -250,6 +282,48 @@ Authorization: Bearer &lt;token&gt;
           </tbody>
         </table></div>
       </div>
+
+      <div class="endpoint">
+        <div class="sig"><span class="method m-post">POST</span><span class="path">/course-qa/reply</span><span class="auth need">Token required</span></div>
+        <div class="tbl"><table>
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>question_id</code></td><td>number</td><td>Required. The question's <code>id</code>.</td></tr>
+            <tr><td><code>reply</code></td><td>string</td><td>Required, 2&ndash;1000 characters.</td></tr>
+          </tbody>
+        </table></div>
+        <div class="code"><button type="button" data-copy>Copy</button><pre>POST /wp-json/eta/v1/course-qa/reply
+Authorization: Bearer &lt;token&gt;
+
+{ "question_id": 222, "reply": "Thanks, that worked!" }</pre></div>
+        <p>Any signed-in user can reply. A reply from an instructor or admin becomes the question's <code>answer</code> in the app and on the website. The person who asked gets an email when someone else replies. On success, add the returned <code>reply</code> to the end of that question's <code>replies</code>.</p>
+        <div class="code"><button type="button" data-copy>Copy</button><pre>{
+  "success": true,
+  "message": "Your reply has been posted.",
+  "answered": false,
+  "reply": {
+    "id": 232,
+    "question_id": 222,
+    "author": "Samson Emmanuel",
+    "content": "Thanks, that worked!",
+    "is_instructor": false,
+    "badge": "Student",
+    "date": "1 second ago",
+    "date_iso": "2026-11-13T11:40:02+00:00"
+  }
+}</pre></div>
+        <div class="tbl"><table>
+          <thead><tr><th>Status</th><th>Error text</th><th>What to do</th></tr></thead>
+          <tbody>
+            <tr><td class="st s2">201</td><td>none; body has <code>reply</code></td><td>Clear the box, append <code>reply</code>.</td></tr>
+            <tr><td class="st s4">400</td><td><code>Reply cannot be empty.</code> / a length message</td><td>Show the error under the box.</td></tr>
+            <tr><td class="st s4">401</td><td><code>Please sign in to reply.</code></td><td>Clear the token and go to login.</td></tr>
+            <tr><td class="st s4">404</td><td><code>That question was not found.</code></td><td>Reload the list.</td></tr>
+            <tr><td class="st s4">409</td><td><code>You have already posted this reply.</code></td><td>Show the error.</td></tr>
+            <tr><td class="st s4">429</td><td><code>You have replied several times recently. &hellip;</code></td><td>Show the error. Students can post 10 replies per hour; instructors have no limit.</td></tr>
+          </tbody>
+        </table></div>
+      </div>
     </section>
 
     <section id="bundles">
@@ -257,42 +331,44 @@ Authorization: Bearer &lt;token&gt;
 
       <div class="endpoint">
         <div class="sig"><span class="method m-get">GET</span><span class="path">/bundles</span><span class="auth opt">No token needed</span></div>
-        <div class="note"><b>The list is wrapped.</b> The response is <code>{ "success": true, "data": [ … ] }</code>. Read the bundles from <code>data</code>, not from the top level. Reading the top level is why bundles showed up empty in the app.</div>
+        <p>Returns every bundle sold on the website (currently 4), read from the website's store, so names, courses and prices always match the website. The old app-only bundles 101 and 102 are gone; drop them from any saved cart.</p>
+        <div class="note"><b>The list is wrapped.</b> The response is <code>{ "success": true, "data": [ &hellip; ] }</code>. Read the bundles from <code>data</code>.</div>
         <div class="code"><button type="button" data-copy>Copy</button><pre>{
   "success": true,
   "data": [
     {
-      "id": 102,
-      "bundle_id": 102,
-      "slug": "creative-freelancer-pack",
-      "title": "Creative Freelancer Pack",
-      "subtitle": "High-converting copywriting, content writing, and graphic design for freelance success",
-      "instructor": "Express Tech Academy / Coach Denis",
-      "category": "Creative &amp; Freelance",
-      "original_price": 12500,
-      "price": 8500,
-      "savings_amount": 4000,
-      "savings_percent": 32,
+      "id": 670,
+      "bundle_id": 670,
+      "product_id": 670,
+      "masteriyo_bundle_id": 948,
+      "slug": "global-remote-career-virtual-assistant-bundle",
+      "title": "Global Remote Career &amp; Virtual Assistant Bundle",
+      "category": "Course Bundle",
+      "original_price": 38000,
+      "price": 18000,
+      "savings_amount": 20000,
+      "savings_percent": 53,
       "currency": "NGN",
-      "currency_symbol": "₦",
-      "badge": "Top Choice (Save 32%)",
-      "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/2.jpeg",
-      "course_ids": [954, 955, 979],
-      "courses_count": 3,
-      "packages": ["THE COMPLETE COPYWRITING MASTERCLASS", "…"],
+      "currency_symbol": "&#8358;",
+      "badge": "Save 53%",
+      "thumbnail": "https://expressteck.tech/wp-content/uploads/2026/10/6-1024x576.jpeg",
+      "description": "Step-by-step blueprint to secure high-paying international remote clients&hellip;",
+      "course_ids": [343, 470],
+      "courses_count": 2,
+      "packages": ["VIRTUAL ASSISTANT MASTER COURSE", "PAYPAL MASTERY COURSE"],
       "courses": [
-        { "id": 954, "title": "THE COMPLETE COPYWRITING MASTERCLASS", "slug": "copywriting-masterclass",
-          "price": 5000, "regular_price": 10000, "thumbnail": "https://…", "instructor": "…" }
+        { "id": 343, "title": "VIRTUAL ASSISTANT MASTER COURSE", "slug": "virtual-assistant",
+          "price": 0, "regular_price": 0, "thumbnail": "https://&hellip;" }
       ],
-      "checkout_url": "https://expressteck.tech/checkout?bundle_id=102"
+      "checkout_url": "https://expressteck.tech/course-bundle/global-remote-career-virtual-assistant-bundle/"
     }
   ]
 }</pre></div>
         <div class="tbl"><table>
           <thead><tr><th>Field</th><th>Use it for</th></tr></thead>
           <tbody>
-            <tr><td><code>id</code> / <code>bundle_id</code></td><td>The bundle's ID (101 or 102). It is not a course ID: don't call course endpoints with it.</td></tr>
-            <tr><td><code>price</code>, <code>original_price</code>, <code>savings_percent</code></td><td>Price shown to the user, in NGN. <code>originalPrice</code>, <code>sale_price</code> and <code>discount</code> are duplicates kept for older app builds.</td></tr>
+            <tr><td><code>id</code> / <code>product_id</code> / <code>bundle_id</code></td><td>The bundle's ID (668&ndash;671 today). Put this ID in the cart and send it to checkout. It is not a course ID: don't call course endpoints with it.</td></tr>
+            <tr><td><code>price</code>, <code>original_price</code>, <code>savings_percent</code></td><td>Price shown to the user, in NGN, identical to the website. <code>originalPrice</code>, <code>regular_price</code>, <code>sale_price</code> and <code>discount</code> are duplicates kept for older app builds.</td></tr>
             <tr><td><code>course_ids</code></td><td>The included courses' IDs. Use these to link to course pages and to mark owned courses.</td></tr>
             <tr><td><code>courses</code></td><td>The included courses with title, price and thumbnail, ready to list.</td></tr>
             <tr><td><code>packages</code></td><td>Course <em>titles</em> only. Don't treat these as IDs.</td></tr>
@@ -300,23 +376,37 @@ Authorization: Bearer &lt;token&gt;
         </table></div>
       </div>
 
-      <h3>Buying a bundle</h3>
-      <p>Start checkout with <code>POST /payment/initialize</code> (alias <code>/checkout/initialize-paystack</code>) and pass the bundle's ID. The server charges the bundle price and enrolls the user in every course in it after <code>/payment/verify</code>.</p>
+      <h3>Checkout: bundles and courses together</h3>
+      <p>Send every cart item's ID, bundles and courses mixed, to <code>POST /payment/initialize</code> (alias <code>/checkout/initialize-paystack</code>). The server prices each item itself: a bundle at its website price, a course at its own price. A course that is also inside a bundle in the same cart is charged once. After <code>/payment/verify</code>, every course in every bundle plus each single course is unlocked.</p>
       <div class="code"><button type="button" data-copy>Copy</button><pre>POST /wp-json/eta/v1/payment/initialize
 Authorization: Bearer &lt;token&gt;
 
-{ "bundle_id": 102, "email": "learner@example.com", "name": "Samson Emmanuel" }</pre></div>
-      <p>The app currently sends <code>{ "items": ["102"] }</code>, which also works, as long as the ID is sent as a string.</p>
-      <div class="note"><b>Check out bundles on their own.</b> If a single checkout contains a bundle and other courses, the server charges and enrolls only the bundle. Until that is changed on the server, the app should not let a bundle and other courses go through one checkout.</div>
+{ "items": ["671", "955"], "email": "learner@example.com", "name": "Samson Emmanuel" }</pre></div>
+      <div class="code"><button type="button" data-copy>Copy</button><pre>{
+  "success": true,
+  "authorization_url": "https://checkout.paystack.com/&hellip;",
+  "access_code": "&hellip;",
+  "reference": "ETA_MOB_&hellip;",
+  "order_id": 1132,
+  "items": [
+    { "id": 671, "title": "Financial Freedom &amp; Global Trading Mastery", "price": 20000, "type": "bundle", "course_ids": [373, 470] },
+    { "id": 955, "title": "THE COMPLETE CONTENT WRITING MASTERCLASS", "price": 5000, "type": "course" }
+  ],
+  "amount": 25000,
+  "currency": "NGN"
+}</pre></div>
+      <p><code>amount</code> is what Paystack will charge. If it differs from the cart total shown in the app, the app's prices are out of date: reload <code>/courses</code> and <code>/bundles</code>.</p>
+      <div class="note"><b>Free carts.</b> If every item is free, there is no Paystack step: the response has <code>free_enrollment: true</code> and an empty <code>authorization_url</code>, and the courses are already unlocked. Clear the cart and open My Courses. The user must be signed in (401 otherwise).</div>
     </section>
 
     <section id="checklist">
       <h2>App checklist</h2>
       <ol class="check">
         <li>Bundles: read the list from <code>response.data</code>, and use <code>course_ids</code> (not <code>packages</code>) as the included course IDs.</li>
-        <li>Tapping a bundle opens a bundle page; don't look the bundle ID up as a course.</li>
+        <li>Tapping a bundle opens a bundle page; don't look the bundle ID up as a course. Remove any saved cart items with the old bundle IDs 101 or 102.</li>
         <li>Reviews: load <code>GET /reviews</code> with the token, show the form only when <code>can_review</code> is <code>true</code>, and handle 401, 403 and 409 as in the table.</li>
-        <li>Q&amp;A: load <code>GET /course-qa</code>; show the "Ask a question" box only to signed-in users; handle 400, 401, 409 and 429.</li>
+        <li>Q&amp;A: load <code>GET /course-qa</code>; key items by <code>id</code>; show replies under each question; show the "Ask" and "Reply" boxes only to signed-in users; handle 400, 401, 404, 409 and 429.</li>
+        <li>Checkout: send all cart IDs, bundles and courses together, in one <code>/payment/initialize</code> call; handle <code>free_enrollment</code>.</li>
         <li>Send both <code>Authorization</code> and <code>X-ETA-Auth-Token</code> on every request made while signed in.</li>
         <li>On any 401, clear the saved token and return to the login screen.</li>
       </ol>

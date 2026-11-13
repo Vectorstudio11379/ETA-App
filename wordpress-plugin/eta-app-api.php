@@ -338,6 +338,14 @@ class ETA_Mobile_API_Bridge {
 				'permission_callback' => '__return_true',
 			),
 		) );
+		// Reply to a question (POST /course-qa/reply, alias /qa/reply). Sign-in checked in the callback.
+		foreach ( array( '/course-qa/reply', '/qa/reply' ) as $reply_route ) {
+			register_rest_route( self::NAMESPACE, $reply_route, array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'submit_course_qa_reply' ),
+				'permission_callback' => '__return_true',
+			) );
+		}
 
 		// 22. Student Certificates & Verification (GET /certificates, GET /my-certificates)
 		register_rest_route( self::NAMESPACE, '/certificates', array(
@@ -943,137 +951,170 @@ class ETA_Mobile_API_Bridge {
 	 * Flagship Bundles matching the live website
 	 */
 	public function get_bundles( $request ) {
-		$theme_uri = get_template_directory_uri();
-
-		// Find active course IDs for the 6 paid courses
-		$dm_post = get_page_by_path( 'digital-marketing-masterclass', OBJECT, 'mto-course' );
-		if ( ! $dm_post ) {
-			$dm_posts = get_posts( array( 'post_type' => 'mto-course', 'title' => 'THE COMPLETE DIGITAL MARKETING MASTERCLASS', 'posts_per_page' => 1 ) );
-			$dm_id = ! empty( $dm_posts ) ? (int) $dm_posts[0]->ID : 0;
-		} else {
-			$dm_id = (int) $dm_post->ID;
-		}
-
-		// Core paid course IDs:
-		// Digital Marketing: $dm_id, Graphic Design: 979, Content Writing: 955, Copywriting: 954, Survey: 680, PayPal: 470
-		$paid_course_ids = array_values( array_filter( array( $dm_id, 979, 955, 954, 680, 470 ) ) );
-
-		$build_course_summary = function( $cid ) {
-			$p = get_post( $cid );
-			if ( ! $p ) return null;
-			$thumb = get_the_post_thumbnail_url( $cid, 'medium' ) ?: 'https://expressteck.tech/wp-content/uploads/2026/10/3.jpeg';
-			$price = (int) get_post_meta( $cid, '_price', true );
-			$reg_price = (int) get_post_meta( $cid, '_regular_price', true );
-			return array(
-				'id'            => (int) $cid,
-				'title'         => $p->post_title,
-				'slug'          => $p->post_name,
-				'price'         => $price ?: $reg_price,
-				'regular_price' => $reg_price ?: $price,
-				'thumbnail'     => $thumb,
-				'instructor'    => 'Express Tech Academy / Coach Denis',
-			);
-		};
-
-		// 1. Complete Digital Career Suite
-		$b1_courses = array();
-		$b1_packages = array();
-		foreach ( $paid_course_ids as $cid ) {
-			$c_obj = $build_course_summary( $cid );
-			if ( $c_obj ) {
-				$b1_courses[] = $c_obj;
-				$b1_packages[] = $c_obj['title'];
+		$bundles = array();
+		foreach ( $this->get_bundle_product_ids() as $product_id ) {
+			$bundle = $this->build_bundle_payload( $product_id );
+			if ( $bundle ) {
+				$bundles[] = $bundle;
 			}
 		}
-
-		$bundle_1 = array(
-			'id'               => 101,
-			'bundle_id'        => 101,
-			'slug'             => 'complete-digital-career-suite',
-			'title'            => 'Complete Digital Career Suite',
-			'subtitle'         => 'Master the 6 highest-paying digital skills in one all-inclusive bundle',
-			'instructor'       => 'Express Tech Academy / Coach Denis',
-			'category'         => 'Digital Career & Freelance',
-			'original_price'   => 31500,
-			'originalPrice'    => 31500,
-			'price'            => 18000,
-			'sale_price'       => 18000,
-			'savings_amount'   => 13500,
-			'savings_percent'  => 43,
-			'discount'         => 43,
-			'currency'         => 'NGN',
-			'currency_symbol'  => '₦',
-			'studentsCount'    => 340,
-			'rating'           => 4.9,
-			'reviewsCount'     => 78,
-			'daysLeft'         => 7,
-			'isBundle'         => true,
-			'is_bundle'        => true,
-			'bundleBadge'      => 'Best Value (Save 43%)',
-			'badge'            => 'Best Value (Save 43%)',
-			'thumbnail'        => 'https://expressteck.tech/wp-content/uploads/2026/10/3.jpeg',
-			'description'      => 'The ultimate career bundle covering all 6 premier skills: Digital Marketing, Graphic Design, Content Writing, Copywriting, International Surveys, and PayPal Creation.',
-			'course_ids'       => $paid_course_ids,
-			'courses_count'    => count( $b1_courses ),
-			'packages'         => $b1_packages,
-			'courses'          => $b1_courses,
-			'checkout_url'     => 'https://expressteck.tech/checkout?bundle_id=101',
-			'enrollment_url'   => 'https://expressteck.tech/checkout?bundle_id=101',
-		);
-
-		// 2. Creative Freelancer Pack
-		$b2_ids = array( 954, 955, 979 );
-		$b2_courses = array();
-		$b2_packages = array();
-		foreach ( $b2_ids as $cid ) {
-			$c_obj = $build_course_summary( $cid );
-			if ( $c_obj ) {
-				$b2_courses[] = $c_obj;
-				$b2_packages[] = $c_obj['title'];
-			}
-		}
-
-		$bundle_2 = array(
-			'id'               => 102,
-			'bundle_id'        => 102,
-			'slug'             => 'creative-freelancer-pack',
-			'title'            => 'Creative Freelancer Pack',
-			'subtitle'         => 'High-converting copywriting, content writing, and graphic design for freelance success',
-			'instructor'       => 'Express Tech Academy / Coach Denis',
-			'category'         => 'Creative & Freelance',
-			'original_price'   => 12500,
-			'originalPrice'    => 12500,
-			'price'            => 8500,
-			'sale_price'       => 8500,
-			'savings_amount'   => 4000,
-			'savings_percent'  => 32,
-			'discount'         => 32,
-			'currency'         => 'NGN',
-			'currency_symbol'  => '₦',
-			'studentsCount'    => 290,
-			'rating'           => 4.9,
-			'reviewsCount'     => 62,
-			'daysLeft'         => 5,
-			'isBundle'         => true,
-			'is_bundle'        => true,
-			'bundleBadge'      => 'Top Choice (Save 32%)',
-			'badge'            => 'Top Choice (Save 32%)',
-			'thumbnail'        => 'https://expressteck.tech/wp-content/uploads/2026/10/2.jpeg',
-			'description'      => 'Everything needed to launch and scale a freelance writing and design agency: persuasive sales copy, SEO content writing, and professional graphics.',
-			'course_ids'       => $b2_ids,
-			'courses_count'    => count( $b2_courses ),
-			'packages'         => $b2_packages,
-			'courses'          => $b2_courses,
-			'checkout_url'     => 'https://expressteck.tech/checkout?bundle_id=102',
-			'enrollment_url'   => 'https://expressteck.tech/checkout?bundle_id=102',
-		);
-
-		$bundles = array( $bundle_1, $bundle_2 );
 
 		return new WP_REST_Response( array(
 			'success' => true,
 			'data'    => $bundles,
 		), 200 );
+	}
+
+	/**
+	 * Helper: a post title as plain text for JSON ("&amp;" -> "&").
+	 */
+	private function plain_title( $post_id ) {
+		return html_entity_decode( get_the_title( $post_id ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+	}
+
+	/**
+	 * Helper: IDs of the published WooCommerce bundle products sold on the website
+	 * (products that list their courses in _penithun_bundle_courses / _courses).
+	 */
+	private function get_bundle_product_ids() {
+		$meta_key = defined( 'PENITHUN_BC_META' ) ? PENITHUN_BC_META : '_penithun_bundle_courses';
+		$ids      = get_posts( array(
+			'post_type'      => 'product',
+			'post_status'    => 'publish',
+			'posts_per_page' => 50,
+			'orderby'        => 'ID',
+			'order'          => 'ASC',
+			'fields'         => 'ids',
+			'meta_query'     => array(
+				'relation' => 'OR',
+				array( 'key' => $meta_key, 'compare' => 'EXISTS' ),
+				array( 'key' => '_masteriyo_bundle_id', 'compare' => 'EXISTS' ),
+			),
+		) );
+		return array_values( array_filter( array_map( 'intval', (array) $ids ), function( $id ) {
+			return ! empty( $this->get_bundle_course_ids( $id ) );
+		} ) );
+	}
+
+	/**
+	 * Helper: the WooCommerce product ID for a bundle, given either the product ID
+	 * or the Masteriyo bundle (mto-bundle) ID. Returns 0 when the ID is not a bundle.
+	 */
+	private function resolve_bundle_product_id( $id ) {
+		$id   = (int) $id;
+		$type = $id ? get_post_type( $id ) : '';
+		if ( 'product' === $type ) {
+			return $id;
+		}
+		if ( in_array( $type, array( 'mto-bundle', 'mto-course-bundle' ), true ) ) {
+			return (int) get_post_meta( $id, '_wc_product_id', true );
+		}
+		return 0;
+	}
+
+	/**
+	 * Helper: Masteriyo course IDs inside a bundle (product or mto-bundle ID).
+	 * Empty array when the ID is not a bundle.
+	 */
+	private function get_bundle_course_ids( $id ) {
+		$product_id = $this->resolve_bundle_product_id( $id );
+		if ( ! $product_id ) {
+			return array();
+		}
+		$meta_key = defined( 'PENITHUN_BC_META' ) ? PENITHUN_BC_META : '_penithun_bundle_courses';
+		$ids      = (array) get_post_meta( $product_id, $meta_key, true );
+		if ( ! array_filter( $ids ) ) {
+			$ids = (array) get_post_meta( $product_id, '_courses', true );
+		}
+		if ( ! array_filter( $ids ) ) {
+			$mto_id = (int) get_post_meta( $product_id, '_masteriyo_bundle_id', true );
+			$ids    = $mto_id ? (array) get_post_meta( $mto_id, '_courses', true ) : array();
+		}
+		return array_values( array_unique( array_filter( array_map( 'intval', $ids ), function( $cid ) {
+			return $cid > 0 && 'mto-course' === get_post_type( $cid );
+		} ) ) );
+	}
+
+	/**
+	 * Helper: current price of a bundle product (NGN), from WooCommerce.
+	 */
+	private function get_bundle_prices( $product_id ) {
+		$product = function_exists( 'wc_get_product' ) ? wc_get_product( $product_id ) : false;
+		if ( $product ) {
+			$price   = (float) $product->get_price();
+			$regular = (float) $product->get_regular_price();
+		} else {
+			$price   = (float) get_post_meta( $product_id, '_price', true );
+			$regular = (float) get_post_meta( $product_id, '_regular_price', true );
+		}
+		return array( $price, max( $regular, $price ) );
+	}
+
+	/**
+	 * Helper: the /bundles payload for one bundle product.
+	 */
+	private function build_bundle_payload( $product_id ) {
+		$post = get_post( $product_id );
+		if ( ! $post ) {
+			return null;
+		}
+		$course_ids = $this->get_bundle_course_ids( $product_id );
+		list( $price, $regular ) = $this->get_bundle_prices( $product_id );
+		$savings = max( 0, $regular - $price );
+		$percent = $regular > 0 ? (int) round( $savings / $regular * 100 ) : 0;
+
+		$courses = array();
+		foreach ( $course_ids as $cid ) {
+			$c_price   = (float) get_post_meta( $cid, '_price', true );
+			$c_regular = (float) get_post_meta( $cid, '_regular_price', true );
+			$courses[] = array(
+				'id'            => $cid,
+				'title'         => $this->plain_title( $cid ),
+				'slug'          => get_post_field( 'post_name', $cid ),
+				'price'         => $c_price,
+				'regular_price' => max( $c_regular, $c_price ),
+				'thumbnail'     => get_the_post_thumbnail_url( $cid, 'medium' ) ?: '',
+			);
+		}
+
+		$mto_id    = (int) get_post_meta( $product_id, '_masteriyo_bundle_id', true );
+		$page_url  = $mto_id && 'publish' === get_post_status( $mto_id ) ? get_permalink( $mto_id ) : get_permalink( $product_id );
+		$thumbnail = get_the_post_thumbnail_url( $product_id, 'large' ) ?: ( $mto_id ? get_the_post_thumbnail_url( $mto_id, 'large' ) : '' );
+		$desc      = $post->post_excerpt ?: wp_strip_all_tags( $post->post_content );
+		$badge     = $percent > 0 ? sprintf( 'Save %d%%', $percent ) : 'Bundle';
+
+		return array(
+			'id'               => (int) $product_id,
+			'bundle_id'        => (int) $product_id,
+			'product_id'       => (int) $product_id,
+			'masteriyo_bundle_id' => $mto_id ?: null,
+			'slug'             => $post->post_name,
+			'title'            => $this->plain_title( $product_id ),
+			'instructor'       => 'Express Tech Academy / Coach Denis',
+			'category'         => 'Course Bundle',
+			'original_price'   => $regular,
+			'originalPrice'    => $regular,
+			'regular_price'    => $regular,
+			'price'            => $price,
+			'sale_price'       => $price,
+			'savings_amount'   => $savings,
+			'savings_percent'  => $percent,
+			'discount'         => $percent,
+			'currency'         => 'NGN',
+			'currency_symbol'  => '₦',
+			'isBundle'         => true,
+			'is_bundle'        => true,
+			'bundleBadge'      => $badge,
+			'badge'            => $badge,
+			'thumbnail'        => $thumbnail,
+			'description'      => $desc,
+			'course_ids'       => $course_ids,
+			'courses_count'    => count( $courses ),
+			'packages'         => wp_list_pluck( $courses, 'title' ),
+			'courses'          => $courses,
+			'checkout_url'     => $page_url,
+			'enrollment_url'   => $page_url,
+		);
 	}
 
 
@@ -1534,21 +1575,19 @@ class ETA_Mobile_API_Bridge {
 			$raw_items = ! empty( $raw_items ) ? explode( ',', (string) $raw_items ) : array();
 		}
 
-		$is_bundle = false;
-		$bundle_price = 0;
-		if ( 101 === $bundle_id || in_array( '101', $raw_items, true ) || in_array( 'bundle_1', $raw_items, true ) || in_array( 'complete-digital-career-suite', $raw_items, true ) ) {
-			$dm_post = get_page_by_path( 'digital-marketing-masterclass', OBJECT, 'mto-course' );
-			$dm_id = $dm_post ? (int) $dm_post->ID : 0;
-			$items = array_values( array_filter( array( $dm_id, 979, 955, 954, 680, 470 ) ) );
-			$is_bundle = true;
-			$bundle_price = 18000;
-		} elseif ( 102 === $bundle_id || in_array( '102', $raw_items, true ) || in_array( 'bundle_2', $raw_items, true ) || in_array( 'creative-freelancer-pack', $raw_items, true ) ) {
-			$items = array( 954, 955, 979 );
-			$is_bundle = true;
-			$bundle_price = 8500;
-		} else {
-			$items = array_values( array_filter( array_map( 'intval', $raw_items ) ) );
+		// Numeric IDs only: Masteriyo courses, course products, or bundle products
+		// (or Masteriyo bundle IDs). Old app-only aliases such as "bundle_1" are ignored.
+		$raw_ids = array();
+		foreach ( (array) $raw_items as $raw ) {
+			$rid = is_numeric( $raw ) ? (int) $raw : 0;
+			if ( $rid > 0 ) {
+				$raw_ids[] = $rid;
+			}
 		}
+		if ( $bundle_id > 0 ) {
+			$raw_ids[] = $bundle_id;
+		}
+		$items = array_values( array_unique( $raw_ids ) );
 
 		$email    = isset( $params['email'] ) ? sanitize_email( $params['email'] ) : '';
 		$name     = isset( $params['name'] ) ? sanitize_text_field( $params['name'] ) : 'Student';
@@ -1576,54 +1615,78 @@ class ETA_Mobile_API_Bridge {
 			return new WP_Error( 'missing_email', 'A valid student email address is required for checkout.', array( 'status' => 400 ) );
 		}
 
-		// Calculate total sum from database prices
-		$total_amount_kobo = 0;
-		$order_items = array();
-
-		if ( $is_bundle && $bundle_price > 0 ) {
-			$total_amount_kobo = $bundle_price * 100;
-			foreach ( $items as $item_id ) {
-				$post = get_post( $item_id );
-				$order_items[] = array(
-					'id'    => $item_id,
-					'title' => $post ? $post->post_title : ( 'Course #' . $item_id ),
-					'price' => $bundle_price,
-				);
-			}
-		} else {
-			foreach ( $items as $item_id ) {
-				$post = get_post( $item_id );
-				if ( ! $post ) {
-					continue;
+		// Price every cart line from the database: bundles at their WooCommerce
+		// price, single courses at their own price. A course that is also inside a
+		// bundle in the same cart is not charged twice.
+		$bundle_lines = array();
+		$course_line_ids = array();
+		foreach ( $items as $rid ) {
+			$bundle_courses = $this->get_bundle_course_ids( $rid );
+			if ( $bundle_courses ) {
+				$pid = $this->resolve_bundle_product_id( $rid );
+				if ( ! isset( $bundle_lines[ $pid ] ) ) {
+					list( $b_price ) = $this->get_bundle_prices( $pid );
+					$bundle_lines[ $pid ] = array(
+						'id'         => $pid,
+						'title'      => $this->plain_title( $pid ),
+						'price'      => $b_price,
+						'type'       => 'bundle',
+						'course_ids' => $bundle_courses,
+					);
 				}
-				$price = (int) ( get_post_meta( $item_id, '_price', true ) ?: 0 );
-				$total_amount_kobo += ( $price * 100 );
-				$order_items[] = array(
-					'id'    => $item_id,
-					'title' => $post->post_title,
-					'price' => $price,
-				);
+			} elseif ( in_array( get_post_type( $rid ), array( 'mto-course', 'product' ), true ) ) {
+				$course_line_ids[] = $rid;
 			}
+		}
+
+		$total_amount_kobo = 0;
+		$order_items       = array();
+		$enroll_ids        = array();
+		foreach ( $bundle_lines as $line ) {
+			$order_items[]      = $line;
+			$enroll_ids         = array_merge( $enroll_ids, $line['course_ids'] );
+			$total_amount_kobo += (int) round( $line['price'] * 100 );
+		}
+		foreach ( $course_line_ids as $cid ) {
+			if ( in_array( $cid, $enroll_ids, true ) ) {
+				continue; // Already included in a bundle in this cart.
+			}
+			$price               = (float) ( get_post_meta( $cid, '_price', true ) ?: 0 );
+			$order_items[]       = array(
+				'id'    => $cid,
+				'title' => $this->plain_title( $cid ),
+				'price' => $price,
+				'type'  => 'course',
+			);
+			$enroll_ids[]        = $cid;
+			$total_amount_kobo  += (int) round( $price * 100 );
 		}
 
 		if ( empty( $order_items ) ) {
-			return new WP_Error( 'invalid_course', 'None of the requested courses exist.', array( 'status' => 400 ) );
+			return new WP_Error( 'invalid_course', 'None of the requested courses or bundles exist.', array( 'status' => 400 ) );
 		}
-		// Only charge for courses that actually exist.
-		$items = array_values( array_map( function( $oi ) { return (int) $oi['id']; }, $order_items ) );
+		// $charged_ids: what goes on the order (bundle products and courses).
+		// $items: the Masteriyo courses this payment unlocks.
+		$charged_ids = array_map( 'intval', wp_list_pluck( $order_items, 'id' ) );
+		$items       = array_values( array_unique( array_map( 'intval', $enroll_ids ) ) );
 
-		// Instant free enrollment for 0 NGN courses (bypasses Paystack)
+		// Free cart (every line costs 0): enroll directly, no Paystack.
 		if ( $total_amount_kobo <= 0 ) {
-			$free_ref = 'free_enroll_' . ( $user_id ?: 'guest' ) . '_' . time();
-			$this->verify_and_enroll_internal( $free_ref, 0, $user_id, $email, $items );
+			if ( $user_id <= 0 ) {
+				return new WP_Error( 'login_required', 'Please sign in to enroll in free courses.', array( 'status' => 401 ) );
+			}
+			$enrolled = $this->enroll_user_in_courses( $user_id, $items );
 			return new WP_REST_Response( array(
+				'success'           => true,
 				'status'            => 'success',
 				'free_enrollment'   => true,
 				'enrolled'          => true,
+				'course_ids'        => $enrolled,
 				'authorization_url' => '',
 				'access_code'       => '',
-				'reference'         => $free_ref,
-				'message'           => 'Successfully enrolled in free course.',
+				'reference'         => '',
+				'amount'            => 0,
+				'message'           => 'You are now enrolled.',
 				'redirect_url'      => 'https://expressteck.tech/my-courses/',
 			), 200 );
 		}
@@ -1638,7 +1701,7 @@ class ETA_Mobile_API_Bridge {
 		if ( function_exists( 'wc_create_order' ) ) {
 			try {
 				$order = wc_create_order();
-				foreach ( $items as $item_id ) {
+				foreach ( $charged_ids as $item_id ) {
 					$product = function_exists( 'wc_get_product' ) ? wc_get_product( $item_id ) : false;
 					if ( ! $product ) {
 						$wc_pid = get_post_meta( $item_id, '_wc_product_id', true );
@@ -1722,6 +1785,7 @@ class ETA_Mobile_API_Bridge {
 				'access_code'       => $res_data['data']['access_code'],
 				'reference'         => $reference,
 				'order_id'          => $order_id,
+				'items'             => $order_items,
 				'amount'            => $total_amount_kobo / 100,
 				'currency'          => 'NGN',
 			), 200 );
@@ -1745,6 +1809,77 @@ class ETA_Mobile_API_Bridge {
 	private function get_txn_record( $reference ) {
 		$record = get_option( $this->txn_record_key( $reference ), null );
 		return is_array( $record ) ? $record : null;
+	}
+
+	/**
+	 * Helper: enroll a user in courses (Masteriyo user items + the app's enrollment cache).
+	 * Accepts course IDs or their WooCommerce product IDs. Returns every ID recorded.
+	 */
+	private function enroll_user_in_courses( $user_id, $course_ids ) {
+		$user_id     = (int) $user_id;
+		$course_ids  = array_values( array_unique( array_filter( array_map( 'intval', (array) $course_ids ) ) ) );
+		$all_targets = array();
+		if ( $user_id <= 0 || empty( $course_ids ) ) {
+			return $all_targets;
+		}
+		foreach ( $course_ids as $vcid ) {
+			$all_targets[] = (int) $vcid;
+			$mto_id = get_post_meta( $vcid, '_masteriyo_course_id', true ) ?: get_post_meta( $vcid, '_course_id', true );
+			if ( ! $mto_id && get_post_type( $vcid ) === 'product' ) {
+				global $wpdb;
+				$mto_id = $wpdb->get_var( $wpdb->prepare(
+					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key IN ('_wc_product_id', '_product_id') AND meta_value = %s LIMIT 1",
+					$vcid
+				) );
+			}
+			if ( $mto_id ) {
+				$all_targets[] = (int) $mto_id;
+			}
+			$prod_id = get_post_meta( $vcid, '_wc_product_id', true );
+			if ( $prod_id ) {
+				$all_targets[] = (int) $prod_id;
+			}
+		}
+		$all_targets = array_values( array_unique( array_filter( $all_targets ) ) );
+
+		// Usermeta enrollment cache
+		$existing = get_user_meta( $user_id, '_eta_enrolled_courses', true );
+		if ( ! is_array( $existing ) ) {
+			$existing = array();
+		}
+		$merged = array_values( array_unique( array_filter( array_merge( $existing, $all_targets ) ) ) );
+		update_user_meta( $user_id, '_eta_enrolled_courses', $merged );
+
+		// Masteriyo DB table (masteriyo_user_items)
+		global $wpdb;
+		$table_user_items = $wpdb->prefix . 'masteriyo_user_items';
+		if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_user_items ) ) === $table_user_items ) {
+			foreach ( $all_targets as $c_id ) {
+				$existing_record = $wpdb->get_var( $wpdb->prepare(
+					"SELECT id FROM {$table_user_items} WHERE user_id = %d AND item_id = %d AND item_type = 'user_course'",
+					$user_id,
+					(int) $c_id
+				) );
+				if ( ! $existing_record ) {
+					$wpdb->insert( $table_user_items, array(
+						'user_id'       => (string) $user_id,
+						'item_id'       => (int) $c_id,
+						'item_type'     => 'user_course',
+						'status'        => 'active',
+						'parent_id'     => 0,
+						'date_start'    => current_time( 'mysql' ),
+						'date_modified' => current_time( 'mysql' ),
+					) );
+				}
+			}
+		}
+
+		// Ensure student role
+		$u_obj = get_user_by( 'id', $user_id );
+		if ( $u_obj && ! in_array( 'masteriyo_student', (array) $u_obj->roles, true ) ) {
+			$u_obj->add_role( 'masteriyo_student' );
+		}
+		return $all_targets;
 	}
 
 	/**
@@ -1887,66 +2022,7 @@ class ETA_Mobile_API_Bridge {
 		}
 
 		// 2. Auto-enroll student into Masteriyo courses in MySQL database
-		$all_targets = array();
-		if ( $user_id > 0 && ! empty( $verified_course_ids ) ) {
-			foreach ( $verified_course_ids as $vcid ) {
-				$all_targets[] = (int) $vcid;
-				$mto_id = get_post_meta( $vcid, '_masteriyo_course_id', true ) ?: get_post_meta( $vcid, '_course_id', true );
-				if ( ! $mto_id && get_post_type( $vcid ) === 'product' ) {
-					global $wpdb;
-					$mto_id = $wpdb->get_var( $wpdb->prepare(
-						"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key IN ('_wc_product_id', '_product_id') AND meta_value = %s LIMIT 1",
-						$vcid
-					) );
-				}
-				if ( $mto_id ) {
-					$all_targets[] = (int) $mto_id;
-				}
-				$prod_id = get_post_meta( $vcid, '_wc_product_id', true );
-				if ( $prod_id ) {
-					$all_targets[] = (int) $prod_id;
-				}
-			}
-			$all_targets = array_values( array_unique( array_filter( $all_targets ) ) );
-
-			// Usermeta enrollment cache
-			$existing = get_user_meta( $user_id, '_eta_enrolled_courses', true );
-			if ( ! is_array( $existing ) ) {
-				$existing = array();
-			}
-			$merged = array_values( array_unique( array_filter( array_merge( $existing, $all_targets ) ) ) );
-			update_user_meta( $user_id, '_eta_enrolled_courses', $merged );
-
-			// Masteriyo DB table (masteriyo_user_items)
-			global $wpdb;
-			$table_user_items = $wpdb->prefix . 'masteriyo_user_items';
-			if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_user_items ) ) === $table_user_items ) {
-				foreach ( $all_targets as $c_id ) {
-					$existing_record = $wpdb->get_var( $wpdb->prepare(
-						"SELECT id FROM {$table_user_items} WHERE user_id = %d AND item_id = %d AND item_type = 'user_course'",
-						$user_id,
-						(int) $c_id
-					) );
-					if ( ! $existing_record ) {
-						$wpdb->insert( $table_user_items, array(
-							'user_id'       => (string) $user_id,
-							'item_id'       => (int) $c_id,
-							'item_type'     => 'user_course',
-							'status'        => 'active',
-							'parent_id'     => 0,
-							'date_start'    => current_time( 'mysql' ),
-							'date_modified' => current_time( 'mysql' ),
-						) );
-					}
-				}
-			}
-
-			// Ensure student role
-			$u_obj = get_user_by( 'id', $user_id );
-			if ( $u_obj && ! in_array( 'masteriyo_student', (array) $u_obj->roles, true ) ) {
-				$u_obj->add_role( 'masteriyo_student' );
-			}
-		}
+		$all_targets = $this->enroll_user_in_courses( $user_id, $verified_course_ids );
 
 		return array(
 			'success'    => true,
@@ -3698,32 +3774,63 @@ class ETA_Mobile_API_Bridge {
 
 		$qa_items = array();
 
-		// 1. Curated Q&As from theme helper if available
+		// 1. Curated FAQs from the theme. The theme helper also appends student
+		//    questions; those are skipped here and built below with IDs and replies.
 		if ( $course_id && function_exists( 'eta_get_course_curated_qa' ) ) {
 			$curated = eta_get_course_curated_qa( $course_id );
 			if ( is_array( $curated ) ) {
-				$qa_items = array_merge( $qa_items, $curated );
+				foreach ( $curated as $item ) {
+					if ( isset( $item['badge'] ) && 'Student Question' === $item['badge'] ) {
+						continue;
+					}
+					$qa_items[] = array_merge( $item, array(
+						'id'          => null,
+						'type'        => 'faq',
+						'answered'    => true,
+						'can_reply'   => false,
+						'reply_count' => 0,
+						'replies'     => array(),
+					) );
+				}
 			}
 		}
 
-		// 2. Fetch approved questions submitted by users
+		// 2. Student questions, each with its replies (oldest first).
 		if ( $course_id ) {
 			$submitted = get_comments( array(
 				'post_id' => $course_id,
 				'type'    => 'eta_course_question',
+				'parent'  => 0,
 				'status'  => 'approve',
-				'number'  => 20,
+				'number'  => 50,
 				'orderby' => 'comment_date',
 				'order'   => 'DESC',
 			) );
 
 			foreach ( $submitted as $c ) {
+				$replies = array();
+				$answer  = '';
+				foreach ( $this->get_qa_reply_comments( $c->comment_ID ) as $r ) {
+					$formatted = $this->format_qa_reply( $r );
+					$replies[] = $formatted;
+					if ( '' === $answer && $formatted['is_instructor'] ) {
+						$answer = $formatted['content'];
+					}
+				}
 				$qa_items[] = array(
-					'question' => $c->comment_content,
-					'answer'   => 'Thank you for asking! Our instructors have received your question and will answer it shortly.',
-					'badge'    => 'Student Q&A',
-					'author'   => $c->comment_author,
-					'date'     => human_time_diff( strtotime( $c->comment_date ) ) . ' ago',
+					'id'          => (int) $c->comment_ID,
+					'type'        => 'question',
+					'question'    => $c->comment_content,
+					// Back-compat: `answer` always holds text. `answered` says whether it is a real instructor answer.
+					'answer'      => '' !== $answer ? $answer : 'Thank you for asking! Our instructors have received your question and will answer it shortly.',
+					'answered'    => '' !== $answer,
+					'badge'       => 'Student Question',
+					'author'      => $c->comment_author,
+					'date'        => human_time_diff( strtotime( $c->comment_date_gmt . ' UTC' ) ) . ' ago',
+					'date_iso'    => mysql2date( 'c', $c->comment_date_gmt . ' +0000' ),
+					'can_reply'   => true,
+					'reply_count' => count( $replies ),
+					'replies'     => $replies,
 				);
 			}
 		}
@@ -3734,6 +3841,51 @@ class ETA_Mobile_API_Bridge {
 			'count'     => count( $qa_items ),
 			'qa_items'  => $qa_items,
 		), 200 );
+	}
+
+	/**
+	 * Helper: approved replies under a Q&A question, oldest first.
+	 */
+	private function get_qa_reply_comments( $question_id ) {
+		return get_comments( array(
+			'parent'  => (int) $question_id,
+			'status'  => 'approve',
+			'orderby' => 'comment_date_gmt',
+			'order'   => 'ASC',
+			'number'  => 100,
+		) );
+	}
+
+	/**
+	 * Helper: is this user an instructor or admin (their replies count as the answer)?
+	 */
+	private function is_qa_staff( $user_id, $course_id = 0 ) {
+		$user_id = (int) $user_id;
+		if ( $user_id <= 0 ) {
+			return false;
+		}
+		if ( user_can( $user_id, 'moderate_comments' ) || user_can( $user_id, 'edit_others_posts' ) ) {
+			return true;
+		}
+		$u = get_userdata( $user_id );
+		if ( $u && array_intersect( (array) $u->roles, array( 'administrator', 'masteriyo_instructor', 'masteriyo_manager' ) ) ) {
+			return true;
+		}
+		return $course_id && (int) get_post_field( 'post_author', $course_id ) === $user_id;
+	}
+
+	private function format_qa_reply( $r ) {
+		$is_staff = $this->is_qa_staff( $r->user_id, $r->comment_post_ID );
+		return array(
+			'id'            => (int) $r->comment_ID,
+			'question_id'   => (int) $r->comment_parent,
+			'author'        => $r->comment_author,
+			'content'       => $r->comment_content,
+			'is_instructor' => $is_staff,
+			'badge'         => $is_staff ? 'Instructor' : 'Student',
+			'date'          => human_time_diff( strtotime( $r->comment_date_gmt . ' UTC' ) ) . ' ago',
+			'date_iso'      => mysql2date( 'c', $r->comment_date_gmt . ' +0000' ),
+		);
 	}
 
 	/**
@@ -3832,12 +3984,117 @@ class ETA_Mobile_API_Bridge {
 			'success' => true,
 			'message' => 'Thank you! Your question has been submitted successfully. Our instructor team will review and respond promptly.',
 			'qa_item' => array(
-				'question' => $question_text,
-				'answer'   => 'Thank you for asking! Our instructors have received your question and will answer it shortly.',
-				'badge'    => 'Just Asked',
-				'author'   => $author_name,
-				'date'     => 'Just now',
+				'id'          => (int) $comment_id,
+				'type'        => 'question',
+				'question'    => $question_text,
+				'answer'      => 'Thank you for asking! Our instructors have received your question and will answer it shortly.',
+				'answered'    => false,
+				'badge'       => 'Just Asked',
+				'author'      => $author_name,
+				'date'        => 'Just now',
+				'date_iso'    => gmdate( 'c' ),
+				'can_reply'   => true,
+				'reply_count' => 0,
+				'replies'     => array(),
 			),
+		), 201 );
+	}
+
+	/**
+	 * POST /wp-json/eta/v1/course-qa/reply  (alias /qa/reply)
+	 * Reply to a student question. Any signed-in user may reply; replies from
+	 * instructors/admins become the question's answer (website and app).
+	 * Body: question_id (or parent_id), reply (or content / message).
+	 */
+	public function submit_course_qa_reply( $request ) {
+		$params = $request->get_json_params() ?: $request->get_params();
+
+		$user_id = $this->get_current_user_id();
+		$u       = $user_id ? get_userdata( $user_id ) : false;
+		if ( ! $u ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Please sign in to reply.' ), 401 );
+		}
+
+		$question_id = (int) ( $params['question_id'] ?? $params['parent_id'] ?? 0 );
+		$question    = $question_id ? get_comment( $question_id ) : null;
+		if ( ! $question || 'eta_course_question' !== $question->comment_type || '1' !== (string) $question->comment_approved || (int) $question->comment_parent !== 0 ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'That question was not found.' ), 404 );
+		}
+		$course_id = (int) $question->comment_post_ID;
+
+		$text = trim( sanitize_textarea_field( $params['reply'] ?? $params['content'] ?? $params['message'] ?? '' ) );
+		if ( '' === $text ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Reply cannot be empty.' ), 400 );
+		}
+		if ( mb_strlen( $text ) < 2 ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Please write a little more.' ), 400 );
+		}
+		if ( mb_strlen( $text ) > 1000 ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Replies can be at most 1000 characters.' ), 400 );
+		}
+
+		$is_staff = $this->is_qa_staff( $user_id, $course_id );
+
+		// Rate limit for students: at most 10 replies per hour across all courses.
+		if ( ! $is_staff ) {
+			$recent = get_comments( array(
+				'user_id'    => $user_id,
+				'type'       => 'eta_qa_reply',
+				'status'     => 'all',
+				'count'      => true,
+				'date_query' => array( array( 'column' => 'comment_date_gmt', 'after' => '1 hour ago', 'inclusive' => true ) ),
+			) );
+			if ( (int) $recent >= 10 ) {
+				return new WP_REST_Response( array( 'success' => false, 'error' => 'You have replied several times recently. Please wait a while before replying again.' ), 429 );
+			}
+		}
+
+		foreach ( $this->get_qa_reply_comments( $question_id ) as $r ) {
+			if ( (int) $r->user_id === $user_id && 0 === strcasecmp( trim( $r->comment_content ), $text ) ) {
+				return new WP_REST_Response( array( 'success' => false, 'error' => 'You have already posted this reply.' ), 409 );
+			}
+		}
+
+		$author_name = $u->display_name ?: $u->user_login;
+		$reply_id    = wp_insert_comment( array(
+			'comment_post_ID'      => $course_id,
+			'comment_parent'       => $question_id,
+			'comment_author'       => $author_name,
+			'comment_author_email' => $u->user_email,
+			'comment_content'      => $text,
+			'comment_type'         => 'eta_qa_reply',
+			'user_id'              => $user_id,
+			'comment_approved'     => 1,
+			'comment_date'         => current_time( 'mysql' ),
+			'comment_date_gmt'     => current_time( 'mysql', true ),
+		) );
+		if ( ! $reply_id ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Could not save your reply. Please try again.' ), 500 );
+		}
+
+		// Email: the asker when someone else replies; the instructor team when a student replies.
+		$course_title = get_the_title( $course_id );
+		$headers      = array( 'Content-Type: text/html; charset=UTF-8' );
+		$body         = sprintf(
+			'<p><strong>Course:</strong> %s</p><p><strong>Question:</strong></p><blockquote>%s</blockquote><p><strong>%s replied:</strong></p><blockquote>%s</blockquote>',
+			esc_html( $course_title ),
+			nl2br( esc_html( $question->comment_content ) ),
+			esc_html( $author_name ),
+			nl2br( esc_html( $text ) )
+		);
+		$asker_email = sanitize_email( $question->comment_author_email );
+		if ( $asker_email && (int) $question->user_id !== $user_id ) {
+			wp_mail( $asker_email, sprintf( 'New reply to your question on %s', $course_title ), $body, $headers );
+		}
+		if ( ! $is_staff ) {
+			wp_mail( 'Expresstechacademy@gmail.com', sprintf( 'New Q&A reply: %s [%s]', $course_title, $author_name ), $body, $headers );
+		}
+
+		return new WP_REST_Response( array(
+			'success'  => true,
+			'message'  => 'Your reply has been posted.',
+			'answered' => $is_staff,
+			'reply'    => $this->format_qa_reply( get_comment( $reply_id ) ),
 		), 201 );
 	}
 

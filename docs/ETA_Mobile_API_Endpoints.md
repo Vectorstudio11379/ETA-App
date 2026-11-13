@@ -1,7 +1,7 @@
 # ETA Mobile API: Endpoint Reference
 
 **Base URL:** `https://expressteck.tech/wp-json/eta/v1`
-**Plugin:** ETA App Mobile API Bridge v2.1.0 (checked against the live site on 2026-11-08; review rules updated the same day)
+**Plugin:** ETA App Mobile API Bridge v2.1.0 (checked against the live site on 2026-11-08; Q&A replies, bundles and mixed-cart checkout updated 2026-11-13)
 **Format:** JSON request and response bodies (`Content-Type: application/json`). CORS is open.
 
 ## Authentication
@@ -35,7 +35,7 @@ Aliases: `/google-login` = `/auth/google`, and `/auth/lost-password` = `/auth/fo
 | GET | `https://expressteck.tech/wp-json/eta/v1/courses` | none (send the token to get your enrolled courses marked) |
 | GET | `https://expressteck.tech/wp-json/eta/v1/course-details?id={courseId}` | `id` (or `course_id`) |
 | GET | `https://expressteck.tech/wp-json/eta/v1/course-curriculum?id={courseId}` | `id` (or `course_id`) |
-| GET | `https://expressteck.tech/wp-json/eta/v1/bundles` | none |
+| GET | `https://expressteck.tech/wp-json/eta/v1/bundles` | none. Returns every bundle sold on the website, at the website's price (see **Bundles** below). |
 | GET | `https://expressteck.tech/wp-json/eta/v1/categories` | none |
 | GET | `https://expressteck.tech/wp-json/eta/v1/instructors` | none |
 | GET | `https://expressteck.tech/wp-json/eta/v1/site-info` | none |
@@ -65,9 +65,37 @@ Aliases: `/google-login` = `/auth/google`, and `/auth/lost-password` = `/auth/fo
 | POST | `https://expressteck.tech/wp-json/eta/v1/reviews` | **Token required.** `course_id`, `rating` (1–5), `title`, `content` |
 | GET | `https://expressteck.tech/wp-json/eta/v1/course-qa?course_id={courseId}` | `course_id` |
 | POST | `https://expressteck.tech/wp-json/eta/v1/course-qa` | **Token required.** `course_id`, `question` (5–1000 characters) |
+| POST | `https://expressteck.tech/wp-json/eta/v1/course-qa/reply` | **Token required.** `question_id` (the question's `id`), `reply` (2–1000 characters) |
 | GET | `https://expressteck.tech/wp-json/eta/v1/certificates/verify?code={certCode}` | `code` (public) |
 
-Alias: `/qa` = `/course-qa`.
+Aliases: `/qa` = `/course-qa`, and `/qa/reply` = `/course-qa/reply`.
+
+### Q&A list
+
+**`GET /course-qa?course_id=…`** returns `qa_items`: the course's built-in FAQs first, then student questions (newest first). Each student question appears once.
+
+| Field | Meaning |
+|---|---|
+| `id` | Question ID, used for replies. `null` on FAQ entries. |
+| `type` | `faq` or `question` |
+| `question`, `author`, `date`, `date_iso` | The question, who asked it, and when |
+| `answer` | Always text. The first instructor reply when there is one, otherwise a "we'll answer soon" message. |
+| `answered` | `true` when `answer` is a real instructor reply |
+| `can_reply` | `false` on FAQ entries |
+| `reply_count`, `replies` | Replies, oldest first. Each has `id`, `question_id`, `author`, `content`, `is_instructor`, `badge` (`Instructor` / `Student`), `date`, `date_iso`. |
+
+### Replying to a question
+
+**`POST /course-qa/reply`** needs a signed-in user. Any signed-in user can reply. A reply from an instructor or admin becomes the question's `answer`, on the app and on the website. The person who asked is emailed when someone else replies.
+
+| Status | `error` | When |
+|---|---|---|
+| 201 | none (`success: true`, `answered`, plus the saved `reply`) | Reply saved |
+| 400 | `Reply cannot be empty.` / length message | Reply under 2 or over 1000 characters |
+| 401 | `Please sign in to reply.` | No token or an expired token |
+| 404 | `That question was not found.` | Unknown `question_id`, or an FAQ entry |
+| 409 | `You have already posted this reply.` | Same user, same question, same text |
+| 429 | `You have replied several times recently. …` | More than 10 replies from this student in the last hour (no limit for instructors) |
 
 ### Asking a question
 
@@ -116,15 +144,33 @@ The same rule applies to reviews posted from the website.
 
 All errors come back as `{ "success": false, "error": "..." }`. A 401 here follows the usual rule: clear the token and send the user to log in.
 
+## Bundles
+
+**`GET /bundles`** lists the bundles sold on the website (WooCommerce bundle products), so names, courses and prices always match the website. There are currently 4.
+
+| Field | Meaning |
+|---|---|
+| `id` / `product_id` / `bundle_id` | The bundle's product ID (for example `671`). Put this ID in the cart and in checkout. |
+| `price`, `original_price` (also `sale_price`, `regular_price`, `originalPrice`) | Current price and the crossed-out price, in naira |
+| `savings_amount`, `savings_percent` (also `discount`), `badge` | Discount details |
+| `course_ids`, `courses`, `packages` | The courses inside the bundle (IDs, summaries, titles) |
+| `title`, `slug`, `description`, `thumbnail`, `checkout_url` | Display details; `checkout_url` is the bundle's page on the website |
+
+The old app-only bundles (IDs `101` / `102`, "Complete Digital Career Suite" and "Creative Freelancer Pack") have been removed. They were never sold on the website.
+
 ## Payments (Paystack)
 
 | Method | Full URL | Params / Body |
 |---|---|---|
-| POST | `https://expressteck.tech/wp-json/eta/v1/payment/initialize` | `course_ids` (array) or `course_id` (**required**), `email`, `name`, `phone`. Returns a Paystack `authorization_url` and `reference`. Returns 400 if no valid course is given. |
+| POST | `https://expressteck.tech/wp-json/eta/v1/payment/initialize` | `items` or `course_ids` (array) or `course_id` (**required**): any mix of course IDs and bundle IDs. Also `email`, `name`, `phone`. Returns a Paystack `authorization_url`, `reference`, `amount` and `items` (what is being charged). Returns 400 if no valid course or bundle is given. |
 | GET / POST | `https://expressteck.tech/wp-json/eta/v1/payment/verify?reference={ref}` | `reference` only. The server checks the payment with Paystack, confirms the amount, and enrolls the courses chosen at checkout. Any `course_ids` / `email` sent here are ignored. |
 | GET | `https://expressteck.tech/wp-json/eta/v1/payment/status?reference={ref}` | `reference` (or `order_id`) |
 
 Aliases: `/checkout/initialize-paystack` = `/payment/initialize`, and `/checkout/verify-paystack` = `/payment/verify`.
+
+**How the total is worked out:** every item is priced on the server. A bundle costs its website price, and each course costs its own price; the app's cart total is not used. A cart with a ₦18,000 bundle and a ₦5,000 course is charged ₦23,000. A course that is also inside a bundle in the same cart is charged only once. After payment, every course in every bundle plus each single course is unlocked.
+
+**Free carts:** if the total is ₦0 (only free courses), there is no Paystack step. The response has `free_enrollment: true`, the courses are unlocked at once, and the user must be signed in (401 otherwise). Send the user to My Courses.
 
 **Web checkout flow (optional):** open `https://expressteck.tech/mobile-checkout/?course_id={id}&email={email}` in a WebView or browser. Both parameters are required (otherwise the page returns 400). Paystack redirects to `https://expressteck.tech/payment-complete/` when payment finishes. Then call `/payment/verify` or `/payment/status`.
 
