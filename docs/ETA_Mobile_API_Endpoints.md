@@ -69,7 +69,7 @@ Aliases: `/google-login` = `/auth/google`, and `/auth/lost-password` = `/auth/fo
 | POST | `https://expressteck.tech/wp-json/eta/v1/course-qa/reply` | **Token required.** `question_id` (the question's `id`), `reply` (2–1000 characters) |
 | GET | `https://expressteck.tech/wp-json/eta/v1/certificates/verify?code={certCode}` | `code` (public) |
 
-Aliases: `/qa` = `/course-qa`, and `/qa/reply` = `/course-qa/reply`.
+Aliases: `/qa` = `/course-qa`, and `/qa/reply` = `/course-qa/reply`. See **Replying to a question** for other accepted reply addresses.
 
 ### Q&A list
 
@@ -87,14 +87,54 @@ Aliases: `/qa` = `/course-qa`, and `/qa/reply` = `/course-qa/reply`.
 
 ### Replying to a question
 
-**`POST /course-qa/reply`** needs a signed-in user. Any signed-in user can reply. A reply from an instructor or admin becomes the question's `answer`, on the app and on the website. The person who asked is emailed when someone else replies.
+**Reply address:** `POST https://expressteck.tech/wp-json/eta/v1/course-qa/reply`
+
+Headers: `Authorization: Bearer <token>` and `Content-Type: application/json`
+
+```json
+{ "question_id": 229, "reply": "Thanks, that worked!" }
+```
+
+- `question_id`: the `id` of a **student question** (`type: "question"`, `can_reply: true`).
+- `reply`: 2–1000 characters.
+
+Only signed-in users can reply, and any signed-in user may. A reply from an instructor or admin becomes the question's `answer` on the app and the website. The person who asked is emailed when someone else replies. On success, add the returned `reply` to the end of that question's `replies`.
+
+```json
+{
+  "success": true,
+  "message": "Your reply has been posted.",
+  "answered": false,
+  "reply": {
+    "id": 232, "question_id": 229, "author": "Samson Emmanuel",
+    "content": "Thanks, that worked!", "is_instructor": false, "badge": "Student",
+    "date": "1 second ago", "date_iso": "2026-11-13T11:40:02+00:00"
+  }
+}
+```
+
+**Show the Reply button only when `can_reply` is `true`.** Built-in FAQ items (`type: "faq"`, `id: null`) can't be replied to. Label them as FAQs, not as student questions.
+
+**Other addresses that also work.** Use the address above in new code. These are accepted too, all `POST` with the same token and body:
+
+| Address | Question ID comes from |
+|---|---|
+| `/qa/reply` | body |
+| `/course-qa/replies`, `/course-qa/answer`, `/qa/answer`, `/qa/replies` | body |
+| `/course-qa/{questionId}/reply` (also `/replies`, `/answer`, `/answers`) | URL |
+| `/qa/{questionId}/reply`, `/questions/{questionId}/answers` | URL |
+| `/courses/{courseId}/qa/{questionId}/reply` | URL |
+
+The question ID can be sent as `question_id`, `questionId`, `qa_id`, `parent_id` or `comment_id`. The text can be sent as `reply`, `content`, `message`, `answer`, `text` or `body`.
 
 | Status | `error` | When |
 |---|---|---|
 | 201 | none (`success: true`, `answered`, plus the saved `reply`) | Reply saved |
-| 400 | `Reply cannot be empty.` / length message | Reply under 2 or over 1000 characters |
+| 400 | `Replies are only for student questions. Built-in FAQ answers cannot be replied to.` | No question ID was sent, for example a reply to an FAQ item (`id: null`) |
+| 400 | `Reply cannot be empty.` / length message | Reply missing, under 2 or over 1000 characters |
 | 401 | `Please sign in to reply.` | No token or an expired token |
-| 404 | `That question was not found.` | Unknown `question_id`, or an FAQ entry |
+| 404 | `That question was not found.` | Unknown `question_id` |
+| 404 | `No route was found matching the URL and request method.` | Wrong address or method. Use the reply address above. |
 | 409 | `You have already posted this reply.` | Same user, same question, same text |
 | 429 | `You have replied several times recently. …` | More than 10 replies from this student in the last hour (no limit for instructors) |
 
