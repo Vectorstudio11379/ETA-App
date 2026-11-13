@@ -29,7 +29,28 @@ import { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 
 export default function MyCoursesScreen() {
   const router = useRouter();
-  const { courses, wishlistIds, colors, isRefreshing, refreshLiveData, userProfile: user } = useApp();
+  const { courses, wishlistIds, colors, isRefreshing, refreshLiveData, userProfile: user, showToast } = useApp();
+
+  // Certificate links are signed and expire after 7 days, so fetch a fresh one on tap.
+  const openCertificate = async (courseId: string, cachedUrl?: string) => {
+    try {
+      const res = await courseService.fetchMyCertificates();
+      const fresh = res.success
+        ? res.data?.certificates?.find((cert) => String(cert.course_id) === String(courseId))?.download_url
+        : undefined;
+      const url = fresh || cachedUrl;
+      if (url) {
+        await Linking.openURL(url);
+        return;
+      }
+    } catch {
+      if (cachedUrl) {
+        await Linking.openURL(cachedUrl);
+        return;
+      }
+    }
+    showToast('Your certificate is not ready yet. Please try again shortly.');
+  };
   const screenMotionStyle = useScreenMotion();
   const reducedMotion = useReducedMotion();
   const [activeTab, setActiveTab] = useState<'all' | 'favourite' | 'certificate'>('all');
@@ -290,7 +311,7 @@ export default function MyCoursesScreen() {
             <View style={{ paddingHorizontal: 16 }}>
               {certCourses.map((c) => {
                 const code = c.certificate?.verification_code || `${c.id}-1070-${user?.id || 1}`;
-                const downloadUrl = c.certificate?.download_url || `https://expressteck.tech/wp-admin/admin-ajax.php?action=eta_download_certificate&course_id=${c.id}&user_id=${user?.id || 1}`;
+                const downloadUrl = c.certificate?.download_url;
                 const verifyUrl = c.certificate?.verification_url || `https://expressteck.tech/certificate-verification/?code=${code}`;
                 return (
                   <View
@@ -328,7 +349,7 @@ export default function MyCoursesScreen() {
                           borderRadius: 10,
                           alignItems: 'center',
                         }}
-                        onPress={() => Linking.openURL(downloadUrl)}
+                        onPress={() => openCertificate(String(c.id), downloadUrl)}
                       >
                         <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 13 }}>Download PDF</Text>
                       </TouchableOpacity>

@@ -1,7 +1,7 @@
 # ETA Mobile API: Endpoint Reference
 
 **Base URL:** `https://expressteck.tech/wp-json/eta/v1`
-**Plugin:** ETA App Mobile API Bridge v2.1.0 (checked against the live site on 2026-11-08; Q&A replies, bundles and mixed-cart checkout updated 2026-11-13)
+**Plugin:** ETA App Mobile API Bridge v2.1.0 (checked against the live site on 2026-11-08; Q&A replies, bundles, mixed-cart checkout and certificate downloads updated 2026-11-13)
 **Format:** JSON request and response bodies (`Content-Type: application/json`). CORS is open.
 
 ## Authentication
@@ -56,6 +56,7 @@ Aliases: `/google-login` = `/auth/google`, and `/auth/lost-password` = `/auth/fo
 | GET | `https://expressteck.tech/wp-json/eta/v1/notifications` | none |
 | POST | `https://expressteck.tech/wp-json/eta/v1/notifications/mark-read` | `id`, or `all: true` |
 | GET | `https://expressteck.tech/wp-json/eta/v1/certificates` | none (alias: `/my-certificates`) |
+| GET | `download_url` from `/certificates` or `/my-courses` | Open it in the browser: it returns the certificate PDF. The link is signed for that student and course and lasts 7 days, so fetch `/certificates` again for a fresh link when the user taps Download. No token needed. |
 
 ## Reviews and Q&A
 

@@ -358,6 +358,12 @@ class ETA_Mobile_API_Bridge {
 			'callback'            => array( $this, 'get_student_certificates' ),
 			'permission_callback' => '__return_true',
 		) );
+		// Signed certificate PDF download (link from /certificates, /my-courses, the website and emails).
+		register_rest_route( self::NAMESPACE, '/certificates/download', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'download_certificate' ),
+			'permission_callback' => '__return_true',
+		) );
 		register_rest_route( self::NAMESPACE, '/certificates/verify', array(
 			'methods'             => 'GET',
 			'callback'            => array( $this, 'verify_certificate_endpoint' ),
@@ -1298,7 +1304,7 @@ class ETA_Mobile_API_Bridge {
 							'is_issued'         => ( $course_prog >= 99 ),
 							'verification_code' => "{$real_mto_cid}-1070-{$user_id}",
 							'verification_url'  => home_url( "/certificate-verification/?code={$real_mto_cid}-1070-{$user_id}" ),
-							'download_url'      => home_url( "/wp-admin/admin-ajax.php?action=eta_download_certificate&course_id={$real_mto_cid}&user_id={$user_id}" ),
+							'download_url'      => eta_certificate_download_url( $real_mto_cid, $user_id ),
 						),
 					);
 				}
@@ -4116,33 +4122,8 @@ class ETA_Mobile_API_Bridge {
 		$u = get_userdata( $user_id );
 		$student_name = $u ? ( trim( $u->first_name . ' ' . $u->last_name ) ?: $u->display_name ) : 'Student';
 
-		global $wpdb;
-		$certificates = array();
-
-		// Check all completed courses for user in masteriyo_course_progress
-		$table_progress = $wpdb->prefix . 'masteriyo_course_progress';
-		$completed_course_ids = array();
-		if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_progress ) ) === $table_progress ) {
-			$progress_rows = $wpdb->get_results( $wpdb->prepare(
-				"SELECT course_id, status FROM {$table_progress} WHERE user_id = %d AND status = 'completed'",
-				$user_id
-			) );
-			foreach ( $progress_rows as $pr ) {
-				$completed_course_ids[] = (int) $pr->course_id;
-			}
-		}
-
-		// Also check user meta stored certificates
-		$meta_certs = get_user_meta( $user_id, '_eta_certificates', true );
-		if ( is_array( $meta_certs ) ) {
-			foreach ( $meta_certs as $mc ) {
-				if ( isset( $mc['course_id'] ) ) {
-					$completed_course_ids[] = (int) $mc['course_id'];
-				}
-			}
-		}
-
-		$completed_course_ids = array_values( array_unique( array_filter( $completed_course_ids ) ) );
+		$certificates         = array();
+		$completed_course_ids = $this->get_completed_course_ids( $user_id );
 
 		foreach ( $completed_course_ids as $cid ) {
 			$verification_code = "{$cid}-1070-{$user_id}";
@@ -4153,7 +4134,7 @@ class ETA_Mobile_API_Bridge {
 				'student_name'      => $student_name,
 				'verification_code' => $verification_code,
 				'verification_url'  => home_url( "/certificate-verification/?code={$verification_code}" ),
-				'download_url'      => home_url( "/wp-admin/admin-ajax.php?action=eta_download_certificate&course_id={$cid}&user_id={$user_id}" ),
+				'download_url'      => eta_certificate_download_url( $cid, $user_id ),
 				'status'            => 'issued',
 				'issued_date'       => get_user_meta( $user_id, "_course_{$cid}_cert_email_sent", true ) ?: current_time( 'Y-m-d' ),
 				'grade'             => '100%',
@@ -4166,6 +4147,96 @@ class ETA_Mobile_API_Bridge {
 			'count'        => count( $certificates ),
 			'certificates' => $certificates,
 		), 200 );
+	}
+
+	/**
+	 * Helper: course IDs this user has completed (Masteriyo progress, plus stored certificates).
+	 */
+	private function get_completed_course_ids( $user_id ) {
+		global $wpdb;
+		$user_id              = (int) $user_id;
+		$completed_course_ids = array();
+		$table_progress       = $wpdb->prefix . 'masteriyo_course_progress';
+		if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_progress ) ) === $table_progress ) {
+			$progress_rows = $wpdb->get_results( $wpdb->prepare(
+				"SELECT course_id FROM {$table_progress} WHERE user_id = %d AND status = 'completed'",
+				$user_id
+			) );
+			foreach ( $progress_rows as $pr ) {
+				$completed_course_ids[] = (int) $pr->course_id;
+			}
+		}
+		$meta_certs = get_user_meta( $user_id, '_eta_certificates', true );
+		if ( is_array( $meta_certs ) ) {
+			foreach ( $meta_certs as $mc ) {
+				if ( isset( $mc['course_id'] ) ) {
+					$completed_course_ids[] = (int) $mc['course_id'];
+				}
+			}
+		}
+		return array_values( array_unique( array_filter( $completed_course_ids ) ) );
+	}
+
+	/**
+	 * GET /wp-json/eta/v1/certificates/download?c=&u=&e=&s=
+	 * Streams the certificate PDF, generated on the server by Masteriyo (mPDF).
+	 * The link is signed for one user and course (eta_certificate_download_url), so it
+	 * works in a browser opened from the app, where the student is not logged in.
+	 */
+	public function download_certificate( $request ) {
+		$course_id = (int) $request->get_param( 'c' );
+		$user_id   = (int) $request->get_param( 'u' );
+		$expires   = (int) $request->get_param( 'e' );
+		$sig       = (string) $request->get_param( 's' );
+
+		// Students open this link in a browser, so errors are a small readable page, not JSON.
+		$fail = function( $message, $status = 403 ) {
+			status_header( $status );
+			header( 'Content-Type: text/html; charset=utf-8' );
+			echo '<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Certificate</title>'
+				. '<div style="font-family:Arial,sans-serif;max-width:480px;margin:15vh auto;padding:24px;text-align:center;color:#0F172A">'
+				. '<h2 style="margin:0 0 12px">Certificate</h2><p>' . esc_html( $message ) . '</p>'
+				. '<p><a href="' . esc_url( home_url( '/' ) ) . '">Express Tech Academy</a></p></div>';
+			exit;
+		};
+
+		if ( ! $course_id || ! $user_id || ! $expires || '' === $sig || ! hash_equals( eta_certificate_link_signature( $course_id, $user_id, $expires ), $sig ) ) {
+			$fail( 'This certificate link is not valid.' );
+		}
+		if ( $expires < time() ) {
+			$fail( 'This certificate link has expired. Open your certificates again to get a new link.' );
+		}
+		if ( ! get_userdata( $user_id ) || 'mto-course' !== get_post_type( $course_id ) ) {
+			$fail( 'This certificate could not be found.', 404 );
+		}
+
+		$completed = in_array( $course_id, $this->get_completed_course_ids( $user_id ), true );
+		if ( ! $completed && function_exists( 'masteriyo_user_has_completed_course' ) && function_exists( 'masteriyo_get_course' ) ) {
+			$course    = masteriyo_get_course( $course_id );
+			$completed = $course && masteriyo_user_has_completed_course( $course, $user_id );
+		}
+		if ( ! $completed ) {
+			$fail( 'Please complete the course to download the certificate.' );
+		}
+
+		$cert_id = function_exists( 'masteriyo_get_course_certificate_id' ) ? (int) masteriyo_get_course_certificate_id( $course_id ) : 0;
+		if ( ! $cert_id ) {
+			$cert_id = (int) get_post_meta( $course_id, '_certificate_id', true );
+		}
+		if ( ! $cert_id && function_exists( 'eta_ensure_certificate_template' ) ) {
+			$cert_id = (int) eta_ensure_certificate_template();
+		}
+		$pdf_class = '\Masteriyo\Addons\Certificate\PDF\CertificatePDF';
+		if ( ! $cert_id || ! class_exists( $pdf_class ) ) {
+			$fail( 'Certificates are not available right now. Please try again later.', 503 );
+		}
+
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+		$pdf = new $pdf_class( $course_id, $user_id, '', $cert_id );
+		$pdf->serve_download(); // Sends the PDF and exits.
+		exit;
 	}
 
 	/**
@@ -4316,6 +4387,122 @@ function eta_apply_course_prices() {
 	do_action( 'litespeed_purge_all' );
 }
 add_action( 'init', 'eta_apply_course_prices', 99 );
+
+/**
+ * Certificate download links: signed for one user + course, valid for $ttl seconds
+ * (7 days by default). Used by the app API, Masteriyo's download buttons and the
+ * completion email.
+ */
+function eta_certificate_link_signature( $course_id, $user_id, $expires ) {
+	return hash_hmac( 'sha256', 'eta-cert|' . (int) $course_id . '|' . (int) $user_id . '|' . (int) $expires, wp_salt( 'auth' ) );
+}
+
+function eta_certificate_download_url( $course_id, $user_id, $ttl = 0 ) {
+	$ttl     = $ttl > 0 ? (int) $ttl : 7 * DAY_IN_SECONDS;
+	$expires = time() + $ttl;
+	return add_query_arg( array(
+		'c' => (int) $course_id,
+		'u' => (int) $user_id,
+		'e' => $expires,
+		's' => eta_certificate_link_signature( $course_id, $user_id, $expires ),
+	), rest_url( 'eta/v1/certificates/download' ) );
+}
+
+// Masteriyo's "Download certificate" buttons build the PDF in the browser for pdfdraft
+// templates, which fails for our template. Point them at the server-generated PDF instead.
+add_filter( 'masteriyo_certificate_download_url', function( $url, $course ) {
+	$user_id = get_current_user_id();
+	if ( $user_id && is_object( $course ) && is_callable( array( $course, 'get_id' ) ) ) {
+		return eta_certificate_download_url( $course->get_id(), $user_id );
+	}
+	return $url;
+}, 20, 2 );
+
+/**
+ * Catalogue changes, applied once per ETA_CATALOG_CHANGES_VERSION:
+ * - new thumbnails for CPA Marketing (978) and Digital Marketing (1079), from images
+ *   uploaded to wp-content/uploads/2026/11/;
+ * - CPA Marketing (978) and Graphic Design (979) moved to draft until their videos are
+ *   complete (course and its WooCommerce product). Publish them again in the admin.
+ * The result is stored in the eta_catalog_changes_report option.
+ */
+define( 'ETA_CATALOG_CHANGES_VERSION', '2026-11-13' );
+
+function eta_apply_catalog_changes() {
+	if ( ETA_CATALOG_CHANGES_VERSION === get_option( 'eta_catalog_changes_version' ) ) {
+		return;
+	}
+	if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+	}
+
+	$report = array( 'thumbnails' => array(), 'drafts' => array() );
+	$uploads = wp_upload_dir();
+
+	$thumbnails = array(
+		978  => array( '2026/11/cpa-marketing-course-thumbnail.jpg', 'CPA Marketing Course' ),
+		1079 => array( '2026/11/digital-marketing-course-thumbnail.jpg', 'Digital Marketing Complete Course' ),
+	);
+	foreach ( $thumbnails as $course_id => $info ) {
+		list( $rel, $title ) = $info;
+		$file = trailingslashit( $uploads['basedir'] ) . $rel;
+		if ( ! file_exists( $file ) ) {
+			$report['thumbnails'][ $course_id ] = 'image file missing';
+			continue;
+		}
+		$existing = get_posts( array(
+			'post_type'      => 'attachment',
+			'post_status'    => 'any',
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'meta_key'       => '_wp_attached_file',
+			'meta_value'     => $rel,
+		) );
+		$att_id = $existing ? (int) $existing[0] : 0;
+		if ( ! $att_id ) {
+			$att_id = wp_insert_attachment( array(
+				'post_mime_type' => 'image/jpeg',
+				'post_title'     => $title,
+				'post_status'    => 'inherit',
+			), $file, $course_id );
+			if ( is_wp_error( $att_id ) || ! $att_id ) {
+				$report['thumbnails'][ $course_id ] = 'attachment failed';
+				continue;
+			}
+			wp_update_attachment_metadata( $att_id, wp_generate_attachment_metadata( $att_id, $file ) );
+		}
+		set_post_thumbnail( $course_id, $att_id );
+		$product_id = (int) get_post_meta( $course_id, '_wc_product_id', true );
+		if ( $product_id ) {
+			set_post_thumbnail( $product_id, $att_id );
+		}
+		$report['thumbnails'][ $course_id ] = array( 'attachment' => $att_id, 'product' => $product_id );
+	}
+
+	foreach ( array( 978, 979 ) as $course_id ) {
+		if ( 'mto-course' !== get_post_type( $course_id ) ) {
+			$report['drafts'][ $course_id ] = 'not a course';
+			continue;
+		}
+		wp_update_post( array( 'ID' => $course_id, 'post_status' => 'draft' ) );
+		$product_id = (int) get_post_meta( $course_id, '_wc_product_id', true );
+		if ( $product_id && 'product' === get_post_type( $product_id ) ) {
+			wp_update_post( array( 'ID' => $product_id, 'post_status' => 'draft' ) );
+		}
+		$report['drafts'][ $course_id ] = array(
+			'course'  => get_post_status( $course_id ),
+			'product' => $product_id ? get_post_status( $product_id ) : null,
+		);
+	}
+
+	update_option( 'eta_catalog_changes_report', $report, false );
+	update_option( 'eta_catalog_changes_version', ETA_CATALOG_CHANGES_VERSION );
+	if ( function_exists( 'wc_delete_product_transients' ) ) {
+		wc_delete_product_transients();
+	}
+	do_action( 'litespeed_purge_all' );
+}
+add_action( 'init', 'eta_apply_catalog_changes', 100 );
 
 // Bootstrap mobile bridge
 new ETA_Mobile_API_Bridge();
