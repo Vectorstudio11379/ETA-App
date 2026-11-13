@@ -346,6 +346,21 @@ class ETA_Mobile_API_Bridge {
 				'permission_callback' => '__return_true',
 			) );
 		}
+		// Other reply URL shapes apps commonly use, e.g. /course-qa/replies, /qa/answer,
+		// /course-qa/222/reply, /questions/222/answers, /courses/979/qa/222/reply.
+		$qa_base   = '(?:course-qa|qa|questions|course-questions|course_qa)';
+		$qa_action = '(?:reply|replies|answer|answers|comment|comments)';
+		foreach ( array(
+			'/' . $qa_base . '/(?:replies|answer|answers|comment|comments|' . 'respond)',
+			'/' . $qa_base . '/(?P<question_id>[^/]*)/' . $qa_action,
+			'/courses?/(?P<course_id>\d+)/' . $qa_base . '/(?P<question_id>[^/]*)/' . $qa_action,
+		) as $reply_route ) {
+			register_rest_route( self::NAMESPACE, $reply_route, array(
+				'methods'             => 'POST, PUT',
+				'callback'            => array( $this, 'submit_course_qa_reply' ),
+				'permission_callback' => '__return_true',
+			) );
+		}
 
 		// 22. Student Certificates & Verification (GET /certificates, GET /my-certificates)
 		register_rest_route( self::NAMESPACE, '/certificates', array(
@@ -4013,7 +4028,12 @@ class ETA_Mobile_API_Bridge {
 	 * Body: question_id (or parent_id), reply (or content / message).
 	 */
 	public function submit_course_qa_reply( $request ) {
-		$params = $request->get_json_params() ?: $request->get_params();
+		// Body (JSON or form) plus any question ID in the URL.
+		$params = array_merge( (array) $request->get_params(), (array) $request->get_json_params() );
+		$url    = $request->get_url_params();
+		if ( isset( $url['question_id'] ) && '' !== $url['question_id'] && ! ctype_digit( (string) ( $params['question_id'] ?? '' ) ) ) {
+			$params['question_id'] = $url['question_id'];
+		}
 
 		$user_id = $this->get_current_user_id();
 		$u       = $user_id ? get_userdata( $user_id ) : false;
@@ -4021,14 +4041,29 @@ class ETA_Mobile_API_Bridge {
 			return new WP_REST_Response( array( 'success' => false, 'error' => 'Please sign in to reply.' ), 401 );
 		}
 
-		$question_id = (int) ( $params['question_id'] ?? $params['parent_id'] ?? 0 );
+		$question_id = 0;
+		foreach ( array( 'question_id', 'questionId', 'qa_id', 'qaId', 'parent_id', 'parentId', 'parent', 'comment_id', 'commentId', 'id' ) as $key ) {
+			if ( isset( $params[ $key ] ) && is_scalar( $params[ $key ] ) && ctype_digit( (string) $params[ $key ] ) && (int) $params[ $key ] > 0 ) {
+				$question_id = (int) $params[ $key ];
+				break;
+			}
+		}
+		if ( ! $question_id ) {
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Replies are only for student questions. Built-in FAQ answers cannot be replied to.' ), 400 );
+		}
 		$question    = $question_id ? get_comment( $question_id ) : null;
 		if ( ! $question || 'eta_course_question' !== $question->comment_type || '1' !== (string) $question->comment_approved || (int) $question->comment_parent !== 0 ) {
 			return new WP_REST_Response( array( 'success' => false, 'error' => 'That question was not found.' ), 404 );
 		}
 		$course_id = (int) $question->comment_post_ID;
 
-		$text = trim( sanitize_textarea_field( $params['reply'] ?? $params['content'] ?? $params['message'] ?? '' ) );
+		$text = '';
+		foreach ( array( 'reply', 'content', 'message', 'answer', 'text', 'body', 'comment' ) as $key ) {
+			if ( isset( $params[ $key ] ) && is_string( $params[ $key ] ) && '' !== trim( $params[ $key ] ) ) {
+				$text = trim( sanitize_textarea_field( $params[ $key ] ) );
+				break;
+			}
+		}
 		if ( '' === $text ) {
 			return new WP_REST_Response( array( 'success' => false, 'error' => 'Reply cannot be empty.' ), 400 );
 		}
@@ -4503,6 +4538,27 @@ function eta_apply_catalog_changes() {
 	do_action( 'litespeed_purge_all' );
 }
 add_action( 'init', 'eta_apply_catalog_changes', 100 );
+
+// Diagnostics: remember the last 30 eta/v1 calls that matched no route (method, path,
+// and body field names only, never values) in the eta_rest_no_route_log option.
+add_filter( 'rest_post_dispatch', function( $response, $server, $request ) {
+	if ( $response instanceof WP_REST_Response && 404 === $response->get_status() ) {
+		$data = $response->get_data();
+		if ( is_array( $data ) && isset( $data['code'] ) && 'rest_no_route' === $data['code'] && 0 === strpos( $request->get_route(), '/eta/' ) ) {
+			$log   = get_option( 'eta_rest_no_route_log', array() );
+			$log   = is_array( $log ) ? $log : array();
+			$log[] = array(
+				'time'   => gmdate( 'c' ),
+				'method' => $request->get_method(),
+				'route'  => substr( $request->get_route(), 0, 200 ),
+				'query'  => array_keys( (array) $request->get_query_params() ),
+				'body'   => array_keys( (array) ( $request->get_json_params() ?: $request->get_body_params() ) ),
+			);
+			update_option( 'eta_rest_no_route_log', array_slice( $log, -30 ), false );
+		}
+	}
+	return $response;
+}, 10, 3 );
 
 // Bootstrap mobile bridge
 new ETA_Mobile_API_Bridge();
