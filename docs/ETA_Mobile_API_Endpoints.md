@@ -1,7 +1,7 @@
 # ETA Mobile API: Endpoint Reference
 
 **Base URL:** `https://expressteck.tech/wp-json/eta/v1`
-**Plugin:** ETA App Mobile API Bridge v2.1.0 (checked against the live site on 2026-11-08; Q&A replies, bundles, mixed-cart checkout and certificate downloads updated 2026-11-13)
+**Plugin:** ETA App Mobile API Bridge v2.1.0 (checked against the live site on 2026-11-08; Q&A replies, bundles, mixed-cart checkout and certificate downloads updated 2026-11-13; synced with the app repo inidash/eta-lms-mobile-app on 2026-11-13)
 **Format:** JSON request and response bodies (`Content-Type: application/json`). CORS is open.
 
 ## Authentication
@@ -22,20 +22,21 @@
 | POST | `https://expressteck.tech/wp-json/eta/v1/register` | `name` (or `fullName`), `email`, `password`, `meta` (optional: `{ phone, country }`) |
 | POST | `https://expressteck.tech/wp-json/eta/v1/login` | `username` or `email`, `password` |
 | POST | `https://expressteck.tech/wp-json/eta/v1/auth/google` | `id_token` (or `credential` / `token`) |
+| POST | `https://expressteck.tech/wp-json/lms/v1/google-auth` | `id_token`. Same as `/auth/google`; this is the address the app uses. Returns `token` and `user`; errors also have `message`. |
 | POST | `https://expressteck.tech/wp-json/eta/v1/auth/forgot-password` | `email` (or `username`). Emails an OTP code. |
 | POST | `https://expressteck.tech/wp-json/eta/v1/auth/verify-reset-code` | `email`, `code` (or `otp`) |
 | POST | `https://expressteck.tech/wp-json/eta/v1/auth/reset-password` | `email`, `code`, `password` (or `new_password`) |
 
-Aliases: `/google-login` = `/auth/google`, and `/auth/lost-password` = `/auth/forgot-password`.
+Aliases: `/google-login` and `/google-auth` = `/auth/google`, and `/auth/lost-password` = `/auth/forgot-password`.
 
 ## Catalog (public)
 
 | Method | Full URL | Params |
 |---|---|---|
-| GET | `https://expressteck.tech/wp-json/eta/v1/courses` | none (send the token to get your enrolled courses marked) |
+| GET | `https://expressteck.tech/wp-json/eta/v1/courses` | none (send the token to get your enrolled courses marked). `price` and `originalPrice` are numeric strings such as `"0"` or `"5000"`: convert with `Number()`. A free course has `price: "0"`. `progress` is the % of lessons completed. |
 | GET | `https://expressteck.tech/wp-json/eta/v1/course-details?id={courseId}` | `id` (or `course_id`) |
 | GET | `https://expressteck.tech/wp-json/eta/v1/course-curriculum?id={courseId}` | `id` (or `course_id`) |
-| GET | `https://expressteck.tech/wp-json/eta/v1/bundles` | none. Returns every bundle sold on the website, at the website's price (see **Bundles** below). |
+| GET | `https://expressteck.tech/wp-json/eta/v1/bundles` | none (send the token to get `isEnrolled`). Returns a plain list of every bundle sold on the website, at the website's price (see **Bundles** below). |
 | GET | `https://expressteck.tech/wp-json/eta/v1/categories` | none |
 | GET | `https://expressteck.tech/wp-json/eta/v1/instructors` | none |
 | GET | `https://expressteck.tech/wp-json/eta/v1/site-info` | none |
@@ -53,7 +54,7 @@ Aliases: `/google-login` = `/auth/google`, and `/auth/lost-password` = `/auth/fo
 | POST | `https://expressteck.tech/wp-json/eta/v1/cart` | `cart_ids` (array of course IDs) |
 | GET | `https://expressteck.tech/wp-json/eta/v1/wishlist` | none |
 | POST | `https://expressteck.tech/wp-json/eta/v1/wishlist` | `wishlist_ids` (array of course IDs) |
-| GET | `https://expressteck.tech/wp-json/eta/v1/notifications` | none |
+| GET | `https://expressteck.tech/wp-json/eta/v1/notifications` | none. Returns a plain list of notifications. |
 | POST | `https://expressteck.tech/wp-json/eta/v1/notifications/mark-read` | `id`, or `all: true` |
 | GET | `https://expressteck.tech/wp-json/eta/v1/certificates` | none (alias: `/my-certificates`) |
 | GET | `download_url` from `/certificates` or `/my-courses` | Open it in the browser: it returns the certificate PDF. The link is signed for that student and course and lasts 7 days, so fetch `/certificates` again for a fresh link when the user taps Download. No token needed. |
@@ -187,13 +188,14 @@ All errors come back as `{ "success": false, "error": "..." }`. A 401 here follo
 
 ## Bundles
 
-**`GET /bundles`** lists the bundles sold on the website (WooCommerce bundle products), so names, courses and prices always match the website. There are currently 4.
+**`GET /bundles`** returns a plain list (`[ { ... }, ... ]`) of the bundles sold on the website (WooCommerce bundle products), so names, courses and prices always match the website. There are currently 4.
 
 | Field | Meaning |
 |---|---|
 | `id` / `product_id` / `bundle_id` | The bundle's product ID (for example `671`). Put this ID in the cart and in checkout. |
 | `price`, `original_price` (also `sale_price`, `regular_price`, `originalPrice`) | Current price and the crossed-out price, in naira |
-| `savings_amount`, `savings_percent` (also `discount`), `badge` | Discount details |
+| `savings_amount`, `savings_percent` (also `discount`), `badge` (also `bundleBadge`) | Discount details |
+| `isEnrolled` (also `is_purchased`), `owned_course_ids` | With a token: `true` when the user can open every course in the bundle (show "Purchased"), and which of its courses they own |
 | `course_ids`, `courses`, `packages` | The courses inside the bundle (IDs, summaries, titles) |
 | `title`, `slug`, `description`, `thumbnail`, `checkout_url` | Display details; `checkout_url` is the bundle's page on the website |
 

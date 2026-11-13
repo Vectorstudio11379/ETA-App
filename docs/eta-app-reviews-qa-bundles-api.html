@@ -332,10 +332,8 @@ Authorization: Bearer &lt;token&gt;
       <div class="endpoint">
         <div class="sig"><span class="method m-get">GET</span><span class="path">/bundles</span><span class="auth opt">No token needed</span></div>
         <p>Returns every bundle sold on the website (currently 4), read from the website's store, so names, courses and prices always match the website. The old app-only bundles 101 and 102 are gone; drop them from any saved cart.</p>
-        <div class="note"><b>The list is wrapped.</b> The response is <code>{ "success": true, "data": [ &hellip; ] }</code>. Read the bundles from <code>data</code>.</div>
-        <div class="code"><button type="button" data-copy>Copy</button><pre>{
-  "success": true,
-  "data": [
+        <div class="note"><b>A plain list.</b> The response is <code>[ { &hellip; }, &hellip; ]</code>, like <code>/courses</code>. Send the token to get <code>isEnrolled</code> (the user owns every course in the bundle).</div>
+        <div class="code"><button type="button" data-copy>Copy</button><pre>[
     {
       "id": 670,
       "bundle_id": 670,
@@ -360,10 +358,12 @@ Authorization: Bearer &lt;token&gt;
         { "id": 343, "title": "VIRTUAL ASSISTANT MASTER COURSE", "slug": "virtual-assistant",
           "price": 0, "regular_price": 0, "thumbnail": "https://&hellip;" }
       ],
-      "checkout_url": "https://expressteck.tech/course-bundle/global-remote-career-virtual-assistant-bundle/"
+      "checkout_url": "https://expressteck.tech/course-bundle/global-remote-career-virtual-assistant-bundle/",
+      "bundleBadge": "Save 53%",
+      "isEnrolled": false,
+      "owned_course_ids": []
     }
-  ]
-}</pre></div>
+]</pre></div>
         <div class="tbl"><table>
           <thead><tr><th>Field</th><th>Use it for</th></tr></thead>
           <tbody>

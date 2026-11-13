@@ -203,6 +203,14 @@ class ETA_Mobile_API_Bridge {
 			'callback'            => array( $this, 'google_auth_user' ),
 			'permission_callback' => '__return_true',
 		) );
+		// The mobile app posts { id_token } here.
+		foreach ( array( array( 'lms/v1', '/google-auth' ), array( self::NAMESPACE, '/google-auth' ) ) as $g ) {
+			register_rest_route( $g[0], $g[1], array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'google_auth_user' ),
+				'permission_callback' => '__return_true',
+			) );
+		}
 
 		// 12. Dynamic Instructors Directory
 		register_rest_route( self::NAMESPACE, '/instructors', array(
@@ -931,9 +939,12 @@ class ETA_Mobile_API_Bridge {
 
 				$is_enrolled   = in_array( (int) $post_id, $enrolled_ids, true );
 				$progress_data = $user_id > 0 ? get_user_meta( $user_id, '_eta_app_course_progress', true ) : array();
-				$progress_val  = $is_enrolled ? ( isset( $progress_data[ $post_id ] ) ? min( 100, count( $progress_data[ $post_id ] ) * 20 ) : 15 ) : 0;
+				$progress_val  = 0; // Set below, once the curriculum is loaded.
 
 				$resolved_mods = $this->resolve_course_modules( $post_id );
+				if ( $is_enrolled && is_array( $progress_data ) ) {
+					$progress_val = $this->course_progress_percent( $progress_data[ $post_id ] ?? array(), $resolved_mods );
+				}
 				$product_id    = get_post_meta( $post_id, '_wc_product_id', true ) ?: ( get_post_type( $post_id ) === 'product' ? $post_id : '' );
 
 				$courses[] = array(
@@ -943,8 +954,8 @@ class ETA_Mobile_API_Bridge {
 					'title'         => html_entity_decode( $post->post_title, ENT_QUOTES, 'UTF-8' ),
 					'instructor'    => ( $author && strpos( $author, '@' ) === false ) ? $author : 'Express Tech Academy',
 					'category'      => $cat_name,
-					'originalPrice' => (int) $regular_price,
-					'price'         => (int) $sale_price,
+					'originalPrice' => (string) (int) $regular_price,
+					'price'         => (string) (int) $sale_price,
 					'discount'      => $regular_price > $sale_price ? (int) round( ( ( $regular_price - $sale_price ) / $regular_price ) * 100 ) : 0,
 					'studentsCount' => 120,
 					'rating'        => round( (float) get_post_meta( $post_id, '_masteriyo_average_rating', true ) ?: 4.9, 1 ),
@@ -973,17 +984,23 @@ class ETA_Mobile_API_Bridge {
 	 */
 	public function get_bundles( $request ) {
 		$bundles = array();
+		$user_id = $this->get_current_user_id();
+		$owned   = $user_id ? $this->get_active_course_ids( $user_id ) : array();
 		foreach ( $this->get_bundle_product_ids() as $product_id ) {
 			$bundle = $this->build_bundle_payload( $product_id );
 			if ( $bundle ) {
-				$bundles[] = $bundle;
+				$ids                       = array_map( 'intval', (array) $bundle['course_ids'] );
+				$have                      = array_values( array_intersect( $ids, $owned ) );
+				$bundle['isEnrolled']      = $user_id > 0 && ! empty( $ids ) && count( $have ) === count( $ids );
+				$bundle['is_purchased']    = $bundle['isEnrolled'];
+				$bundle['owned_course_ids'] = $have;
+				$bundle['bundleBadge']      = $bundle['badge'];
+				$bundles[]                 = $bundle;
 			}
 		}
 
-		return new WP_REST_Response( array(
-			'success' => true,
-			'data'    => $bundles,
-		), 200 );
+		// A plain list, like /courses, /categories and /instructors.
+		return new WP_REST_Response( $bundles, 200 );
 	}
 
 	/**
@@ -1074,6 +1091,66 @@ class ETA_Mobile_API_Bridge {
 	/**
 	 * Helper: the /bundles payload for one bundle product.
 	 */
+	/**
+	 * Helper: course IDs this user can open right now (active Masteriyo enrollments).
+	 */
+	private function get_active_course_ids( $user_id ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'masteriyo_user_items';
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
+			return array();
+		}
+		return array_map( 'intval', $wpdb->get_col( $wpdb->prepare(
+			"SELECT DISTINCT item_id FROM {$table} WHERE user_id = %d AND item_type = 'user_course' AND status IN ('active', 'enrolled', 'progress', 'completed')",
+			(int) $user_id
+		) ) );
+	}
+
+	/**
+	 * One-time repair: re-run enrollment for every paid app order, so buyers whose
+	 * enrollment was left inactive get access, and attach them to their orders.
+	 */
+	public function repair_paid_app_orders() {
+		if ( ! function_exists( 'wc_get_orders' ) ) {
+			return array();
+		}
+		$report = array();
+		$orders = wc_get_orders( array(
+			'status'         => array( 'processing', 'completed' ),
+			'payment_method' => 'paystack',
+			'limit'          => 300,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+		) );
+		foreach ( $orders as $order ) {
+			$oid = $order->get_id();
+			$ref = get_post_meta( $oid, '_paystack_txn_ref', true );
+			$rec = $ref ? $this->get_txn_record( $ref ) : null;
+			if ( ! $rec || (int) $rec['order_id'] !== $oid ) {
+				continue; // Not an app checkout.
+			}
+			$uid = (int) ( $rec['user_id'] ?? 0 );
+			if ( $uid <= 0 && ! empty( $rec['email'] ) ) {
+				$u   = get_user_by( 'email', $rec['email'] );
+				$uid = $u ? (int) $u->ID : 0;
+			}
+			if ( $uid <= 0 ) {
+				$report[ $oid ] = 'no user';
+				continue;
+			}
+			if ( (int) $order->get_customer_id() !== $uid ) {
+				$order->set_customer_id( $uid );
+				$order->save();
+			}
+			if ( 'processing' === $order->get_status() ) {
+				$order->update_status( 'completed', 'Course access unlocked by the app checkout (repair).' );
+			}
+			$this->enroll_user_in_courses( $uid, (array) $rec['course_ids'] );
+			$report[ $oid ] = array( 'user' => $uid, 'courses' => array_map( 'intval', (array) $rec['course_ids'] ) );
+		}
+		return $report;
+	}
+
 	private function build_bundle_payload( $product_id ) {
 		$post = get_post( $product_id );
 		if ( ! $post ) {
@@ -1275,6 +1352,7 @@ class ETA_Mobile_API_Bridge {
 			update_user_meta( $user_id, '_eta_enrolled_courses', $all_enrolled_ids );
 		}
 
+		$listed_course_ids = array();
 		if ( ! empty( $all_enrolled_ids ) ) {
 			foreach ( $all_enrolled_ids as $c_id ) {
 				$real_mto_cid = (int) $c_id;
@@ -1290,11 +1368,18 @@ class ETA_Mobile_API_Bridge {
 					$real_mto_cid = (int) $linked_mto;
 				}
 
-				$post = get_post( $real_mto_cid ) ?: get_post( $c_id );
+				// One entry per published course: product IDs and course IDs resolve to the same course,
+				// and bundle records or unpublished (draft) courses are not listed.
+				if ( isset( $listed_course_ids[ $real_mto_cid ] ) || 'mto-course' !== get_post_type( $real_mto_cid ) || 'publish' !== get_post_status( $real_mto_cid ) ) {
+					continue;
+				}
+				$listed_course_ids[ $real_mto_cid ] = true;
+				$post = get_post( $real_mto_cid );
 				if ( $post ) {
 					$thumb = get_the_post_thumbnail_url( $real_mto_cid, 'large' ) ?: get_the_post_thumbnail_url( $c_id, 'large' ) ?: 'https://expressteck.tech/wp-content/uploads/2026/10/Getting-Started-with-Masteriyo-LMS-1.jpg';
 					$progress_data = get_user_meta( $user_id, '_eta_app_course_progress', true );
-					$course_prog = isset( $progress_data[ $real_mto_cid ] ) && is_array( $progress_data[ $real_mto_cid ] ) ? count( $progress_data[ $real_mto_cid ] ) * 20 : 15;
+					$course_mods = $this->resolve_course_modules( $real_mto_cid );
+					$course_prog = $this->course_progress_percent( is_array( $progress_data ) ? ( $progress_data[ $real_mto_cid ] ?? array() ) : array(), $course_mods );
 					$prod_id = get_post_meta( $real_mto_cid, '_wc_product_id', true ) ?: ( get_post_type( $c_id ) === 'product' ? $c_id : '' );
 
 					$enrolled_courses[] = array(
@@ -1314,7 +1399,7 @@ class ETA_Mobile_API_Bridge {
 						'reviewsCount'  => 12,
 						'studentsCount' => 120,
 						'daysLeft'      => 0,
-						'modules'       => $this->resolve_course_modules( $real_mto_cid ),
+						'modules'       => $course_mods,
 						'certificate'   => array(
 							'is_issued'         => ( $course_prog >= 99 ),
 							'verification_code' => "{$real_mto_cid}-1070-{$user_id}",
@@ -1346,18 +1431,36 @@ class ETA_Mobile_API_Bridge {
 		return new WP_REST_Response( array(
 			'enrolled'     => $enrolled_courses,
 			'certificates' => $student_certificates,
-			'debug'        => array(
-				'user_id'          => $user_id,
-				'all_enrolled_ids' => $all_enrolled_ids,
-				'manual_ids'       => $manual_ids,
-				'db_course_ids'    => $db_course_ids,
-			),
 		), 200 );
 	}
 
 	/**
 	 * Helper: Resolve full curriculum modules and lessons for a course
 	 */
+	/**
+	 * Helper: course progress in % = completed lessons / all lessons in the curriculum.
+	 */
+	private function course_progress_percent( $lesson_progress, $modules ) {
+		$total = 0;
+		$ids   = array();
+		foreach ( (array) $modules as $m ) {
+			foreach ( (array) ( $m['lessons'] ?? array() ) as $l ) {
+				$total++;
+				$ids[] = (string) ( $l['id'] ?? '' );
+			}
+		}
+		if ( ! $total || ! is_array( $lesson_progress ) ) {
+			return 0;
+		}
+		$done = 0;
+		foreach ( $lesson_progress as $lesson_id => $row ) {
+			if ( in_array( (string) $lesson_id, $ids, true ) && ( is_array( $row ) ? ! empty( $row['completed'] ) : (bool) $row ) ) {
+				$done++;
+			}
+		}
+		return (int) min( 100, round( $done / $total * 100 ) );
+	}
+
 	public function resolve_course_modules( $course_id ) {
 		$course_id = (int) $course_id;
 
@@ -1554,10 +1657,14 @@ class ETA_Mobile_API_Bridge {
 				$existing[ $course_id ] = array();
 			}
 
+			$previous = isset( $existing[ $course_id ][ $lesson_id ] ) && is_array( $existing[ $course_id ][ $lesson_id ] ) ? $existing[ $course_id ][ $lesson_id ] : array();
 			$existing[ $course_id ][ $lesson_id ] = array(
-				'completed' => $completed,
-				'score'     => $score,
-				'time'      => current_time( 'mysql' ),
+				// A lesson stays completed once completed (later position saves send completed: false).
+				'completed'        => $completed || ! empty( $previous['completed'] ),
+				'score'            => $score,
+				'progress_percent' => isset( $params['progress_percent'] ) ? max( 0, min( 100, (float) $params['progress_percent'] ) ) : ( $completed ? 100 : (float) ( $previous['progress_percent'] ?? 0 ) ),
+				'position_seconds' => isset( $params['position_seconds'] ) ? max( 0, (int) $params['position_seconds'] ) : (int) ( $previous['position_seconds'] ?? 0 ),
+				'time'             => current_time( 'mysql' ),
 			);
 
 			update_user_meta( $user_id, '_eta_app_course_progress', $existing );
@@ -1876,11 +1983,16 @@ class ETA_Mobile_API_Bridge {
 		$table_user_items = $wpdb->prefix . 'masteriyo_user_items';
 		if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_user_items ) ) === $table_user_items ) {
 			foreach ( $all_targets as $c_id ) {
-				$existing_record = $wpdb->get_var( $wpdb->prepare(
-					"SELECT id FROM {$table_user_items} WHERE user_id = %d AND item_id = %d AND item_type = 'user_course'",
+				$existing_row = $wpdb->get_row( $wpdb->prepare(
+					"SELECT id, status FROM {$table_user_items} WHERE user_id = %d AND item_id = %d AND item_type = 'user_course' ORDER BY id DESC LIMIT 1",
 					$user_id,
 					(int) $c_id
 				) );
+				$existing_record = $existing_row ? (int) $existing_row->id : 0;
+				if ( $existing_row && ! in_array( $existing_row->status, array( 'active', 'enrolled', 'progress', 'completed' ), true ) ) {
+					// An earlier unpaid or cancelled order left this enrollment inactive; this payment unlocks it.
+					$wpdb->update( $table_user_items, array( 'status' => 'active', 'date_modified' => current_time( 'mysql' ) ), array( 'id' => $existing_record ) );
+				}
 				if ( ! $existing_record ) {
 					$wpdb->insert( $table_user_items, array(
 						'user_id'       => (string) $user_id,
@@ -2039,6 +2151,18 @@ class ETA_Mobile_API_Bridge {
 						$u_obj->set_role( 'masteriyo_student' );
 					}
 				}
+			}
+		}
+
+		// Attach the buyer to the order (so it shows in their account) and complete it:
+		// everything sold here is a digital course or bundle.
+		if ( $order && $user_id > 0 ) {
+			if ( (int) $order->get_customer_id() !== $user_id ) {
+				$order->set_customer_id( $user_id );
+				$order->save();
+			}
+			if ( 'processing' === $order->get_status() ) {
+				$order->update_status( 'completed', 'Course access unlocked by the app checkout.' );
 			}
 		}
 
@@ -2621,12 +2745,12 @@ class ETA_Mobile_API_Bridge {
 		$client_id  = function_exists( 'eta_react_google_client_id' ) ? eta_react_google_client_id() : ( defined( 'ETA_GOOGLE_CLIENT_ID' ) ? ETA_GOOGLE_CLIENT_ID : '1075070762182-vlf41rha8ctjckt9ig2bnv28otd3n10l.apps.googleusercontent.com' );
 
 		if ( empty( $credential ) ) {
-			return new WP_REST_Response( array( 'success' => false, 'error' => 'Google credential/ID token is required.' ), 400 );
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Google credential/ID token is required.', 'message' => 'Google credential/ID token is required.' ), 400 );
 		}
 
 		$response = wp_remote_get( 'https://oauth2.googleapis.com/tokeninfo?id_token=' . rawurlencode( $credential ), array( 'timeout' => 10 ) );
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
-			return new WP_REST_Response( array( 'success' => false, 'error' => 'Unable to verify Google credential with Google servers.' ), 401 );
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Unable to verify Google credential with Google servers.', 'message' => 'Unable to verify Google credential with Google servers.' ), 401 );
 		}
 
 		$payload = json_decode( wp_remote_retrieve_body( $response ), true );
@@ -2641,7 +2765,7 @@ class ETA_Mobile_API_Bridge {
 			&& isset( $payload['email_verified'] ) && in_array( $payload['email_verified'], array( 'true', true ), true );
 
 		if ( ! $valid ) {
-			return new WP_REST_Response( array( 'success' => false, 'error' => 'Invalid or expired Google token.' ), 401 );
+			return new WP_REST_Response( array( 'success' => false, 'error' => 'Invalid or expired Google token.', 'message' => 'Invalid or expired Google token.' ), 401 );
 		}
 
 		$user = get_user_by( 'email', $email );
@@ -3234,10 +3358,7 @@ class ETA_Mobile_API_Bridge {
 			return $time_b - $time_a;
 		} );
 
-		return new WP_REST_Response( array(
-			'success' => true,
-			'data'    => $notifications,
-		), 200 );
+		return new WP_REST_Response( array_values( $notifications ), 200 );
 	}
 
 	/**
@@ -4561,6 +4682,15 @@ add_filter( 'rest_post_dispatch', function( $response, $server, $request ) {
 }, 10, 3 );
 
 // Bootstrap mobile bridge
-new ETA_Mobile_API_Bridge();
+$GLOBALS['eta_mobile_api_bridge'] = new ETA_Mobile_API_Bridge();
+
+// One-time repair of paid app orders (see repair_paid_app_orders).
+add_action( 'init', function () {
+	if ( '2026-11-13b' === get_option( 'eta_app_order_repair_version' ) || ! function_exists( 'wc_get_orders' ) ) {
+		return;
+	}
+	update_option( 'eta_app_order_repair_version', '2026-11-13b' );
+	update_option( 'eta_app_order_repair_report', $GLOBALS['eta_mobile_api_bridge']->repair_paid_app_orders(), false );
+}, 110 );
 
 } // End if ! class_exists
