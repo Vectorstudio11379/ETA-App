@@ -666,7 +666,7 @@ class ETA_Mobile_API_Bridge {
 	/**
 	 * Helper: Resolve current user ID from WordPress session or Bearer token
 	 */
-	private function get_current_user_id() {
+	public function get_current_user_id() {
 		$user_id = get_current_user_id();
 		if ( $user_id > 0 ) {
 			return $user_id;
@@ -1006,7 +1006,7 @@ class ETA_Mobile_API_Bridge {
 	/**
 	 * Helper: a post title as plain text for JSON ("&amp;" -> "&").
 	 */
-	private function plain_title( $post_id ) {
+	public function plain_title( $post_id ) {
 		return html_entity_decode( get_the_title( $post_id ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 	}
 
@@ -1014,7 +1014,7 @@ class ETA_Mobile_API_Bridge {
 	 * Helper: IDs of the published WooCommerce bundle products sold on the website
 	 * (products that list their courses in _penithun_bundle_courses / _courses).
 	 */
-	private function get_bundle_product_ids() {
+	public function get_bundle_product_ids() {
 		$meta_key = defined( 'PENITHUN_BC_META' ) ? PENITHUN_BC_META : '_penithun_bundle_courses';
 		$ids      = get_posts( array(
 			'post_type'      => 'product',
@@ -1038,7 +1038,7 @@ class ETA_Mobile_API_Bridge {
 	 * Helper: the WooCommerce product ID for a bundle, given either the product ID
 	 * or the Masteriyo bundle (mto-bundle) ID. Returns 0 when the ID is not a bundle.
 	 */
-	private function resolve_bundle_product_id( $id ) {
+	public function resolve_bundle_product_id( $id ) {
 		$id   = (int) $id;
 		$type = $id ? get_post_type( $id ) : '';
 		if ( 'product' === $type ) {
@@ -1054,7 +1054,7 @@ class ETA_Mobile_API_Bridge {
 	 * Helper: Masteriyo course IDs inside a bundle (product or mto-bundle ID).
 	 * Empty array when the ID is not a bundle.
 	 */
-	private function get_bundle_course_ids( $id ) {
+	public function get_bundle_course_ids( $id ) {
 		$product_id = $this->resolve_bundle_product_id( $id );
 		if ( ! $product_id ) {
 			return array();
@@ -1076,7 +1076,7 @@ class ETA_Mobile_API_Bridge {
 	/**
 	 * Helper: current price of a bundle product (NGN), from WooCommerce.
 	 */
-	private function get_bundle_prices( $product_id ) {
+	public function get_bundle_prices( $product_id ) {
 		$product = function_exists( 'wc_get_product' ) ? wc_get_product( $product_id ) : false;
 		if ( $product ) {
 			$price   = (float) $product->get_price();
@@ -1094,7 +1094,7 @@ class ETA_Mobile_API_Bridge {
 	/**
 	 * Helper: course IDs this user can open right now (active Masteriyo enrollments).
 	 */
-	private function get_active_course_ids( $user_id ) {
+	public function get_active_course_ids( $user_id ) {
 		global $wpdb;
 		$table = $wpdb->prefix . 'masteriyo_user_items';
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
@@ -1943,7 +1943,7 @@ class ETA_Mobile_API_Bridge {
 	 * Helper: enroll a user in courses (Masteriyo user items + the app's enrollment cache).
 	 * Accepts course IDs or their WooCommerce product IDs. Returns every ID recorded.
 	 */
-	private function enroll_user_in_courses( $user_id, $course_ids ) {
+	public function enroll_user_in_courses( $user_id, $course_ids ) {
 		$user_id     = (int) $user_id;
 		$course_ids  = array_values( array_unique( array_filter( array_map( 'intval', (array) $course_ids ) ) ) );
 		$all_targets = array();
@@ -4683,6 +4683,10 @@ add_filter( 'rest_post_dispatch', function( $response, $server, $request ) {
 
 // Bootstrap mobile bridge
 $GLOBALS['eta_mobile_api_bridge'] = new ETA_Mobile_API_Bridge();
+
+// Google Play Billing for the Android app (the website keeps Paystack).
+require_once __DIR__ . '/eta-google-play.php';
+$GLOBALS['eta_google_play'] = new ETA_Google_Play( $GLOBALS['eta_mobile_api_bridge'] );
 
 // One-time repair of paid app orders (see repair_paid_app_orders).
 add_action( 'init', function () {
