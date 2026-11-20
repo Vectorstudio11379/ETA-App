@@ -29,6 +29,29 @@
 
 Aliases: `/google-login` and `/google-auth` = `/auth/google`, and `/auth/lost-password` = `/auth/forgot-password`.
 
+### Deleting an account
+
+Google Play requires that students can delete their account in the app. Put a **Delete account** button in Profile or Settings, ask the student to confirm, then call:
+
+| Method | Full URL | Body |
+|---|---|---|
+| POST (or DELETE) | `https://expressteck.tech/wp-json/eta/v1/account/delete` | `confirm: "DELETE"` (**required**). Optional `password`: if sent, it must be correct. Send the Bearer token. |
+
+Aliases: `/delete-account` and `/user/delete`.
+
+- **200** `{ success: true, deleted: true, message }`: the account is gone. Clear the token and every local copy of the student's data, then go to the sign-in screen.
+- **400** `confirmation_required`: `confirm` wasn't `"DELETE"`.
+- **401** `login_required`: no valid token.
+- **403** `wrong_password`: a password was sent and it's wrong. `protected_account`: staff accounts (admins, instructors, shop managers) can't be deleted from the app.
+
+What deleting does:
+- Removes the profile, sign-in tokens, course progress, enrollments and quiz attempts.
+- Keeps the student's reviews, questions and replies on the courses, shown as "Former student".
+- Keeps WooCommerce orders for accounting, with the name, email, phone and address removed.
+- Emails the student a confirmation.
+
+The same is available on the web at `https://expressteck.tech/delete-account/`. The student signs in, types DELETE and confirms. Use this address as the **Delete account URL** in Play Console → App content → Data safety.
+
 ## Catalog (public)
 
 | Method | Full URL | Params |

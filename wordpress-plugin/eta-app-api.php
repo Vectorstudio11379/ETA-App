@@ -4688,6 +4688,10 @@ $GLOBALS['eta_mobile_api_bridge'] = new ETA_Mobile_API_Bridge();
 require_once __DIR__ . '/eta-google-play.php';
 $GLOBALS['eta_google_play'] = new ETA_Google_Play( $GLOBALS['eta_mobile_api_bridge'] );
 
+// Account deletion (in the app and at /delete-account/), required by Google Play.
+require_once __DIR__ . '/eta-account-deletion.php';
+$GLOBALS['eta_account_deletion'] = new ETA_Account_Deletion( $GLOBALS['eta_mobile_api_bridge'] );
+
 // One-time repair of paid app orders (see repair_paid_app_orders).
 add_action( 'init', function () {
 	if ( '2026-11-13b' === get_option( 'eta_app_order_repair_version' ) || ! function_exists( 'wc_get_orders' ) ) {
